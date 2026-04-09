@@ -23,6 +23,8 @@ dependencies:
     path: ../features_expenses
   features_currency:
     path: ../features_currency
+  features_budgets:
+    path: ../features_budgets
   shared_models:
     path: ../shared_models
   ui_components:

@@ -92,7 +92,8 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
-                FilledButton(
+                PrimaryActionButton(
+                  height: 48,
                   onPressed: () => Navigator.of(context).maybePop(),
                   child: Text(tr('import.close')),
                 ),
@@ -271,14 +272,10 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: FilledButton(
+          child: PrimaryActionButton(
+            height: 52,
+            hapticOnPress: !_saving && selected > 0,
             onPressed: _saving || selected == 0 ? null : () => _save(context),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(52),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
             child: _saving
                 ? const SizedBox(
                     height: 22,
@@ -397,7 +394,7 @@ class _AttentionClusterBar extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
       child: Material(
-        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.6),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -475,19 +472,50 @@ class _ReviewTile extends ConsumerWidget {
       item.parsed.occurredAt,
     );
 
-    final dotColor = _confidenceColor(theme, item);
+    final accentColor = ConfidencePalette.accentColor(
+      theme,
+      confidence: item.confidence,
+    );
     final sameCount = notifier.countWithSameSanitizedTitle(index);
-
-    final titleStyle = compact
-        ? theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)
-        : theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600);
-    final metaStyle = compact
-        ? theme.textTheme.labelSmall
-            ?.copyWith(color: theme.colorScheme.onSurfaceVariant)
-        : theme.textTheme.bodySmall
-            ?.copyWith(color: theme.colorScheme.onSurfaceVariant);
     final barHeight = compact ? 36.0 : 48.0;
-    final vPad = compact ? 6.0 : 10.0;
+
+    final Widget? belowSubtitle = (!compact && sameCount > 1)
+        ? TextButton(
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            onPressed: () async {
+              final id = await _openCategorySheet(
+                context,
+                categoriesAsync.valueOrNull ?? [],
+              );
+              if (!context.mounted || id == null || id.isEmpty) {
+                return;
+              }
+              notifier.applyCategoryToSameSanitizedTitle(
+                index,
+                id,
+              );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(tr('import.review.reinforce_hint')),
+                    duration: AppMotion.standard + AppMotion.fast,
+                  ),
+                );
+              }
+            },
+            child: Text(
+              tr(
+                'import.review.apply_same_title',
+                args: [sameCount.toString()],
+              ),
+              style: theme.textTheme.labelSmall,
+            ),
+          )
+        : null;
 
     final tile = Padding(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: compact ? 3 : 6),
@@ -499,79 +527,17 @@ class _ReviewTile extends ConsumerWidget {
             ref,
             categoriesAsync.valueOrNull ?? [],
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: vPad),
-            child: Row(
+          child: CompactRow(
+            title: displayTitle,
+            subtitle: '$dateLabel · $amountLabel',
+            belowSubtitle: belowSubtitle,
+            leadingAccentColor: accentColor,
+            leadingAccentHeight: barHeight,
+            compact: compact,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 3,
-                  height: barHeight,
-                  decoration: BoxDecoration(
-                    color: dotColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                SizedBox(width: compact ? 8 : 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayTitle,
-                        maxLines: compact ? 1 : 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: titleStyle,
-                      ),
-                      SizedBox(height: compact ? 2 : 4),
-                      Text(
-                        '$dateLabel · $amountLabel',
-                        style: metaStyle,
-                      ),
-                      if (!compact && sameCount > 1) ...[
-                        const SizedBox(height: 6),
-                        TextButton(
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          onPressed: () async {
-                            final id = await _openCategorySheet(
-                              context,
-                              categoriesAsync.valueOrNull ?? [],
-                            );
-                            if (!context.mounted || id == null || id.isEmpty) {
-                              return;
-                            }
-                            notifier.applyCategoryToSameSanitizedTitle(
-                              index,
-                              id,
-                            );
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content:
-                                      Text(tr('import.review.reinforce_hint')),
-                                  duration:
-                                      AppMotion.standard + AppMotion.fast,
-                                ),
-                              );
-                            }
-                          },
-                          child: Text(
-                            tr(
-                              'import.review.apply_same_title',
-                              args: [sameCount.toString()],
-                            ),
-                            style: theme.textTheme.labelSmall,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                SizedBox(width: compact ? 4 : 8),
                 categoriesAsync.when(
                   data: (cats) {
                     Category? cat;
@@ -590,7 +556,7 @@ class _ReviewTile extends ConsumerWidget {
                           radius: avR,
                           backgroundColor: cat != null
                               ? Color(cat.colorValue)
-                                  .withOpacity(0.85)
+                                  .withValues(alpha: 0.85)
                               : theme.colorScheme.surfaceContainerHighest,
                           child: Icon(
                             cat != null ? Icons.label : Icons.label_outline,
@@ -671,14 +637,6 @@ class _ReviewTile extends ConsumerWidget {
             curve: AppMotion.curve,
           ),
     );
-  }
-
-  Color _confidenceColor(ThemeData theme, PendingImportExpense e) {
-    if (e.confidence >= 0.9) return theme.colorScheme.primary;
-    if (e.confidence >= kPendingImportLowConfidence) {
-      return theme.colorScheme.tertiary;
-    }
-    return theme.colorScheme.error;
   }
 
   Future<void> _pickCategory(

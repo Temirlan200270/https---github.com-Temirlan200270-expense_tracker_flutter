@@ -60,6 +60,17 @@ class HomeDecisionSnapshot {
   final TrendDirection spendingTrend;
 }
 
+/// Единый снимок для Home и связанных экранов (см. [financialSnapshotProvider]).
+class FinancialSnapshot {
+  const FinancialSnapshot({
+    required this.decision,
+    required this.computedAt,
+  });
+
+  final HomeDecisionSnapshot decision;
+  final DateTime computedAt;
+}
+
 /// Статус: баланс + прогноз + скорость трат (предиктивно) + тренд относительно нормы.
 HomeFinancialStateTier resolveHomeFinancialState({
   required AnalyticsStats stats,
@@ -137,8 +148,7 @@ int? _monthRunwayDays({
   return days;
 }
 
-final homeDecisionEngineProvider =
-    FutureProvider.autoDispose<HomeDecisionSnapshot>((ref) async {
+Future<HomeDecisionSnapshot> _computeHomeDecisionSnapshot(Ref ref) async {
   final all = await ref.watch(expensesStreamProvider.future);
   final categories = await ref.watch(categoriesStreamProvider.future);
   final defaultCurrency = ref.watch(defaultCurrencyProvider);
@@ -316,4 +326,21 @@ final homeDecisionEngineProvider =
     runwayDays: runwayDays,
     spendingTrend: spendingTrend,
   );
+}
+
+/// Единый источник: месячная статистика + Decision Engine.
+final financialSnapshotProvider =
+    FutureProvider.autoDispose<FinancialSnapshot>((ref) async {
+  final decision = await _computeHomeDecisionSnapshot(ref);
+  return FinancialSnapshot(
+    decision: decision,
+    computedAt: DateTime.now(),
+  );
+});
+
+/// Совместимость: только снимок решения (данные совпадают с [financialSnapshotProvider]).
+final homeDecisionEngineProvider =
+    FutureProvider.autoDispose<HomeDecisionSnapshot>((ref) async {
+  final snap = await ref.watch(financialSnapshotProvider.future);
+  return snap.decision;
 });

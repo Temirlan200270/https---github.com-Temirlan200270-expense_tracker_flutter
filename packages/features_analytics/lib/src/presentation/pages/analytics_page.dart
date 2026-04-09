@@ -1,10 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:features_budgets/features_budgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ui_components/ui_components.dart';
 
 import '../../providers/analytics_providers.dart';
 import '../../providers/analytics_period_provider.dart';
+import '../../providers/home_decision_engine_provider.dart';
 import '../widgets/analytics_common.dart';
 import '../widgets/analytics_period_selector.dart'
     show AnalyticsPeriodSelector, AnalyticsPeriodSelectorSheet;
@@ -16,6 +18,7 @@ import '../widgets/analytics_patterns_card.dart';
 import '../widgets/analytics_comparison_card.dart';
 import '../widgets/analytics_time_chart.dart';
 import '../widgets/analytics_category_chart.dart';
+import '../widgets/analytics_financial_snapshot_section.dart';
 
 /// Главная страница аналитики
 class AnalyticsPage extends ConsumerWidget {
@@ -44,6 +47,8 @@ class AnalyticsPage extends ConsumerWidget {
       child: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
+            ref.refresh(financialSnapshotProvider.future),
+            ref.refresh(budgetsWithSpendingProvider.future),
             ref.refresh(analyticsStatsProvider.future),
             ref.refresh(categoryStatsProvider.future),
             ref.refresh(timeStatsProvider.future),
@@ -59,16 +64,22 @@ class AnalyticsPage extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Селектор периода
               AnimatedAnalyticsSection(
                 index: 0,
+                child: const AnalyticsFinancialSnapshotSection(),
+              ),
+              const SizedBox(height: 16),
+
+              // Селектор периода
+              AnimatedAnalyticsSection(
+                index: 1,
                 child: AnalyticsPeriodSelector(periodState: periodState),
               ),
               const SizedBox(height: 16),
 
               // Статистика
               AnimatedAnalyticsSection(
-                index: 1,
+                index: 2,
                 child: statsAsync.when(
                   data: (stats) => AnalyticsStatsCards(stats: stats),
                   loading: () => const AnalyticsLoadingCard(),
@@ -80,7 +91,7 @@ class AnalyticsPage extends ConsumerWidget {
 
               // Умные инсайты
               AnimatedAnalyticsSection(
-                index: 2,
+                index: 3,
                 child: insightsAsync.when(
                   data: (insights) => insights.isNotEmpty
                       ? AnalyticsInsightsSection(insights: insights)
@@ -92,7 +103,7 @@ class AnalyticsPage extends ConsumerWidget {
 
               // Прогноз
               AnimatedAnalyticsSection(
-                index: 3,
+                index: 4,
                 child: forecastAsync.when(
                   data: (forecast) => forecast != null
                       ? AnalyticsForecastCard(forecast: forecast)
@@ -104,7 +115,7 @@ class AnalyticsPage extends ConsumerWidget {
 
               // Сравнение с предыдущим периодом
               AnimatedAnalyticsSection(
-                index: 4,
+                index: 5,
                 child: comparisonAsync.when(
                   data: (comparison) {
                     if (comparison == null) {
@@ -121,7 +132,7 @@ class AnalyticsPage extends ConsumerWidget {
 
               // Средние показатели
               AnimatedAnalyticsSection(
-                index: 5,
+                index: 6,
                 child: averagesAsync.when(
                   data: (averages) => averages != null
                       ? AnalyticsAveragesCard(averages: averages)
@@ -133,7 +144,7 @@ class AnalyticsPage extends ConsumerWidget {
 
               // Паттерны трат
               AnimatedAnalyticsSection(
-                index: 6,
+                index: 7,
                 child: patternsAsync.when(
                   data: (patterns) => patterns != null
                       ? AnalyticsPatternsCard(patterns: patterns)
@@ -145,7 +156,7 @@ class AnalyticsPage extends ConsumerWidget {
 
               // График по времени
               AnimatedAnalyticsSection(
-                index: 7,
+                index: 8,
                 child: timeStatsAsync.when(
                   data: (stats) => AnalyticsTimeChart(stats: stats),
                   loading: () => const AnalyticsLoadingCard(),
@@ -157,7 +168,7 @@ class AnalyticsPage extends ConsumerWidget {
 
               // График по категориям
               AnimatedAnalyticsSection(
-                index: 8,
+                index: 9,
                 child: categoryStatsAsync.when(
                   data: (stats) => AnalyticsCategoryChart(stats: stats),
                   loading: () => const AnalyticsLoadingCard(),

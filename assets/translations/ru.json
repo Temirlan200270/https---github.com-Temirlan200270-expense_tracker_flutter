@@ -45,14 +45,32 @@
     },
     "hero": {
       "month_balance": "Баланс за месяц",
-      "new_operation": "Новая операция",
-      "ftue_micro": "Добавьте трату или импортируйте выписку — тогда появится пульс и прогноз."
+      "new_operation": "+ Новая операция",
+      "ftue_micro": "Добавьте трату или импортируйте выписку — тогда появится пульс и прогноз.",
+      "wallet_title": "Кошелёк",
+      "analysis_label": "АНАЛИЗ",
+      "total_balance": "ОБЩИЙ БАЛАНС",
+      "expenses_col": "Расходы",
+      "income_col": "Доходы",
+      "forecast_col": "Прогноз",
+      "forecast_na": "—",
+      "budget_insight": "{name}: осталось {remaining} из {limit} — {percent}% бюджета использовано.",
+      "ux": {
+        "tone_safe_short": "Сейчас всё спокойно",
+        "tone_watch_short": "Стоит присмотреться к темпу трат",
+        "tone_risk_short": "Запас по балансу тонкий",
+        "feedback_prompt": "Полезно?",
+        "feedback_yes": "Да",
+        "feedback_no": "Не очень"
+      }
     },
     "feed": {
       "today": "Сегодня",
       "yesterday": "Вчера",
       "income": "Доход",
-      "expense": "Расход"
+      "expense": "Расход",
+      "recent_upper": "ПОСЛЕДНИЕ",
+      "all_link": "Все →"
     },
     "decision": {
       "title": "Финансовое состояние",
@@ -228,7 +246,22 @@
       "weekly": "В неделю",
       "monthly": "В месяц"
     },
-    "top_categories": "Топ категорий"
+    "top_categories": "Топ категорий",
+    "snapshot": {
+      "title": "Финансовый снимок",
+      "subtitle": "Текущий месяц — та же логика, что на главной",
+      "loading": "Считаем снимок…"
+    },
+    "insights": {
+      "title": "Умные подсказки",
+      "type_spending": "Траты",
+      "type_saving": "Сбережения",
+      "type_trend": "Тренд",
+      "type_warning": "Предупреждение",
+      "type_achievement": "Достижение",
+      "type_pattern": "Паттерн",
+      "type_tip": "Совет"
+    }
   },
   "filters": {
     "title": "Фильтры",

@@ -3671,6 +3671,284 @@ class DebtsTableCompanion extends UpdateCompanion<DebtRow> {
   }
 }
 
+class $InsightFeedbackTableTable extends InsightFeedbackTable
+    with TableInfo<$InsightFeedbackTableTable, InsightFeedbackRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $InsightFeedbackTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _insightIdMeta =
+      const VerificationMeta('insightId');
+  @override
+  late final GeneratedColumn<String> insightId = GeneratedColumn<String>(
+      'insight_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _feedbackTypeMeta =
+      const VerificationMeta('feedbackType');
+  @override
+  late final GeneratedColumn<int> feedbackType = GeneratedColumn<int>(
+      'feedback_type', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, insightId, feedbackType, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'insight_feedback';
+  @override
+  VerificationContext validateIntegrity(Insertable<InsightFeedbackRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('insight_id')) {
+      context.handle(_insightIdMeta,
+          insightId.isAcceptableOrUnknown(data['insight_id']!, _insightIdMeta));
+    } else if (isInserting) {
+      context.missing(_insightIdMeta);
+    }
+    if (data.containsKey('feedback_type')) {
+      context.handle(
+          _feedbackTypeMeta,
+          feedbackType.isAcceptableOrUnknown(
+              data['feedback_type']!, _feedbackTypeMeta));
+    } else if (isInserting) {
+      context.missing(_feedbackTypeMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  InsightFeedbackRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return InsightFeedbackRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      insightId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}insight_id'])!,
+      feedbackType: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}feedback_type'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $InsightFeedbackTableTable createAlias(String alias) {
+    return $InsightFeedbackTableTable(attachedDatabase, alias);
+  }
+}
+
+class InsightFeedbackRow extends DataClass
+    implements Insertable<InsightFeedbackRow> {
+  final String id;
+  final String insightId;
+  final int feedbackType;
+  final DateTime createdAt;
+  const InsightFeedbackRow(
+      {required this.id,
+      required this.insightId,
+      required this.feedbackType,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['insight_id'] = Variable<String>(insightId);
+    map['feedback_type'] = Variable<int>(feedbackType);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  InsightFeedbackTableCompanion toCompanion(bool nullToAbsent) {
+    return InsightFeedbackTableCompanion(
+      id: Value(id),
+      insightId: Value(insightId),
+      feedbackType: Value(feedbackType),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory InsightFeedbackRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return InsightFeedbackRow(
+      id: serializer.fromJson<String>(json['id']),
+      insightId: serializer.fromJson<String>(json['insightId']),
+      feedbackType: serializer.fromJson<int>(json['feedbackType']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'insightId': serializer.toJson<String>(insightId),
+      'feedbackType': serializer.toJson<int>(feedbackType),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  InsightFeedbackRow copyWith(
+          {String? id,
+          String? insightId,
+          int? feedbackType,
+          DateTime? createdAt}) =>
+      InsightFeedbackRow(
+        id: id ?? this.id,
+        insightId: insightId ?? this.insightId,
+        feedbackType: feedbackType ?? this.feedbackType,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  InsightFeedbackRow copyWithCompanion(InsightFeedbackTableCompanion data) {
+    return InsightFeedbackRow(
+      id: data.id.present ? data.id.value : this.id,
+      insightId: data.insightId.present ? data.insightId.value : this.insightId,
+      feedbackType: data.feedbackType.present
+          ? data.feedbackType.value
+          : this.feedbackType,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InsightFeedbackRow(')
+          ..write('id: $id, ')
+          ..write('insightId: $insightId, ')
+          ..write('feedbackType: $feedbackType, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, insightId, feedbackType, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is InsightFeedbackRow &&
+          other.id == this.id &&
+          other.insightId == this.insightId &&
+          other.feedbackType == this.feedbackType &&
+          other.createdAt == this.createdAt);
+}
+
+class InsightFeedbackTableCompanion
+    extends UpdateCompanion<InsightFeedbackRow> {
+  final Value<String> id;
+  final Value<String> insightId;
+  final Value<int> feedbackType;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const InsightFeedbackTableCompanion({
+    this.id = const Value.absent(),
+    this.insightId = const Value.absent(),
+    this.feedbackType = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  InsightFeedbackTableCompanion.insert({
+    required String id,
+    required String insightId,
+    required int feedbackType,
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        insightId = Value(insightId),
+        feedbackType = Value(feedbackType),
+        createdAt = Value(createdAt);
+  static Insertable<InsightFeedbackRow> custom({
+    Expression<String>? id,
+    Expression<String>? insightId,
+    Expression<int>? feedbackType,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (insightId != null) 'insight_id': insightId,
+      if (feedbackType != null) 'feedback_type': feedbackType,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  InsightFeedbackTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? insightId,
+      Value<int>? feedbackType,
+      Value<DateTime>? createdAt,
+      Value<int>? rowid}) {
+    return InsightFeedbackTableCompanion(
+      id: id ?? this.id,
+      insightId: insightId ?? this.insightId,
+      feedbackType: feedbackType ?? this.feedbackType,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (insightId.present) {
+      map['insight_id'] = Variable<String>(insightId.value);
+    }
+    if (feedbackType.present) {
+      map['feedback_type'] = Variable<int>(feedbackType.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InsightFeedbackTableCompanion(')
+          ..write('id: $id, ')
+          ..write('insightId: $insightId, ')
+          ..write('feedbackType: $feedbackType, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3683,6 +3961,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CategoryRulesTableTable categoryRulesTable =
       $CategoryRulesTableTable(this);
   late final $DebtsTableTable debtsTable = $DebtsTableTable(this);
+  late final $InsightFeedbackTableTable insightFeedbackTable =
+      $InsightFeedbackTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3693,7 +3973,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         recurringExpensesTable,
         budgetsTable,
         categoryRulesTable,
-        debtsTable
+        debtsTable,
+        insightFeedbackTable
       ];
 }
 
@@ -5382,6 +5663,171 @@ typedef $$DebtsTableTableProcessedTableManager = ProcessedTableManager<
     (DebtRow, BaseReferences<_$AppDatabase, $DebtsTableTable, DebtRow>),
     DebtRow,
     PrefetchHooks Function()>;
+typedef $$InsightFeedbackTableTableCreateCompanionBuilder
+    = InsightFeedbackTableCompanion Function({
+  required String id,
+  required String insightId,
+  required int feedbackType,
+  required DateTime createdAt,
+  Value<int> rowid,
+});
+typedef $$InsightFeedbackTableTableUpdateCompanionBuilder
+    = InsightFeedbackTableCompanion Function({
+  Value<String> id,
+  Value<String> insightId,
+  Value<int> feedbackType,
+  Value<DateTime> createdAt,
+  Value<int> rowid,
+});
+
+class $$InsightFeedbackTableTableFilterComposer
+    extends Composer<_$AppDatabase, $InsightFeedbackTableTable> {
+  $$InsightFeedbackTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get insightId => $composableBuilder(
+      column: $table.insightId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get feedbackType => $composableBuilder(
+      column: $table.feedbackType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$InsightFeedbackTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $InsightFeedbackTableTable> {
+  $$InsightFeedbackTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get insightId => $composableBuilder(
+      column: $table.insightId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get feedbackType => $composableBuilder(
+      column: $table.feedbackType,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$InsightFeedbackTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $InsightFeedbackTableTable> {
+  $$InsightFeedbackTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get insightId =>
+      $composableBuilder(column: $table.insightId, builder: (column) => column);
+
+  GeneratedColumn<int> get feedbackType => $composableBuilder(
+      column: $table.feedbackType, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$InsightFeedbackTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $InsightFeedbackTableTable,
+    InsightFeedbackRow,
+    $$InsightFeedbackTableTableFilterComposer,
+    $$InsightFeedbackTableTableOrderingComposer,
+    $$InsightFeedbackTableTableAnnotationComposer,
+    $$InsightFeedbackTableTableCreateCompanionBuilder,
+    $$InsightFeedbackTableTableUpdateCompanionBuilder,
+    (
+      InsightFeedbackRow,
+      BaseReferences<_$AppDatabase, $InsightFeedbackTableTable,
+          InsightFeedbackRow>
+    ),
+    InsightFeedbackRow,
+    PrefetchHooks Function()> {
+  $$InsightFeedbackTableTableTableManager(
+      _$AppDatabase db, $InsightFeedbackTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$InsightFeedbackTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$InsightFeedbackTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$InsightFeedbackTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> insightId = const Value.absent(),
+            Value<int> feedbackType = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              InsightFeedbackTableCompanion(
+            id: id,
+            insightId: insightId,
+            feedbackType: feedbackType,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String insightId,
+            required int feedbackType,
+            required DateTime createdAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              InsightFeedbackTableCompanion.insert(
+            id: id,
+            insightId: insightId,
+            feedbackType: feedbackType,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$InsightFeedbackTableTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $InsightFeedbackTableTable,
+        InsightFeedbackRow,
+        $$InsightFeedbackTableTableFilterComposer,
+        $$InsightFeedbackTableTableOrderingComposer,
+        $$InsightFeedbackTableTableAnnotationComposer,
+        $$InsightFeedbackTableTableCreateCompanionBuilder,
+        $$InsightFeedbackTableTableUpdateCompanionBuilder,
+        (
+          InsightFeedbackRow,
+          BaseReferences<_$AppDatabase, $InsightFeedbackTableTable,
+              InsightFeedbackRow>
+        ),
+        InsightFeedbackRow,
+        PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5399,4 +5845,6 @@ class $AppDatabaseManager {
       $$CategoryRulesTableTableTableManager(_db, _db.categoryRulesTable);
   $$DebtsTableTableTableManager get debtsTable =>
       $$DebtsTableTableTableManager(_db, _db.debtsTable);
+  $$InsightFeedbackTableTableTableManager get insightFeedbackTable =>
+      $$InsightFeedbackTableTableTableManager(_db, _db.insightFeedbackTable);
 }

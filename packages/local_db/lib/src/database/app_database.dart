@@ -19,12 +19,12 @@ LazyDatabase _openConnection() {
   });
 }
 
-@DriftDatabase(tables: [ExpensesTable, CategoriesTable, RecurringExpensesTable, BudgetsTable, CategoryRulesTable, DebtsTable])
+@DriftDatabase(tables: [ExpensesTable, CategoriesTable, RecurringExpensesTable, BudgetsTable, CategoryRulesTable, DebtsTable, InsightFeedbackTable])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration {
@@ -128,6 +128,19 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('CREATE INDEX IF NOT EXISTS idx_debts_type ON debts(type)');
           await customStatement('CREATE INDEX IF NOT EXISTS idx_debts_is_closed ON debts(is_closed)');
           await customStatement('CREATE INDEX IF NOT EXISTS idx_debts_is_deleted ON debts(is_deleted)');
+        }
+        if (from < 7) {
+          await customStatement('''
+            CREATE TABLE IF NOT EXISTS insight_feedback (
+              id TEXT NOT NULL PRIMARY KEY,
+              insight_id TEXT NOT NULL,
+              feedback_type INTEGER NOT NULL,
+              created_at INTEGER NOT NULL
+            )
+          ''');
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_insight_feedback_insight_id ON insight_feedback(insight_id)',
+          );
         }
       },
     );

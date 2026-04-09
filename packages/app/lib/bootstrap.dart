@@ -4,6 +4,8 @@ import 'package:features_expenses/features_expenses.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_db/local_db.dart';
+
+import 'src/providers/insight_feedback_providers.dart';
 import 'package:shared_models/shared_models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sync_api/sync_api.dart';
@@ -21,6 +23,7 @@ Future<void> bootstrapExpenseTrackerApp() async {
   final expensesRepo = LocalExpensesRepository(database);
   final categoriesRepo = LocalCategoriesRepository(database);
   final recurringExpensesRepo = LocalRecurringExpensesRepository(database);
+  final insightFeedbackRepo = LocalInsightFeedbackRepository(database);
 
   await _seedCategories(categoriesRepo);
 
@@ -31,6 +34,7 @@ Future<void> bootstrapExpenseTrackerApp() async {
       expensesRepositoryProvider.overrideWithValue(expensesRepo),
       categoriesRepositoryProvider.overrideWithValue(categoriesRepo),
       recurringExpensesRepositoryProvider.overrideWithValue(recurringExpensesRepo),
+      insightFeedbackRepositoryProvider.overrideWithValue(insightFeedbackRepo),
       syncClientProvider.overrideWithValue(MockSyncClient()),
       syncServiceProvider.overrideWith((ref) => ExampleSyncService(ref.read(syncClientProvider))),
     ],

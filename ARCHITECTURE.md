@@ -151,4 +151,16 @@ flowchart TB
 
 ---
 
+## 10. Человеческий слой поверх Decision Engine (SSS UX v1)
+
+Сырые сигналы (velocity, tier, trend, confidence) считаются в **`features_analytics`** (`homeDecisionEngineProvider`, `HomeDecisionSnapshot`). Для главного экрана они **не протаскиваются в UI напрямую**.
+
+- **`HomeDecisionHeroHelper`** — перевод снимка в локализованный нарратив (`HomeDecisionHeroNarrative`).
+- **`UxDecisionMapper`** (`packages/app/lib/src/home/ux_decision_mapper.dart`) — схлопывание в **`UxDecisionView`** (`shared_models`): одна доминирующая мысль (`coreMessage`), короткий контекст (`contextLine`), подсказка к поведению (`actionHint`), тон `UxFinancialTone` для визуала.
+- **`resolveHomeHeroInsight`** — приоритет **одного** бюджетного инсайта; иначе текст из `UxDecisionView` (без конкурирующих «техно»-строк).
+
+Правило продукта: пользователь не интерпретирует движок — в интерфейс попадают только уже интерпретированные строки. Визуальные правила — [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) §1 и §10.
+
+---
+
 *Последнее обновление документа: по состоянию кодовой базы монорепозитория expense_tracker_flutter.*

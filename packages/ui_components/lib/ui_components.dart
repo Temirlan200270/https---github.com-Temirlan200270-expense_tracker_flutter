@@ -12,4 +12,12 @@ export 'src/enhanced_card.dart';
 export 'src/glass_card.dart';
 export 'src/balance_card.dart';
 export 'src/settings_tile.dart';
+export 'src/outlined_circle_icon_button.dart';
+export 'src/wallet_hero_card.dart';
+export 'src/section_header.dart';
+export 'src/primary_action_button.dart';
+export 'src/confidence_indicator.dart';
+export 'src/compact_row.dart';
+export 'src/risk_badge.dart';
+export 'src/insight_chip.dart';
 

@@ -145,3 +145,18 @@ class DebtsTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Обратная связь по инсайтам (полезно / не полезно).
+@DataClassName('InsightFeedbackRow')
+class InsightFeedbackTable extends Table {
+  @override
+  String get tableName => 'insight_feedback';
+
+  TextColumn get id => text()();
+  TextColumn get insightId => text().named('insight_id')();
+  IntColumn get feedbackType => integer().named('feedback_type')();
+  DateTimeColumn get createdAt => dateTime().named('created_at')();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+

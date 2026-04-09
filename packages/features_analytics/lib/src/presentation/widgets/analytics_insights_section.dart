@@ -1,8 +1,10 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:ui_components/ui_components.dart';
 
 import '../../providers/smart_insights.dart';
 
-/// Секция умных инсайтов
+/// Секция умных инсайтов (Analysis Mode, примитивы DESIGN_SYSTEM §7.2).
 class AnalyticsInsightsSection extends StatelessWidget {
   const AnalyticsInsightsSection({super.key, required this.insights});
 
@@ -10,6 +12,7 @@ class AnalyticsInsightsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -17,13 +20,16 @@ class AnalyticsInsightsSection extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
-              Icon(Icons.lightbulb_outline,
-                  color: Colors.amber.shade700, size: 20),
+              Icon(
+                Icons.lightbulb_outline_rounded,
+                color: cs.primary,
+                size: 22,
+              ),
               const SizedBox(width: 8),
               Text(
-                'Умные подсказки',
+                tr('analytics.insights.title'),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                     ),
               ),
             ],
@@ -40,9 +46,52 @@ class _InsightCard extends StatelessWidget {
 
   final SmartInsight insight;
 
+  String _typeLabel() {
+    return switch (insight.type) {
+      InsightType.spending => tr('analytics.insights.type_spending'),
+      InsightType.saving => tr('analytics.insights.type_saving'),
+      InsightType.trend => tr('analytics.insights.type_trend'),
+      InsightType.warning => tr('analytics.insights.type_warning'),
+      InsightType.achievement => tr('analytics.insights.type_achievement'),
+      InsightType.pattern => tr('analytics.insights.type_pattern'),
+      InsightType.tip => tr('analytics.insights.type_tip'),
+    };
+  }
+
+  (IconData, InsightChipTone) _iconAndTone() {
+    return switch (insight.type) {
+      InsightType.spending => (Icons.shopping_cart_outlined, InsightChipTone.informational),
+      InsightType.saving => (Icons.savings_outlined, InsightChipTone.positive),
+      InsightType.trend => (Icons.show_chart_rounded, InsightChipTone.informational),
+      InsightType.warning => (Icons.warning_amber_rounded, InsightChipTone.caution),
+      InsightType.achievement => (Icons.emoji_events_outlined, InsightChipTone.positive),
+      InsightType.pattern => (Icons.auto_graph_rounded, InsightChipTone.neutral),
+      InsightType.tip => (Icons.tips_and_updates_outlined, InsightChipTone.informational),
+    };
+  }
+
+  Color _trendColor(ColorScheme cs) {
+    final t = insight.trend;
+    if (t == null || t == InsightTrendDirection.stable) {
+      return cs.onSurfaceVariant;
+    }
+    if (t == InsightTrendDirection.up) return cs.error;
+    return cs.primary;
+  }
+
+  IconData _trendIcon() {
+    final t = insight.trend;
+    if (t == InsightTrendDirection.up) return Icons.arrow_upward_rounded;
+    if (t == InsightTrendDirection.down) {
+      return Icons.arrow_downward_rounded;
+    }
+    return Icons.remove_rounded;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final (icon, color) = _getIconAndColor(insight.type);
+    final cs = Theme.of(context).colorScheme;
+    final (typeIcon, tone) = _iconAndTone();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -51,23 +100,20 @@ class _InsightCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  InsightChip(
+                    label: _typeLabel(),
+                    icon: typeIcon,
+                    tone: tone,
+                  ),
+                  const SizedBox(height: 8),
                   Text(
                     insight.title,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
                         ),
                   ),
                   const SizedBox(height: 4),
@@ -78,43 +124,17 @@ class _InsightCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (insight.trend != null)
+            if (insight.trend != null) ...[
+              const SizedBox(width: 8),
               Icon(
-                insight.trend == InsightTrendDirection.up
-                    ? Icons.arrow_upward
-                    : insight.trend == InsightTrendDirection.down
-                        ? Icons.arrow_downward
-                        : Icons.remove,
-                color: insight.trend == InsightTrendDirection.up
-                    ? Colors.red
-                    : insight.trend == InsightTrendDirection.down
-                        ? Colors.green
-                        : Colors.grey,
-                size: 16,
+                _trendIcon(),
+                color: _trendColor(cs),
+                size: 18,
               ),
+            ],
           ],
         ),
       ),
     );
   }
-
-  (IconData, Color) _getIconAndColor(InsightType type) {
-    switch (type) {
-      case InsightType.spending:
-        return (Icons.shopping_cart, Colors.blue);
-      case InsightType.saving:
-        return (Icons.savings, Colors.green);
-      case InsightType.trend:
-        return (Icons.show_chart, Colors.purple);
-      case InsightType.warning:
-        return (Icons.warning_amber, Colors.orange);
-      case InsightType.achievement:
-        return (Icons.emoji_events, Colors.amber);
-      case InsightType.pattern:
-        return (Icons.auto_graph, Colors.teal);
-      case InsightType.tip:
-        return (Icons.tips_and_updates, Colors.cyan);
-    }
-  }
 }
-

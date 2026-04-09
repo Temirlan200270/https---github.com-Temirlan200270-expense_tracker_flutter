@@ -44,14 +44,32 @@
     },
     "hero": {
       "month_balance": "Month balance",
-      "new_operation": "New transaction",
-      "ftue_micro": "Add an expense or import a statement to unlock your pulse and forecast."
+      "new_operation": "+ New transaction",
+      "ftue_micro": "Add an expense or import a statement to unlock your pulse and forecast.",
+      "wallet_title": "Wallet",
+      "analysis_label": "ANALYSIS",
+      "total_balance": "TOTAL BALANCE",
+      "expenses_col": "Expenses",
+      "income_col": "Income",
+      "forecast_col": "Forecast",
+      "forecast_na": "—",
+      "budget_insight": "{name}: {remaining} left of {limit} — {percent}% of budget used.",
+      "ux": {
+        "tone_safe_short": "Things look calm right now",
+        "tone_watch_short": "Worth watching your spending pace",
+        "tone_risk_short": "Your balance buffer is thin",
+        "feedback_prompt": "Was this helpful?",
+        "feedback_yes": "Yes",
+        "feedback_no": "Not really"
+      }
     },
     "feed": {
       "today": "Today",
       "yesterday": "Yesterday",
       "income": "Income",
-      "expense": "Expense"
+      "expense": "Expense",
+      "recent_upper": "RECENT",
+      "all_link": "All →"
     },
     "decision": {
       "title": "Financial state",
@@ -226,7 +244,22 @@
       "weekly": "Per Week",
       "monthly": "Per Month"
     },
-    "top_categories": "Top Categories"
+    "top_categories": "Top Categories",
+    "snapshot": {
+      "title": "Financial snapshot",
+      "subtitle": "Current month — same logic as Home",
+      "loading": "Computing snapshot…"
+    },
+    "insights": {
+      "title": "Smart insights",
+      "type_spending": "Spending",
+      "type_saving": "Saving",
+      "type_trend": "Trend",
+      "type_warning": "Warning",
+      "type_achievement": "Achievement",
+      "type_pattern": "Pattern",
+      "type_tip": "Tip"
+    }
   },
   "filters": {
     "title": "Filters",
