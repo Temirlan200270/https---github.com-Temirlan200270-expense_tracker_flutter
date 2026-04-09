@@ -10,6 +10,9 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_models/shared_models.dart';
 import 'package:ui_components/ui_components.dart';
 
+import 'home_decision_hero_helper.dart';
+import 'home_hero_block.dart';
+
 // Провайдер для статистики на главной странице (за месяц)
 final _homeStatsProvider =
     FutureProvider.autoDispose<AnalyticsStats>((ref) async {
@@ -25,7 +28,6 @@ final _homeStatsProvider =
     return true;
   }).toList();
 
-  // Упрощенная статистика без конвертации валют для главной страницы
   double totalIncome = 0;
   double totalExpenses = 0;
   int incomeCount = 0;
@@ -53,29 +55,24 @@ final _homeStatsProvider =
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final currencyCode = ref.watch(defaultCurrencyProvider);
-    final formatter = NumberFormat.currency(
-      locale: context.locale.toLanguageTag(),
-      symbol: currencyCode,
-    );
-
-    // Получаем статистику за текущий месяц
-    final statsAsync = ref.watch(_homeStatsProvider);
-    final decisionAsync = ref.watch(homeDecisionEngineProvider);
-    final recentExpensesAsync = ref.watch(expensesStreamProvider);
-    final now = DateTime.now();
-
-    return PrimaryScaffold(
-      title: tr('home.title'),
-      actions: [
+  static Widget _topBar(BuildContext context) {
+    return Row(
+      children: [
         IconButton(
-          icon: const Icon(Icons.analytics),
+          icon: const Icon(Icons.account_circle_outlined),
+          tooltip: tr('settings'),
+          onPressed: () {
+            HapticUtils.selection();
+            context.push('/settings');
+          },
+        ),
+        const Spacer(),
+        IconButton(
+          icon: const Icon(Icons.analytics_outlined),
           onPressed: () => context.push('/analytics'),
           tooltip: tr('analytics.title'),
         ),
-        PopupMenuButton(
+        PopupMenuButton<void>(
           icon: const Icon(Icons.more_vert),
           itemBuilder: (context) => [
             PopupMenuItem(
@@ -138,27 +135,27 @@ class HomePage extends ConsumerWidget {
                 },
               ),
             ),
-            PopupMenuItem(
-              child: ListTile(
-                leading: const Icon(Icons.settings),
-                title: Text(tr('settings')),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/settings');
-                },
-              ),
-            ),
           ],
         ),
       ],
-      fab: FloatingActionButton(
-        onPressed: () {
-          HapticUtils.mediumImpact();
-          context.push('/expenses/new');
-        },
-        child: const Icon(Icons.add),
-      ),
-      child: RefreshIndicator(
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currencyCode = ref.watch(defaultCurrencyProvider);
+    final formatter = NumberFormat.currency(
+      locale: context.locale.toLanguageTag(),
+      symbol: currencyCode,
+    );
+
+    final statsAsync = ref.watch(_homeStatsProvider);
+    final decisionAsync = ref.watch(homeDecisionEngineProvider);
+    final recentExpensesAsync = ref.watch(expensesStreamProvider);
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
             ref.refresh(_homeStatsProvider.future),
@@ -169,212 +166,228 @@ class HomePage extends ConsumerWidget {
         child: recentExpensesAsync.when(
           data: (allExpenses) {
             final globalEmpty = allExpenses.isEmpty;
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (globalEmpty)
-                    EmptyState(
-                      icon: Icons.account_balance_wallet_outlined,
-                      title: tr('home.ftue.title'),
-                      message: tr('home.ftue.message'),
-                      action: FilledButton.icon(
-                        onPressed: () {
-                          HapticUtils.selection();
-                          context.push('/import');
-                        },
-                        icon: const Icon(Icons.upload_file),
-                        label: Text(tr('home.ftue.import_cta')),
-                      ),
-                    )
-                        .animate()
-                        .fadeIn(
-                          duration: 220.ms,
-                          curve: Curves.easeOutCubic,
+            final recentForHome = allExpenses.take(5).toList();
+            return CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: globalEmpty
+                      ? HomeHeroBlock(
+                          topBar: _topBar(context),
+                          stateTitle: tr('home.ftue.title'),
+                          microAction: tr('home.hero.ftue_micro'),
+                          balanceLabel: tr('home.hero.month_balance'),
+                          balanceAmount: formatter.format(0),
+                          accentColor:
+                              Theme.of(context).colorScheme.primary,
+                          onPrimaryAction: () =>
+                              context.push('/expenses/new'),
+                          primaryActionLabel: tr('home.hero.new_operation'),
+                          secondaryAction: TextButton.icon(
+                            onPressed: () {
+                              HapticUtils.selection();
+                              context.push('/import');
+                            },
+                            icon: const Icon(Icons.upload_file, size: 20),
+                            label: Text(tr('home.ftue.import_cta')),
+                          ),
                         )
-                        .slideY(
-                          begin: 0.06,
-                          end: 0,
-                          duration: 240.ms,
-                          curve: Curves.easeOutCubic,
-                        )
-                  else ...[
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final themeType = ref.watch(appThemeTypeProvider);
-                        return statsAsync.when(
-                          data: (stats) => BalanceCard(
-                            balance: stats.balance,
-                            income: stats.totalIncome,
-                            expenses: stats.totalExpenses,
-                            formatter: formatter,
-                            themeType: themeType.name,
-                          ),
-                          loading: () => Container(
-                            height: 200,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
-                              borderRadius: BorderRadius.circular(28),
-                            ),
-                            child: const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          ),
-                          error: (error, _) => Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Text(
-                                tr('home.stats_error'),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(color: Colors.red),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    decisionAsync.when(
-                      data: (snapshot) => _HomeDecisionEngineCard(
-                        snapshot: snapshot,
-                        formatter: formatter,
-                        now: now,
-                      )
                           .animate()
                           .fadeIn(
-                            duration: 200.ms,
-                            delay: 50.ms,
-                            curve: Curves.easeOutCubic,
+                            duration: AppMotion.standard,
+                            curve: AppMotion.curve,
                           )
                           .slideY(
                             begin: 0.04,
                             end: 0,
-                            duration: 220.ms,
-                            delay: 50.ms,
-                            curve: Curves.easeOutCubic,
-                          ),
-                      loading: () => const SizedBox.shrink(),
-                      error: (_, __) => const SizedBox.shrink(),
-                    ),
-                    if (decisionAsync.hasValue) const SizedBox(height: 16),
-                  ],
-                  const BudgetsSummaryWidget(),
-                  const SizedBox(height: 16),
-                  QuickActions(
-                    onExpense: () {
-                      HapticUtils.selection();
-                      context.push('/expenses/new', extra: {'type': 'expense'});
-                    },
-                    onIncome: () {
-                      HapticUtils.selection();
-                      context.push('/expenses/new', extra: {'type': 'income'});
-                    },
-                    onRepeatLast: allExpenses.isNotEmpty
-                        ? () {
-                            HapticUtils.mediumImpact();
-                            final last = allExpenses.first;
-                            context.push('/expenses/new',
-                                extra: {'expense': last});
-                          }
-                        : null,
-                    hasLastTransaction: allExpenses.isNotEmpty,
-                  ),
-                  if (!globalEmpty) ...[
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            tr('home.recent_transactions'),
-                            style: Theme.of(context).textTheme.titleLarge,
+                            duration: AppMotion.screen,
+                            curve: AppMotion.curve,
                           )
-                              .animate()
-                              .fadeIn(
-                                duration: 220.ms,
-                                delay: 120.ms,
-                                curve: Curves.easeOutCubic,
-                              )
-                              .slideX(
-                                begin: -0.06,
-                                end: 0,
-                                duration: 240.ms,
-                                delay: 120.ms,
-                                curve: Curves.easeOutCubic,
+                      : statsAsync.when(
+                          data: (stats) => decisionAsync.when(
+                            data: (snapshot) {
+                              final narrative =
+                                  HomeDecisionHeroHelper.build(
+                                colorScheme:
+                                    Theme.of(context).colorScheme,
+                                snapshot: snapshot,
+                                formatter: formatter,
+                              );
+                              return HomeHeroBlock(
+                                topBar: _topBar(context),
+                                stateTitle: narrative.stateTitle,
+                                microAction: narrative.microAction,
+                                detailLine: narrative.detailLine,
+                                balanceLabel:
+                                    tr('home.hero.month_balance'),
+                                balanceAmount:
+                                    formatter.format(stats.balance),
+                                accentColor: narrative.accentColor,
+                                onPrimaryAction: () =>
+                                    context.push('/expenses/new'),
+                                primaryActionLabel:
+                                    tr('home.hero.new_operation'),
+                              );
+                            },
+                            loading: () => _HeroLoadingShell(
+                              topBar: _topBar(context),
+                            ),
+                            error: (_, __) => HomeHeroBlock(
+                              topBar: _topBar(context),
+                              stateTitle: tr('home.decision.state_stable'),
+                              microAction: tr(
+                                'home.decision.micro_action_stable',
                               ),
+                              balanceLabel:
+                                  tr('home.hero.month_balance'),
+                              balanceAmount:
+                                  formatter.format(stats.balance),
+                              accentColor: Theme.of(context)
+                                  .colorScheme
+                                  .primary,
+                              onPrimaryAction: () =>
+                                  context.push('/expenses/new'),
+                              primaryActionLabel:
+                                  tr('home.hero.new_operation'),
+                            ),
+                          ),
+                          loading: () => _HeroLoadingShell(
+                            topBar: _topBar(context),
+                          ),
+                          error: (error, _) => Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              tr('home.stats_error'),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .error,
+                                  ),
+                            ),
+                          ),
                         ),
-                        TextButton(
-                          onPressed: () => context.push('/expenses'),
-                          child: Text(tr('home.view_all'))
-                              .animate()
-                              .fadeIn(
-                                duration: 220.ms,
-                                delay: 150.ms,
-                                curve: Curves.easeOutCubic,
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (globalEmpty) ...[
+                          const SizedBox(height: 8),
+                          Divider(
+                            height: 1,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .outline
+                                .withValues(alpha: 0.2),
+                          ),
+                        ],
+                        const BudgetsSummaryWidget(),
+                        if (!globalEmpty) ...[
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                tr('home.recent_transactions'),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
                               ),
-                        ),
+                              TextButton(
+                                onPressed: () =>
+                                    context.push('/expenses'),
+                                child: Text(tr('home.view_all')),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                        ],
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    ...allExpenses.take(5).toList().asMap().entries.map((entry) {
-                      final delay = (28 * entry.key).ms;
-                      return _DismissibleTransactionTile(
-                        expense: entry.value,
+                  ),
+                ),
+                if (!globalEmpty)
+                  SliverList.separated(
+                    itemCount: recentForHome.length,
+                    separatorBuilder: (_, __) => Divider(
+                      height: 1,
+                      indent: 20,
+                      endIndent: 20,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .withValues(alpha: 0.15),
+                    ),
+                    itemBuilder: (context, index) {
+                      final expense = recentForHome[index];
+                      return _HomeFeedTile(
+                        expense: expense,
                         formatter: formatter,
+                        showDayHeader: _shouldShowDayHeader(
+                          recentForHome,
+                          index,
+                        ),
+                        dayHeaderText: _dayHeaderText(
+                          context,
+                          expense.occurredAt,
+                        ),
                       )
                           .animate()
                           .fadeIn(
-                            duration: 180.ms,
-                            delay: delay,
-                            curve: Curves.easeOutCubic,
+                            duration: AppMotion.standard,
+                            delay: (AppMotion.staggerInterval * index),
+                            curve: AppMotion.curve,
                           )
                           .slideY(
-                            begin: 0.08,
+                            begin: 0.06,
                             end: 0,
-                            duration: 200.ms,
-                            delay: delay,
-                            curve: Curves.easeOutCubic,
+                            duration: AppMotion.standard,
+                            delay: (AppMotion.staggerInterval * index),
+                            curve: AppMotion.curve,
                           );
-                    }).toList(),
-                  ],
-                ],
-              ),
+                    },
+                  ),
+                const SliverToBoxAdapter(child: SizedBox(height: 32)),
+              ],
             );
           },
-          loading: () => SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(28),
+          loading: () => CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: _HeroLoadingShell(topBar: _topBar(context)),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      const BudgetsSummaryWidget(),
+                      const SizedBox(height: 16),
+                      const SkeletonList(itemCount: 4),
+                    ],
                   ),
-                  child: const Center(child: CircularProgressIndicator()),
                 ),
-                const SizedBox(height: 16),
-                const BudgetsSummaryWidget(),
-                const SizedBox(height: 16),
-                const SkeletonList(itemCount: 3),
-              ],
-            ),
+              ),
+            ],
           ),
-          error: (error, _) => SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  tr('home.transactions_error'),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.red,
-                      ),
-                ),
+          error: (error, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                tr('home.transactions_error'),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
               ),
             ),
           ),
@@ -382,490 +395,126 @@ class HomePage extends ConsumerWidget {
       ),
     );
   }
+
+  static bool _shouldShowDayHeader(List<Expense> list, int index) {
+    if (index == 0) return true;
+    final a = list[index - 1].occurredAt;
+    final b = list[index].occurredAt;
+    return !_isSameCalendarDay(a, b);
+  }
+
+  static bool _isSameCalendarDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  static String _dayHeaderText(BuildContext context, DateTime d) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(d.year, d.month, d.day);
+    if (target == today) return tr('home.feed.today');
+    if (target == today.subtract(const Duration(days: 1))) {
+      return tr('home.feed.yesterday');
+    }
+    return DateFormat.yMMMd(context.locale.toLanguageTag()).format(d);
+  }
 }
 
-/// Результат синтеза: текст и флаг «не дублировать строку прогноза расходов».
-class _SynthesisOutcome {
-  const _SynthesisOutcome({
-    this.text,
-    this.suppressForecastExpensesLine = false,
-  });
+/// Плейсхолдер hero при загрузке decision/stats.
+class _HeroLoadingShell extends StatelessWidget {
+  const _HeroLoadingShell({required this.topBar});
 
-  final String? text;
-  final bool suppressForecastExpensesLine;
-}
-
-/// Decision Engine: предиктивный статус + один инсайт с «почему» и уверенностью формулировки.
-class _HomeDecisionEngineCard extends StatelessWidget {
-  const _HomeDecisionEngineCard({
-    required this.snapshot,
-    required this.formatter,
-    required this.now,
-  });
-
-  final HomeDecisionSnapshot snapshot;
-  final NumberFormat formatter;
-  final DateTime now;
-
-  /// Мало дней запаса → в синтезе сначала runway; иначе при сильном ratio — сначала отклонение.
-  static const int _kCriticalRunwayDays = 7;
-  static const double _kSharpDeviationRatio = 1.45;
-
-  static String _microActionTrKey(HomeFinancialStateTier tier) {
-    return switch (tier) {
-      HomeFinancialStateTier.stable => 'home.decision.micro_action_stable',
-      HomeFinancialStateTier.caution => 'home.decision.micro_action_caution',
-      HomeFinancialStateTier.danger => 'home.decision.micro_action_danger',
-    };
-  }
-
-  static String _detailTrKey(InsightConfidenceTier confidence) {
-    return switch (confidence) {
-      InsightConfidenceTier.high => 'home.decision.insight_detail_high',
-      InsightConfidenceTier.medium => 'home.decision.insight_detail_medium',
-      InsightConfidenceTier.low => 'home.decision.insight_detail_low',
-    };
-  }
-
-  /// Лид с учётом тренда: stable → прежние ключи; иначе суффикс accel / slow.
-  static String _leadTrKey(
-    HomeBehaviorInsight insight,
-    TrendDirection trend,
-  ) {
-    final tier = switch (insight.confidence) {
-      InsightConfidenceTier.high => 'high',
-      InsightConfidenceTier.medium => 'medium',
-      InsightConfidenceTier.low => 'low',
-    };
-    if (trend == TrendDirection.stable) {
-      return insight.variant == HomeInsightVariant.overallOverspend
-          ? 'home.decision.insight_overall_lead_$tier'
-          : 'home.decision.insight_category_lead_$tier';
-    }
-    final suffix =
-        trend == TrendDirection.accelerating ? 'accel' : 'slow';
-    return insight.variant == HomeInsightVariant.overallOverspend
-        ? 'home.decision.insight_overall_lead_${tier}_$suffix'
-        : 'home.decision.insight_category_lead_${tier}_$suffix';
-  }
-
-  /// Синтез: при `runway` — дни; иначе при перерасходе и прогнозе — сумма до конца месяца.
-  static _SynthesisOutcome _resolveSynthesis(
-    HomeDecisionSnapshot snapshot,
-    NumberFormat formatter,
-  ) {
-    final insight = snapshot.behaviorInsight;
-    if (insight == null) {
-      return const _SynthesisOutcome();
-    }
-
-    final runway = snapshot.runwayDays;
-    if (runway == null) {
-      final forecast = snapshot.forecast;
-      if (forecast == null) {
-        return const _SynthesisOutcome();
-      }
-      final amount = formatter.format(forecast.projectedExpenses);
-      final trend = snapshot.spendingTrend;
-      final isOverall =
-          insight.variant == HomeInsightVariant.overallOverspend;
-      final cat = insight.topContributor?.categoryName ?? '—';
-      if (isOverall) {
-        final key = switch (trend) {
-          TrendDirection.accelerating =>
-            'home.decision.synthesis_overall_forecast_accel',
-          TrendDirection.slowing =>
-            'home.decision.synthesis_overall_forecast_slow',
-          TrendDirection.stable =>
-            'home.decision.synthesis_overall_forecast_stable',
-        };
-        return _SynthesisOutcome(
-          text: tr(key, namedArgs: {'amount': amount}),
-          suppressForecastExpensesLine: true,
-        );
-      }
-      final key = switch (trend) {
-        TrendDirection.accelerating =>
-          'home.decision.synthesis_category_forecast_accel',
-        TrendDirection.slowing =>
-          'home.decision.synthesis_category_forecast_slow',
-        TrendDirection.stable =>
-          'home.decision.synthesis_category_forecast_stable',
-      };
-      return _SynthesisOutcome(
-        text: tr(key, namedArgs: {'amount': amount, 'category': cat}),
-        suppressForecastExpensesLine: true,
-      );
-    }
-
-    final days = '$runway';
-    final trend = snapshot.spendingTrend;
-    final ratio = insight.deviation.velocityRatio;
-    final runwayFirst = runway <= _kCriticalRunwayDays;
-    final deviationFirst =
-        !runwayFirst && ratio >= _kSharpDeviationRatio;
-
-    String trendBalancedKeyOverall() {
-      return switch (trend) {
-        TrendDirection.accelerating =>
-          'home.decision.synthesis_overall_runway_accel',
-        TrendDirection.slowing => 'home.decision.synthesis_overall_runway_slow',
-        TrendDirection.stable => 'home.decision.synthesis_overall_runway_stable',
-      };
-    }
-
-    String trendBalancedKeyCategory() {
-      return switch (trend) {
-        TrendDirection.accelerating =>
-          'home.decision.synthesis_category_runway_accel',
-        TrendDirection.slowing => 'home.decision.synthesis_category_runway_slow',
-        TrendDirection.stable => 'home.decision.synthesis_category_runway_stable',
-      };
-    }
-
-    String trendRunwayFirstKeyOverall() {
-      return switch (trend) {
-        TrendDirection.accelerating =>
-          'home.decision.synthesis_overall_runway_first_accel',
-        TrendDirection.slowing =>
-          'home.decision.synthesis_overall_runway_first_slow',
-        TrendDirection.stable =>
-          'home.decision.synthesis_overall_runway_first_stable',
-      };
-    }
-
-    String trendDeviationFirstKeyOverall() {
-      return switch (trend) {
-        TrendDirection.accelerating =>
-          'home.decision.synthesis_overall_deviation_first_accel',
-        TrendDirection.slowing =>
-          'home.decision.synthesis_overall_deviation_first_slow',
-        TrendDirection.stable =>
-          'home.decision.synthesis_overall_deviation_first_stable',
-      };
-    }
-
-    String trendRunwayFirstKeyCategory() {
-      return switch (trend) {
-        TrendDirection.accelerating =>
-          'home.decision.synthesis_category_runway_first_accel',
-        TrendDirection.slowing =>
-          'home.decision.synthesis_category_runway_first_slow',
-        TrendDirection.stable =>
-          'home.decision.synthesis_category_runway_first_stable',
-      };
-    }
-
-    String trendDeviationFirstKeyCategory() {
-      return switch (trend) {
-        TrendDirection.accelerating =>
-          'home.decision.synthesis_category_deviation_first_accel',
-        TrendDirection.slowing =>
-          'home.decision.synthesis_category_deviation_first_slow',
-        TrendDirection.stable =>
-          'home.decision.synthesis_category_deviation_first_stable',
-      };
-    }
-
-    final isOverall =
-        insight.variant == HomeInsightVariant.overallOverspend;
-    final cat = insight.topContributor?.categoryName ?? '—';
-
-    if (isOverall) {
-      if (runwayFirst) {
-        return _SynthesisOutcome(
-          text: tr(
-            trendRunwayFirstKeyOverall(),
-            namedArgs: {'days': days},
-          ),
-        );
-      }
-      if (deviationFirst) {
-        return _SynthesisOutcome(
-          text: tr(
-            trendDeviationFirstKeyOverall(),
-            namedArgs: {'days': days},
-          ),
-        );
-      }
-      return _SynthesisOutcome(
-        text: tr(trendBalancedKeyOverall(), namedArgs: {'days': days}),
-      );
-    }
-
-    if (runwayFirst) {
-      return _SynthesisOutcome(
-        text: tr(
-          trendRunwayFirstKeyCategory(),
-          namedArgs: {'days': days, 'category': cat},
-        ),
-      );
-    }
-    if (deviationFirst) {
-      return _SynthesisOutcome(
-        text: tr(
-          trendDeviationFirstKeyCategory(),
-          namedArgs: {'days': days, 'category': cat},
-        ),
-      );
-    }
-    return _SynthesisOutcome(
-      text: tr(
-        trendBalancedKeyCategory(),
-        namedArgs: {'days': days, 'category': cat},
-      ),
-    );
-  }
+  final Widget topBar;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    final (Color tint, IconData icon, Color iconColor, String stateKey) =
-        switch (snapshot.stateTier) {
-      HomeFinancialStateTier.stable => (
-          cs.primary.withOpacity(0.12),
-          Icons.shield_moon_outlined,
-          cs.primary,
-          'home.decision.state_stable',
+    final topInset = MediaQuery.paddingOf(context).top;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(20, topInset + 8, 20, 28),
+      decoration: BoxDecoration(
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest
+            .withValues(alpha: 0.35),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
         ),
-      HomeFinancialStateTier.caution => (
-          cs.tertiary.withOpacity(0.14),
-          Icons.visibility_outlined,
-          cs.tertiary,
-          'home.decision.state_caution',
-        ),
-      HomeFinancialStateTier.danger => (
-          cs.error.withOpacity(0.12),
-          Icons.warning_amber_rounded,
-          cs.error,
-          'home.decision.state_danger',
-        ),
-    };
-
-    final insight = snapshot.behaviorInsight;
-    final timeLabel =
-        DateFormat.Hm(context.locale.toLanguageTag()).format(now);
-    final excessPct = insight != null
-        ? ((insight.deviation.velocityRatio - 1) * 100)
-            .round()
-            .clamp(1, 500)
-            .toString()
-        : '';
-
-    final synthesisOutcome = _resolveSynthesis(snapshot, formatter);
-    final synthesis = synthesisOutcome.text;
-    final showForecastExpenses = snapshot.forecast != null &&
-        !synthesisOutcome.suppressForecastExpensesLine;
-    final showRunwayInForecastBlock =
-        snapshot.runwayDays != null && synthesis == null;
-    final hasForecastBlock =
-        showForecastExpenses || showRunwayInForecastBlock;
-
-    return GlassCard(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: tint,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(icon, color: iconColor, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    tr('home.decision.title'),
-                    style: textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                ),
-                if (snapshot.spendingTrend == TrendDirection.accelerating)
-                  Icon(
-                    Icons.trending_up_rounded,
-                    color: cs.error.withOpacity(0.9),
-                    size: 26,
-                  )
-                else if (snapshot.spendingTrend == TrendDirection.slowing)
-                  Icon(
-                    Icons.trending_down_rounded,
-                    color: cs.primary.withOpacity(0.9),
-                    size: 26,
-                  ),
-              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          topBar,
+          const SizedBox(height: 32),
+          Container(
+            height: 20,
+            width: 180,
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
             ),
-            const SizedBox(height: 10),
-            Text(
-              tr(stateKey),
-              style: textTheme.titleSmall?.copyWith(
-                color: iconColor,
-                fontWeight: FontWeight.w700,
-              ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            height: 14,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(6),
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                tr(_microActionTrKey(snapshot.stateTier)),
-                style: textTheme.bodySmall?.copyWith(
-                  height: 1.35,
-                  color: cs.onSurface.withOpacity(0.72),
-                ),
-              ),
+          ),
+          const SizedBox(height: 28),
+          Container(
+            height: 48,
+            width: 140,
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
             ),
-            if (insight == null &&
-                (snapshot.spendingTrend == TrendDirection.accelerating ||
-                    snapshot.spendingTrend == TrendDirection.slowing)) ...[
-              const SizedBox(height: 8),
-              Text(
-                snapshot.spendingTrend == TrendDirection.accelerating
-                    ? tr('home.decision.trend_accelerating')
-                    : tr('home.decision.trend_slowing'),
-                style: textTheme.bodySmall?.copyWith(
-                  height: 1.35,
-                  fontWeight: FontWeight.w600,
-                  color: snapshot.spendingTrend == TrendDirection.accelerating
-                      ? cs.error.withOpacity(0.88)
-                      : cs.primary.withOpacity(0.88),
-                ),
-              ),
-            ],
-            if (insight != null) ...[
-              const SizedBox(height: 14),
-              Text(
-                insight.variant == HomeInsightVariant.categoryFocus
-                    ? tr(
-                        _leadTrKey(insight, snapshot.spendingTrend),
-                        namedArgs: {
-                          'category':
-                              insight.topContributor?.categoryName ?? '—',
-                        },
-                      )
-                    : tr(_leadTrKey(insight, snapshot.spendingTrend)),
-                style: textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  height: 1.3,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                tr(
-                  _detailTrKey(insight.confidence),
-                  namedArgs: {
-                    'time': timeLabel,
-                    'usual': formatter.format(insight.baseline.expectedUntilNow),
-                    'current':
-                        formatter.format(insight.baseline.spentTodayUntilNow),
-                    'excess': excessPct,
-                  },
-                ),
-                style: textTheme.bodySmall?.copyWith(
-                  height: 1.4,
-                  color: cs.onSurface.withOpacity(0.88),
-                ),
-              ),
-              if (insight.variant == HomeInsightVariant.overallOverspend &&
-                  insight.topContributor != null &&
-                  insight.topContributor!.contribution > 0.01)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    tr(
-                      'home.decision.cause_line',
-                      namedArgs: {
-                        'category': insight.topContributor!.categoryName,
-                        'amount': formatter
-                            .format(insight.topContributor!.contribution),
-                      },
-                    ),
-                    style: textTheme.bodySmall?.copyWith(
-                      height: 1.35,
-                      fontWeight: FontWeight.w600,
-                      color: cs.tertiary,
-                    ),
-                  ),
-                ),
-              if (synthesis != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Text(
-                    synthesis,
-                    style: textTheme.bodyMedium?.copyWith(
-                      height: 1.4,
-                      fontWeight: FontWeight.w600,
-                      color: cs.onSurface.withOpacity(0.92),
-                    ),
-                  ),
-                ),
-            ],
-            if (hasForecastBlock) ...[
-              const SizedBox(height: 14),
-              Text(
-                tr('home.decision.forecast_heading'),
-                style: textTheme.labelLarge?.copyWith(
-                  color: cs.onSurface.withOpacity(0.65),
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.3,
-                ),
-              ),
-              const SizedBox(height: 6),
-              if (showForecastExpenses)
-                Text(
-                  tr(
-                    'home.decision.forecast_expenses',
-                    namedArgs: {
-                      'amount':
-                          formatter.format(snapshot.forecast!.projectedExpenses),
-                    },
-                  ),
-                  style: textTheme.bodySmall?.copyWith(height: 1.35),
-                ),
-              if (showRunwayInForecastBlock)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    tr(
-                      'home.decision.runway_days',
-                      namedArgs: {
-                        'days': '${snapshot.runwayDays}',
-                      },
-                    ),
-                    style: textTheme.bodySmall?.copyWith(
-                      height: 1.35,
-                      color: cs.onSurface.withOpacity(0.72),
-                    ),
-                  ),
-                ),
-            ],
-          ],
-        ),
+          ),
+          const SizedBox(height: 24),
+          const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ],
       ),
     );
   }
 }
 
-/// Транзакция с возможностью удаления
-class _DismissibleTransactionTile extends ConsumerWidget {
-  const _DismissibleTransactionTile({
+/// Плоская строка ленты (без «коробочной» карточки).
+class _HomeFeedTile extends ConsumerWidget {
+  const _HomeFeedTile({
     required this.expense,
     required this.formatter,
+    required this.showDayHeader,
+    required this.dayHeaderText,
   });
 
   final Expense expense;
   final NumberFormat formatter;
+  final bool showDayHeader;
+  final String dayHeaderText;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final color = expense.type.isIncome ? Colors.green : Colors.red;
-    final dateLabel = DateFormat.yMd(context.locale.toLanguageTag())
-        .format(expense.occurredAt);
-    final timeLabel = DateFormat.Hm().format(expense.occurredAt);
+    final cs = Theme.of(context).colorScheme;
+    final isIncome = expense.type.isIncome;
+    final amountColor =
+        isIncome ? cs.primary : cs.error;
+    final timeLabel =
+        DateFormat.Hm(context.locale.toLanguageTag())
+            .format(expense.occurredAt);
+    final title = (expense.note != null && expense.note!.trim().isNotEmpty)
+        ? expense.note!.trim()
+        : (isIncome ? tr('home.feed.income') : tr('home.feed.expense'));
 
     return Dismissible(
       key: Key(expense.id),
@@ -873,73 +522,89 @@ class _DismissibleTransactionTile extends ConsumerWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(12),
-        ),
+        color: cs.error,
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       confirmDismiss: (direction) => _confirmDelete(context),
       onDismissed: (direction) => _deleteExpense(context, ref),
-      child: EnhancedExpenseCard(
-        gradient: expense.type.isIncome ? IncomeGradient() : ExpenseGradient(),
-        onLongPress: () => _showContextMenu(context, ref),
-        onTap: () => context.push('/expenses'),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: color.withOpacity(0.2),
-                child: Icon(
-                  expense.type.isIncome
-                      ? Icons.trending_up
-                      : Icons.trending_down,
-                  color: color,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.push('/expenses'),
+          onLongPress: () => _showContextMenu(context, ref),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (showDayHeader) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      dayHeaderText,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: cs.onSurface.withValues(alpha: 0.55),
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.4,
+                          ),
+                    ),
+                  ),
+                ],
+                Row(
                   children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            timeLabel,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: cs.onSurface
+                                      .withValues(alpha: 0.55),
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
                     Text(
                       formatter.format(expense.amount.amount),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                        fontSize: 16,
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: amountColor,
+                            letterSpacing: -0.5,
+                          ),
                     ),
-                    Text(
-                      '$dateLabel • $timeLabel',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    if (expense.note != null && expense.note!.isNotEmpty)
-                      Text(
-                        expense.note!,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey,
-                            ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    IconButton(
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: cs.onSurface.withValues(alpha: 0.35),
+                        size: 22,
                       ),
+                      onPressed: () => _showDeleteDialog(context, ref),
+                      tooltip: tr('delete'),
+                    ),
                   ],
                 ),
-              ),
-              // Кнопка удаления
-              IconButton(
-                icon: Icon(
-                  Icons.delete_outline,
-                  color: Colors.grey.shade400,
-                  size: 20,
-                ),
-                onPressed: () => _showDeleteDialog(context, ref),
-                tooltip: tr('delete'),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -959,7 +624,10 @@ class _DismissibleTransactionTile extends ConsumerWidget {
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                style: TextButton.styleFrom(
+                  foregroundColor:
+                      Theme.of(context).colorScheme.error,
+                ),
                 child: Text(tr('delete')),
               ),
             ],
@@ -999,9 +667,11 @@ class _DismissibleTransactionTile extends ConsumerWidget {
   }
 
   void _showContextMenu(BuildContext context, WidgetRef ref) {
-    final color = expense.type.isIncome ? Colors.green : Colors.red;
+    final cs = Theme.of(context).colorScheme;
+    final isIncome = expense.type.isIncome;
+    final amountColor = isIncome ? cs.primary : cs.error;
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       builder: (context) => SafeArea(
         child: Column(
@@ -1012,26 +682,28 @@ class _DismissibleTransactionTile extends ConsumerWidget {
               height: 4,
               margin: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: cs.outline.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             ListTile(
               leading: CircleAvatar(
-                backgroundColor: color.withOpacity(0.2),
+                backgroundColor: amountColor.withValues(alpha: 0.15),
                 child: Icon(
-                  expense.type.isIncome
-                      ? Icons.trending_up
-                      : Icons.trending_down,
-                  color: color,
+                  isIncome ? Icons.trending_up : Icons.trending_down,
+                  color: amountColor,
                 ),
               ),
               title: Text(
                 formatter.format(expense.amount.amount),
-                style: TextStyle(fontWeight: FontWeight.bold, color: color),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: amountColor,
+                ),
               ),
               subtitle: Text(
-                DateFormat.yMMMMd().format(expense.occurredAt),
+                DateFormat.yMMMMd(context.locale.toLanguageTag())
+                    .format(expense.occurredAt),
               ),
             ),
             const Divider(),
@@ -1063,16 +735,18 @@ class _DismissibleTransactionTile extends ConsumerWidget {
                 if (context.mounted) {
                   HapticUtils.success();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(tr('expenses.duplicate.success'))),
+                    SnackBar(
+                      content: Text(tr('expenses.duplicate.success')),
+                    ),
                   );
                 }
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
+              leading: Icon(Icons.delete, color: cs.error),
               title: Text(
                 tr('delete'),
-                style: const TextStyle(color: Colors.red),
+                style: TextStyle(color: cs.error),
               ),
               onTap: () {
                 Navigator.pop(context);

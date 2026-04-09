@@ -42,6 +42,17 @@
       "message": "Add your first expense manually or import a statement so the app can start learning your habits.",
       "import_cta": "Import statement"
     },
+    "hero": {
+      "month_balance": "Month balance",
+      "new_operation": "New transaction",
+      "ftue_micro": "Add an expense or import a statement to unlock your pulse and forecast."
+    },
+    "feed": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "income": "Income",
+      "expense": "Expense"
+    },
     "decision": {
       "title": "Financial state",
       "state_stable": "You are in a good place",
