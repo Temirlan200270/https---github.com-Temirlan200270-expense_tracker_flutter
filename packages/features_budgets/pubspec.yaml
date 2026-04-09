@@ -1,0 +1,34 @@
+name: features_budgets
+description: Модуль управления бюджетами и лимитами расходов.
+version: 0.1.0
+publish_to: "none"
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.13.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.5.1
+  go_router: ^14.2.7
+  easy_localization: ^3.0.8
+  flutter_animate: ^4.5.0
+  shared_models:
+    path: ../shared_models
+  data_core:
+    path: ../data_core
+  local_db:
+    path: ../local_db
+  ui_components:
+    path: ../ui_components
+  expense_tracker_app:
+    path: ../app
+  features_expenses:
+    path: ../features_expenses
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  lints: ^3.0.0
+

@@ -1,0 +1,30 @@
+
+name: expense_tracker_flutter
+description: A starter Flutter project for your Expense Tracker (Riverpod + Drift + fl_chart).
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  expense_tracker_app:
+    path: packages/app
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.0
+  drift_dev: ^2.8.0
+  shared_models:
+    path: packages/shared_models
+  pedantic: ^1.11.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/translations/

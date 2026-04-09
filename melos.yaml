@@ -1,0 +1,9 @@
+name: expense_tracker_workspace
+
+packages:
+  - packages/**
+
+scripts:
+  analyze: flutter analyze
+  format: dart format .
+

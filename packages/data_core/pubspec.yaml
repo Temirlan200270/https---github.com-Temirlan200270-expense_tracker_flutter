@@ -1,0 +1,15 @@
+name: data_core
+description: Чистые абстракции репозиториев и сервисов Expense Tracker.
+version: 0.1.0
+publish_to: "none"
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  shared_models:
+    path: ../shared_models
+
+dev_dependencies:
+  lints: ^3.0.0
+

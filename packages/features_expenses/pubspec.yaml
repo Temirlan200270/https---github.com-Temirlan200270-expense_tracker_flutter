@@ -1,0 +1,36 @@
+name: features_expenses
+description: "Фича расходов/доходов: контроллеры, провайдеры, UI."
+version: 0.1.0
+publish_to: "none"
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.5.1
+  go_router: ^14.2.7
+  easy_localization: ^3.0.8
+  intl: ^0.20.2
+  flutter_animate: ^4.5.0
+  expense_tracker_app:
+    path: ../app
+  data_core:
+    path: ../data_core
+  shared_models:
+    path: ../shared_models
+  ui_components:
+    path: ../ui_components
+  features_export:
+    path: ../features_export
+  uuid: ^4.5.1
+  image_picker: ^1.1.2
+  local_db:
+    path: ../local_db
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  lints: ^3.0.0
+

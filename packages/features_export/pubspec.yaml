@@ -1,0 +1,50 @@
+name: features_export
+description: "Фича экспорта/импорта расходов (CSV, JSON, PDF)."
+version: 0.1.0
+publish_to: "none"
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.5.1
+  path_provider: ^2.1.4
+  share_plus: ^10.1.2
+  printing: ^5.13.3
+  pdf: ^3.11.1
+  csv: ^5.0.2
+  file_picker: ^8.1.4
+  intl: ^0.20.2
+  easy_localization: ^3.0.8
+  archive: ^3.4.0
+  # OCR зависимости для распознавания текста из PDF
+  google_mlkit_text_recognition: ^0.13.0
+  image: ^4.3.0
+  pdfrx: ^1.0.0
+  http: ^1.2.2
+  image_picker: ^1.1.2
+  data_core:
+    path: ../data_core
+  features_expenses:
+    path: ../features_expenses
+  shared_models:
+    path: ../shared_models
+  local_db:
+    path: ../local_db
+  expense_tracker_app:
+    path: ../app
+  cross_file: ^0.3.4
+  uuid: ^4.5.1
+  path: ^1.9.0
+  features_budgets:
+    path: ../features_budgets
+  features_debts:
+    path: ../features_debts
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  lints: ^3.0.0
+

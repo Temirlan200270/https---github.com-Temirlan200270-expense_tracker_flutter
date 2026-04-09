@@ -1,0 +1,37 @@
+- Implement repository interfaces (data_core) and package-level implementations that use local_db and sync_api.
+  - Implement Riverpod providers and AsyncNotifiers in feature packages (expenses/categories).
+  - Implement App bootstrap (packages/app) with GoRouter wiring to feature routes.
+  - Implement UI widgets in ui_components (reusable).
+  - Implement mock SyncClient and example SyncService that can be replaced with Firebase/Supabase adapter.
+  - Include README + developer guide for workspace-level setup and run commands.
+  - Include tests: unit tests for domain usecases and at least simple integration test that inserts and reads expense.
+
+notes_and_constraints:
+  - Do not use setState anywhere in feature presentation code; use Riverpod.
+  - Keep UI and business logic strictly separated.
+  - Use dependency inversion: feature packages depend on data_core interfaces, not concrete local_db.
+  - All persistent IDs must be UUIDs (use uuid package).
+  - Use soft-delete pattern for safe sync (deleted boolean + deleted_at).
+  - Include localization-ready strings (intl) for RU + EN placeholders.
+  - Make code compile on Flutter stable as of the SDK constraints.
+
+quick_commands_for_user:
+  - "From workspace root:"
+  - "dart pub get"
+  - "melos bootstrap  # optional if using melos"
+  - "dart run build_runner build --delete-conflicting-outputs -p packages/local_db"
+  - "dart run build_runner build --delete-conflicting-outputs -p packages/shared_models"
+  - "flutter run -d <device> -t packages/app/lib/main.dart"
+
+final_instructions_for_AI_output_format:
+  - Output must be a file tree with full file contents inline.
+  - For each package, provide pubspec.yaml content.
+  - For each Dart file include full imports and code; no '...'.
+  - For generated code (freezed/drift), AI may include templates and the necessary annotations; include exact commands to generate artifacts.
+  - Add 'How to swap in Firebase/Supabase' section with code snippets for adapter (but adapter can be skeleton with TODO comments).
+  - Provide estimate of which files are critical to implement first for incremental development:
+      - local_db (drift tables + DAOs)
+      - shared_models (entities)
+      - data_core interfaces
+      - features_expenses (basic list + add flow)
+      - app.bootstrap (main + routing)

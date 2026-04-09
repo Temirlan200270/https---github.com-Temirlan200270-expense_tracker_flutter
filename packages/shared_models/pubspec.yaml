@@ -1,0 +1,15 @@
+name: shared_models
+description: Общие сущности и значения для всех пакетов Expense Tracker.
+version: 0.1.0
+publish_to: "none"
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  intl: ^0.20.2
+  uuid: ^4.5.1
+
+dev_dependencies:
+  lints: ^3.0.0
+

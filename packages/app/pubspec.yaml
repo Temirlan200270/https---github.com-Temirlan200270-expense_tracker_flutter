@@ -1,0 +1,47 @@
+name: expense_tracker_app
+description: Bootstrap-приложение Expense Tracker (GoRouter + Riverpod).
+version: 0.1.0
+publish_to: "none"
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.13.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  easy_localization: ^3.0.8
+  flutter_riverpod: ^2.5.1
+  go_router: ^14.2.7
+  shared_preferences: ^2.3.2
+  local_auth: ^2.3.0
+  google_fonts: ^6.2.1
+  flutter_animate: ^4.5.0
+  data_core:
+    path: ../data_core
+  shared_models:
+    path: ../shared_models
+  local_db:
+    path: ../local_db
+  features_expenses:
+    path: ../features_expenses
+  features_analytics:
+    path: ../features_analytics
+  features_export:
+    path: ../features_export
+  features_currency:
+    path: ../features_currency
+  features_budgets:
+    path: ../features_budgets
+  features_debts:
+    path: ../features_debts
+  sync_api:
+    path: ../sync_api
+  ui_components:
+    path: ../ui_components
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  lints: ^3.0.0
+
