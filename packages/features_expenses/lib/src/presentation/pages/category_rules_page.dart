@@ -293,7 +293,7 @@ class _RuleFormDialogState extends ConsumerState<_RuleFormDialog> {
                       .toList();
 
                   return DropdownButtonFormField<String>(
-                    initialValue: _selectedCategoryId,
+                    value: _selectedCategoryId,
                     decoration: InputDecoration(
                       labelText: tr('rules.category'),
                       prefixIcon: const Icon(Icons.category),

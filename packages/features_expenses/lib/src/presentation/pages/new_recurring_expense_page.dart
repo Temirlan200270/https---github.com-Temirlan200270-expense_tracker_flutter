@@ -157,7 +157,7 @@ class _NewRecurringExpensePageState
 
             // Тип повторения
             DropdownButtonFormField<RecurrenceType>(
-              initialValue: _recurrenceType,
+              value: _recurrenceType,
               decoration: InputDecoration(
                 labelText: tr('recurring.frequency'),
                 prefixIcon: const Icon(Icons.repeat),

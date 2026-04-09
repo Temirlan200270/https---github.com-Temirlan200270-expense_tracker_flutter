@@ -8,7 +8,8 @@ plugins {
 android {
     namespace = "com.example.expense_tracker_flutter"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Плагины (ML Kit, file_picker и др.) требуют NDK 27; совместимо с CI и локальной сборкой.
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

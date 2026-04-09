@@ -276,7 +276,7 @@ class _BudgetFormPageState extends ConsumerState<BudgetFormPage> {
                     .toList();
 
                 return DropdownButtonFormField<String?>(
-                  initialValue: _selectedCategoryId,
+                  value: _selectedCategoryId,
                   decoration: InputDecoration(
                     prefixIcon: Container(
                       margin: const EdgeInsets.all(8),
