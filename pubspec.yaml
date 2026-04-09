@@ -11,6 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Иконки и шрифт для дерева иконок (устраняет предупреждение Material/Cupertino при сборке).
+  cupertino_icons: ^1.0.8
   expense_tracker_app:
     path: packages/app
 

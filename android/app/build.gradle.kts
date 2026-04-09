@@ -56,3 +56,8 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Ссылки из io.flutter.embedding на Play Core (split install); без JAR R8 падает на minifyRelease.
+    implementation("com.google.android.play:core:1.10.3")
+}
