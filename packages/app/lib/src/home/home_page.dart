@@ -166,189 +166,217 @@ class HomePage extends ConsumerWidget {
             ref.refresh(expensesStreamProvider.future),
           ]);
         },
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Hero карточка баланса
-              Consumer(
-                builder: (context, ref, child) {
-                  final themeType = ref.watch(appThemeTypeProvider);
-                  return statsAsync.when(
-                    data: (stats) => BalanceCard(
-                      balance: stats.balance,
-                      income: stats.totalIncome,
-                      expenses: stats.totalExpenses,
-                      formatter: formatter,
-                      themeType: themeType.name, // 'purple', 'green', 'orange'
-                    ),
-                    loading: () => Container(
-                      height: 200,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      child: const Center(child: CircularProgressIndicator()),
-                    ),
-                    error: (error, _) => Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(
-                          tr('home.stats_error'),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.red,
-                              ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              decisionAsync.when(
-                data: (snapshot) => _HomeDecisionEngineCard(
-                  snapshot: snapshot,
-                  formatter: formatter,
-                  now: now,
-                )
-                    .animate()
-                    .fadeIn(
-                      duration: 200.ms,
-                      delay: 50.ms,
-                      curve: Curves.easeOutCubic,
-                    )
-                    .slideY(
-                      begin: 0.04,
-                      end: 0,
-                      duration: 220.ms,
-                      delay: 50.ms,
-                      curve: Curves.easeOutCubic,
-                    ),
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-              ),
-              if (decisionAsync.hasValue) const SizedBox(height: 16),
-              // Секция бюджетов
-              const BudgetsSummaryWidget(),
-              const SizedBox(height: 16),
-              // Быстрые действия
-              QuickActions(
-                onExpense: () {
-                  HapticUtils.selection();
-                  context.push('/expenses/new', extra: {'type': 'expense'});
-                },
-                onIncome: () {
-                  HapticUtils.selection();
-                  context.push('/expenses/new', extra: {'type': 'income'});
-                },
-                onRepeatLast: recentExpensesAsync.valueOrNull?.isNotEmpty ==
-                        true
-                    ? () {
-                        HapticUtils.mediumImpact();
-                        final last = recentExpensesAsync.valueOrNull!.first;
-                        context.push('/expenses/new', extra: {'expense': last});
-                      }
-                    : null,
-                hasLastTransaction:
-                    recentExpensesAsync.valueOrNull?.isNotEmpty == true,
-              ),
-              const SizedBox(height: 16),
-              // Последние транзакции
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: recentExpensesAsync.when(
+          data: (allExpenses) {
+            final globalEmpty = allExpenses.isEmpty;
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: Text(
-                      tr('home.recent_transactions'),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    )
-                        .animate()
-                        .fadeIn(
-                          duration: 220.ms,
-                          delay: 120.ms,
-                          curve: Curves.easeOutCubic,
-                        )
-                        .slideX(
-                          begin: -0.06,
-                          end: 0,
-                          duration: 240.ms,
-                          delay: 120.ms,
-                          curve: Curves.easeOutCubic,
-                        ),
-                  ),
-                  TextButton(
-                    onPressed: () => context.push('/expenses'),
-                    child: Text(tr('home.view_all'))
-                        .animate()
-                        .fadeIn(
-                          duration: 220.ms,
-                          delay: 150.ms,
-                          curve: Curves.easeOutCubic,
-                        ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              recentExpensesAsync.when(
-                data: (expenses) {
-                  if (expenses.isEmpty) {
-                    return EmptyState(
-                      icon: Icons.receipt_long,
-                      title: tr('home.no_transactions'),
-                      message: tr('home.no_transactions_hint'),
+                  if (globalEmpty)
+                    EmptyState(
+                      icon: Icons.account_balance_wallet_outlined,
+                      title: tr('home.ftue.title'),
+                      message: tr('home.ftue.message'),
                       action: FilledButton.icon(
                         onPressed: () {
                           HapticUtils.selection();
-                          context.push('/expenses/new');
+                          context.push('/import');
                         },
-                        icon: const Icon(Icons.add),
-                        label: Text(tr('expenses.form.title')),
+                        icon: const Icon(Icons.upload_file),
+                        label: Text(tr('home.ftue.import_cta')),
                       ),
-                    );
-                  }
-                  final recent = expenses.take(5).toList();
-                  return Column(
-                    children: recent
-                        .asMap()
-                        .entries
-                        .map((entry) {
-                          final delay = (28 * entry.key).ms;
-                          return _DismissibleTransactionTile(
-                            expense: entry.value,
+                    )
+                        .animate()
+                        .fadeIn(
+                          duration: 220.ms,
+                          curve: Curves.easeOutCubic,
+                        )
+                        .slideY(
+                          begin: 0.06,
+                          end: 0,
+                          duration: 240.ms,
+                          curve: Curves.easeOutCubic,
+                        )
+                  else ...[
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final themeType = ref.watch(appThemeTypeProvider);
+                        return statsAsync.when(
+                          data: (stats) => BalanceCard(
+                            balance: stats.balance,
+                            income: stats.totalIncome,
+                            expenses: stats.totalExpenses,
                             formatter: formatter,
+                            themeType: themeType.name,
+                          ),
+                          loading: () => Container(
+                            height: 200,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(28),
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          ),
+                          error: (error, _) => Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Text(
+                                tr('home.stats_error'),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(color: Colors.red),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    decisionAsync.when(
+                      data: (snapshot) => _HomeDecisionEngineCard(
+                        snapshot: snapshot,
+                        formatter: formatter,
+                        now: now,
+                      )
+                          .animate()
+                          .fadeIn(
+                            duration: 200.ms,
+                            delay: 50.ms,
+                            curve: Curves.easeOutCubic,
+                          )
+                          .slideY(
+                            begin: 0.04,
+                            end: 0,
+                            duration: 220.ms,
+                            delay: 50.ms,
+                            curve: Curves.easeOutCubic,
+                          ),
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    ),
+                    if (decisionAsync.hasValue) const SizedBox(height: 16),
+                  ],
+                  const BudgetsSummaryWidget(),
+                  const SizedBox(height: 16),
+                  QuickActions(
+                    onExpense: () {
+                      HapticUtils.selection();
+                      context.push('/expenses/new', extra: {'type': 'expense'});
+                    },
+                    onIncome: () {
+                      HapticUtils.selection();
+                      context.push('/expenses/new', extra: {'type': 'income'});
+                    },
+                    onRepeatLast: allExpenses.isNotEmpty
+                        ? () {
+                            HapticUtils.mediumImpact();
+                            final last = allExpenses.first;
+                            context.push('/expenses/new',
+                                extra: {'expense': last});
+                          }
+                        : null,
+                    hasLastTransaction: allExpenses.isNotEmpty,
+                  ),
+                  if (!globalEmpty) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            tr('home.recent_transactions'),
+                            style: Theme.of(context).textTheme.titleLarge,
                           )
                               .animate()
                               .fadeIn(
-                                duration: 180.ms,
-                                delay: delay,
+                                duration: 220.ms,
+                                delay: 120.ms,
                                 curve: Curves.easeOutCubic,
                               )
-                              .slideY(
-                                begin: 0.08,
+                              .slideX(
+                                begin: -0.06,
                                 end: 0,
-                                duration: 200.ms,
-                                delay: delay,
+                                duration: 240.ms,
+                                delay: 120.ms,
                                 curve: Curves.easeOutCubic,
-                              );
-                        })
-                        .toList(),
-                  );
-                },
-                loading: () => const SkeletonList(itemCount: 3),
-                error: (error, _) => Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      tr('home.transactions_error'),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.red,
-                          ),
+                              ),
+                        ),
+                        TextButton(
+                          onPressed: () => context.push('/expenses'),
+                          child: Text(tr('home.view_all'))
+                              .animate()
+                              .fadeIn(
+                                duration: 220.ms,
+                                delay: 150.ms,
+                                curve: Curves.easeOutCubic,
+                              ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 8),
+                    ...allExpenses.take(5).toList().asMap().entries.map((entry) {
+                      final delay = (28 * entry.key).ms;
+                      return _DismissibleTransactionTile(
+                        expense: entry.value,
+                        formatter: formatter,
+                      )
+                          .animate()
+                          .fadeIn(
+                            duration: 180.ms,
+                            delay: delay,
+                            curve: Curves.easeOutCubic,
+                          )
+                          .slideY(
+                            begin: 0.08,
+                            end: 0,
+                            duration: 200.ms,
+                            delay: delay,
+                            curve: Curves.easeOutCubic,
+                          );
+                    }).toList(),
+                  ],
+                ],
+              ),
+            );
+          },
+          loading: () => SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(28),
                   ),
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+                const SizedBox(height: 16),
+                const BudgetsSummaryWidget(),
+                const SizedBox(height: 16),
+                const SkeletonList(itemCount: 3),
+              ],
+            ),
+          ),
+          error: (error, _) => SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  tr('home.transactions_error'),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.red,
+                      ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),

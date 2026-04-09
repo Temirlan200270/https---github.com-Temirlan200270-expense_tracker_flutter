@@ -37,6 +37,11 @@
     "add_income": "Income",
     "stats_error": "Failed to load statistics",
     "transactions_error": "Failed to load transactions",
+    "ftue": {
+      "title": "Welcome to your financial hub",
+      "message": "Add your first expense manually or import a statement so the app can start learning your habits.",
+      "import_cta": "Import statement"
+    },
     "decision": {
       "title": "Financial state",
       "state_stable": "You are in a good place",
@@ -349,8 +354,8 @@
       "description": "Easily add income and expenses with categories and notes. All your transactions in one place."
     },
     "slide2": {
-      "title": "Analyze Your Finances",
-      "description": "View charts and statistics on your spending to better understand your finances and find opportunities to save."
+      "title": "Your financial pulse",
+      "description": "The home screen shows balance, spending rhythm, and forecasts — a pulse for your money. The more you track, the clearer the picture."
     },
     "slide3": {
       "title": "Budgets and Limits",
@@ -361,8 +366,8 @@
       "description": "Track debts and loans. Keep records of what you owe and what is owed to you, with automatic transaction creation."
     },
     "slide5": {
-      "title": "Import and Backups",
-      "description": "Import data from CSV, JSON, and PDF files (including bank statements). Create local backups to protect your data."
+      "title": "Smart import",
+      "description": "Upload bank statements and the app categorizes them. Correct a mistake once, and the system remembers your choice for similar transactions."
     },
     "slide6": {
       "title": "Security",
