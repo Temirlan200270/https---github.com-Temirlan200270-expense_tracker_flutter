@@ -6,8 +6,8 @@ class AnimatedListItem extends StatefulWidget {
     super.key,
     required this.index,
     required this.child,
-    this.duration = const Duration(milliseconds: 400),
-    this.delay = const Duration(milliseconds: 50),
+    this.duration = const Duration(milliseconds: 220),
+    this.delay = const Duration(milliseconds: 36),
     this.curve = Curves.easeOutCubic,
     this.slideOffset = const Offset(0.0, 0.1),
   });
@@ -116,7 +116,7 @@ class _AnimatedCardState extends State<AnimatedCard>
       end: widget.pressedScale,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOutCubic,
     ));
 
     _elevationAnimation = Tween<double>(
@@ -124,7 +124,7 @@ class _AnimatedCardState extends State<AnimatedCard>
       end: widget.pressedElevation,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOutCubic,
     ));
   }
 
@@ -167,9 +167,9 @@ class FadeInWidget extends StatefulWidget {
   const FadeInWidget({
     super.key,
     required this.child,
-    this.duration = const Duration(milliseconds: 500),
+    this.duration = const Duration(milliseconds: 240),
     this.delay = Duration.zero,
-    this.curve = Curves.easeOut,
+    this.curve = Curves.easeOutCubic,
   });
 
   final Widget child;
@@ -225,7 +225,7 @@ class AnimatedCounter extends StatelessWidget {
     required this.value,
     required this.formatter,
     this.style,
-    this.duration = const Duration(milliseconds: 800),
+    this.duration = const Duration(milliseconds: 420),
     this.curve = Curves.easeOutCubic,
   });
 
@@ -277,7 +277,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1200),
     )..repeat();
   }
 

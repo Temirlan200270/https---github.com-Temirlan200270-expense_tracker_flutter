@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:ui_components/ui_components.dart';
 
 import '../../providers/analytics_models.dart';
 
@@ -15,12 +16,11 @@ class AnalyticsTimeChart extends StatelessWidget {
     if (stats.isEmpty) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Center(
-            child: Text(
-              tr('analytics.no_data'),
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          child: EmptyState(
+            icon: Icons.show_chart_outlined,
+            title: tr('analytics.empty_charts_title'),
+            message: tr('analytics.empty_charts_message'),
           ),
         ),
       );
@@ -125,7 +125,7 @@ class AnalyticsTimeChart extends StatelessWidget {
                     ),
                   ),
                 ),
-                duration: const Duration(milliseconds: 500),
+                duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOutCubic,
               ),
             ),

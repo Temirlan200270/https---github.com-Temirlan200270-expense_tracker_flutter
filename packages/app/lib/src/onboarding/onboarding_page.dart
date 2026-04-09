@@ -89,8 +89,16 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                       child: Text(tr('onboarding.start')),
                     )
                       .animate()
-                      .fadeIn(delay: 300.ms, duration: 400.ms)
-                      .slideY(begin: 0.3, end: 0, delay: 300.ms, duration: 400.ms)
+                      .fadeIn(
+                          delay: 180.ms,
+                          duration: 240.ms,
+                          curve: Curves.easeOutCubic)
+                      .slideY(
+                          begin: 0.12,
+                          end: 0,
+                          delay: 180.ms,
+                          duration: 260.ms,
+                          curve: Curves.easeOutCubic)
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -99,14 +107,25 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                           child: Text(tr('onboarding.skip')),
                         )
                             .animate()
-                            .fadeIn(delay: 200.ms, duration: 300.ms),
+                            .fadeIn(
+                                delay: 120.ms,
+                                duration: 200.ms,
+                                curve: Curves.easeOutCubic),
                         FilledButton(
                           onPressed: _nextPage,
                           child: Text(tr('onboarding.next')),
                         )
                             .animate()
-                            .fadeIn(delay: 200.ms, duration: 300.ms)
-                            .scale(delay: 200.ms, duration: 300.ms, begin: const Offset(0.9, 0.9), end: const Offset(1, 1)),
+                            .fadeIn(
+                                delay: 120.ms,
+                                duration: 200.ms,
+                                curve: Curves.easeOutCubic)
+                            .scale(
+                                delay: 120.ms,
+                                duration: 220.ms,
+                                curve: Curves.easeOutCubic,
+                                begin: const Offset(0.94, 0.94),
+                                end: const Offset(1, 1)),
                       ],
                     ),
             ),
@@ -119,8 +138,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   void _nextPage() {
     if (_currentPage < _slides.length - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
       );
     }
   }
@@ -163,8 +182,16 @@ class _SlideContent extends StatelessWidget {
             color: Theme.of(context).colorScheme.primary,
           )
               .animate()
-              .scale(delay: 200.ms, duration: 600.ms, begin: const Offset(0.5, 0.5), end: const Offset(1, 1))
-              .fadeIn(delay: 200.ms, duration: 400.ms),
+              .scale(
+                  delay: 120.ms,
+                  duration: 320.ms,
+                  curve: Curves.easeOutCubic,
+                  begin: const Offset(0.82, 0.82),
+                  end: const Offset(1, 1))
+              .fadeIn(
+                  delay: 120.ms,
+                  duration: 240.ms,
+                  curve: Curves.easeOutCubic),
           const SizedBox(height: 48),
           Text(
             tr(slide.title),
@@ -174,8 +201,16 @@ class _SlideContent extends StatelessWidget {
             textAlign: TextAlign.center,
           )
               .animate()
-              .fadeIn(delay: 400.ms, duration: 500.ms)
-              .slideY(begin: 0.2, end: 0, delay: 400.ms, duration: 500.ms),
+              .fadeIn(
+                  delay: 220.ms,
+                  duration: 260.ms,
+                  curve: Curves.easeOutCubic)
+              .slideY(
+                  begin: 0.1,
+                  end: 0,
+                  delay: 220.ms,
+                  duration: 280.ms,
+                  curve: Curves.easeOutCubic),
           const SizedBox(height: 24),
           Text(
             tr(slide.description),
@@ -183,8 +218,16 @@ class _SlideContent extends StatelessWidget {
             textAlign: TextAlign.center,
           )
               .animate()
-              .fadeIn(delay: 600.ms, duration: 500.ms)
-              .slideY(begin: 0.2, end: 0, delay: 600.ms, duration: 500.ms),
+              .fadeIn(
+                  delay: 320.ms,
+                  duration: 260.ms,
+                  curve: Curves.easeOutCubic)
+              .slideY(
+                  begin: 0.1,
+                  end: 0,
+                  delay: 320.ms,
+                  duration: 280.ms,
+                  curve: Curves.easeOutCubic),
         ],
       ),
     );
@@ -218,8 +261,16 @@ class _PageIndicator extends StatelessWidget {
           ),
         )
             .animate()
-            .scale(delay: (index * 50).ms, duration: 300.ms, begin: const Offset(0, 0), end: const Offset(1, 1))
-            .fadeIn(delay: (index * 50).ms, duration: 300.ms),
+            .scale(
+                delay: (index * 32).ms,
+                duration: 200.ms,
+                curve: Curves.easeOutCubic,
+                begin: const Offset(0, 0),
+                end: const Offset(1, 1))
+            .fadeIn(
+                delay: (index * 32).ms,
+                duration: 200.ms,
+                curve: Curves.easeOutCubic),
       ),
     );
   }

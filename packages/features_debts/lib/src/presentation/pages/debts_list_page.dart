@@ -142,8 +142,16 @@ class _DebtsTab extends ConsumerWidget {
                 onDelete: () => _confirmDelete(context, ref, debts[index]),
               )
                   .animate()
-                  .fadeIn(duration: 300.ms, delay: (50 * index).ms)
-                  .slideY(begin: 0.1, end: 0, duration: 300.ms, delay: (50 * index).ms);
+                  .fadeIn(
+                      duration: 200.ms,
+                      delay: (28 * index).ms,
+                      curve: Curves.easeOutCubic)
+                  .slideY(
+                      begin: 0.08,
+                      end: 0,
+                      duration: 220.ms,
+                      delay: (28 * index).ms,
+                      curve: Curves.easeOutCubic);
             },
           ),
         );

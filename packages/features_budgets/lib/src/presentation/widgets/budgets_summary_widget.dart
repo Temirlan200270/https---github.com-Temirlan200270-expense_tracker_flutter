@@ -72,15 +72,15 @@ class BudgetsSummaryWidget extends ConsumerWidget {
                     )
                         .animate()
                         .fadeIn(
-                          duration: 300.ms,
-                          delay: (100 * index).ms,
-                          curve: Curves.easeOut,
+                          duration: 200.ms,
+                          delay: (48 * index).ms,
+                          curve: Curves.easeOutCubic,
                         )
                         .scale(
-                          begin: const Offset(0.9, 0.9),
+                          begin: const Offset(0.94, 0.94),
                           end: const Offset(1, 1),
-                          duration: 400.ms,
-                          delay: (100 * index).ms,
+                          duration: 240.ms,
+                          delay: (48 * index).ms,
                           curve: Curves.easeOutCubic,
                         ),
                   );

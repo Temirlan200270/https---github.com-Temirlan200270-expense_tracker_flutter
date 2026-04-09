@@ -1,46 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-/// Глобальная библиотека переиспользуемых анимаций (согласно документации flutter_animate)
+/// Глобальная библиотека переиспользуемых анимаций (flutter_animate).
+/// Тайминги: UI ~150–250 ms, easeOut — ощущение быстрого отклика.
 class AppAnimations {
   // Базовые эффекты появления
   static final List<Effect> fadeInUp = [
     FadeEffect(
-      duration: 300.ms,
-      curve: Curves.easeOut,
+      duration: 200.ms,
+      curve: Curves.easeOutCubic,
     ),
     SlideEffect(
-      begin: const Offset(0, 0.2),
+      begin: const Offset(0, 0.12),
       end: Offset.zero,
-      duration: 300.ms,
-      curve: Curves.easeOut,
+      duration: 220.ms,
+      curve: Curves.easeOutCubic,
     ),
   ];
 
   // Эффект появления с масштабированием (для карточек)
   static final List<Effect> scaleIn = [
     ScaleEffect(
-      begin: const Offset(0.9, 0.9),
+      begin: const Offset(0.92, 0.92),
       end: const Offset(1, 1),
-      duration: 400.ms,
+      duration: 240.ms,
       curve: Curves.easeOutCubic,
     ),
     FadeEffect(
-      duration: 400.ms,
-      curve: Curves.easeOut,
+      duration: 220.ms,
+      curve: Curves.easeOutCubic,
     ),
   ];
 
-  // Эффект для Hero карточек (более драматичный)
+  // Эффект для Hero карточек (чуть дольше списка, без «театра»)
   static final List<Effect> heroCard = [
     FadeEffect(
-      duration: 500.ms,
-      curve: Curves.easeOut,
+      duration: 280.ms,
+      curve: Curves.easeOutCubic,
     ),
     ScaleEffect(
-      begin: const Offset(0.95, 0.95),
+      begin: const Offset(0.97, 0.97),
       end: const Offset(1, 1),
-      duration: 500.ms,
+      duration: 300.ms,
       curve: Curves.easeOutCubic,
     ),
   ];
@@ -48,7 +49,7 @@ class AppAnimations {
   // Shimmer эффект для загрузки
   static final List<Effect> shimmerLoad = [
     ShimmerEffect(
-      duration: 1500.ms,
+      duration: 1100.ms,
       color: const Color(0xFF80DDFF),
     ),
   ];
@@ -56,15 +57,15 @@ class AppAnimations {
   // Эффект тряски для ошибок
   static final List<Effect> errorShake = [
     ShakeEffect(
-      duration: 400.ms,
-      hz: 5,
-      offset: const Offset(8, 0),
+      duration: 220.ms,
+      hz: 6,
+      offset: const Offset(6, 0),
       rotation: 0,
     ),
     TintEffect(
       color: Colors.red,
       end: 0.3,
-      duration: 200.ms,
+      duration: 160.ms,
     ),
   ];
 
@@ -72,9 +73,9 @@ class AppAnimations {
   static final List<Effect> buttonPress = [
     ScaleEffect(
       begin: const Offset(1, 1),
-      end: const Offset(0.95, 0.95),
-      duration: 100.ms,
-      curve: Curves.easeInOut,
+      end: const Offset(0.97, 0.97),
+      duration: 80.ms,
+      curve: Curves.easeOutCubic,
     ),
   ];
 
@@ -82,15 +83,15 @@ class AppAnimations {
   static List<Effect> listItem(int index) {
     return [
       FadeEffect(
-        duration: 300.ms,
-        delay: (50 * index).ms,
-        curve: Curves.easeOut,
+        duration: 180.ms,
+        delay: (28 * index).ms,
+        curve: Curves.easeOutCubic,
       ),
       SlideEffect(
-        begin: const Offset(0, 0.1),
+        begin: const Offset(0, 0.08),
         end: Offset.zero,
-        duration: 300.ms,
-        delay: (50 * index).ms,
+        duration: 190.ms,
+        delay: (28 * index).ms,
         curve: Curves.easeOutCubic,
       ),
     ];
@@ -100,15 +101,15 @@ class AppAnimations {
   static List<Effect> settingsTile(int index) {
     return [
       FadeEffect(
-        duration: 300.ms,
-        delay: (30 * index).ms,
-        curve: Curves.easeOut,
+        duration: 180.ms,
+        delay: (24 * index).ms,
+        curve: Curves.easeOutCubic,
       ),
       SlideEffect(
-        begin: const Offset(0.1, 0),
+        begin: const Offset(0.06, 0),
         end: Offset.zero,
-        duration: 300.ms,
-        delay: (30 * index).ms,
+        duration: 200.ms,
+        delay: (24 * index).ms,
         curve: Curves.easeOutCubic,
       ),
     ];
@@ -117,14 +118,14 @@ class AppAnimations {
   // Эффект для чисел (счетчик)
   static final List<Effect> numberCount = [
     FadeEffect(
-      duration: 200.ms,
-      curve: Curves.easeOut,
+      duration: 160.ms,
+      curve: Curves.easeOutCubic,
     ),
     ScaleEffect(
-      begin: const Offset(1.1, 1.1),
+      begin: const Offset(1.06, 1.06),
       end: const Offset(1, 1),
-      duration: 300.ms,
-      curve: Curves.easeOutBack,
+      duration: 200.ms,
+      curve: Curves.easeOutCubic,
     ),
   ];
 }

@@ -116,8 +116,16 @@ class BudgetProgressCard extends StatelessWidget {
                 ),
               )
                   .animate()
-                  .fadeIn(duration: 400.ms, delay: 200.ms)
-                  .scaleX(begin: 0, end: 1, duration: 600.ms, delay: 200.ms, curve: Curves.easeOutCubic),
+                  .fadeIn(
+                      duration: 220.ms,
+                      delay: 120.ms,
+                      curve: Curves.easeOutCubic)
+                  .scaleX(
+                      begin: 0,
+                      end: 1,
+                      duration: 320.ms,
+                      delay: 120.ms,
+                      curve: Curves.easeOutCubic),
               const SizedBox(height: 12),
 
               // Суммы
@@ -222,8 +230,16 @@ class BudgetProgressCard extends StatelessWidget {
             ),
           )
               .animate()
-              .fadeIn(duration: 300.ms, delay: 100.ms)
-              .scaleX(begin: 0, end: 1, duration: 500.ms, delay: 100.ms, curve: Curves.easeOutCubic),
+              .fadeIn(
+                  duration: 200.ms,
+                  delay: 70.ms,
+                  curve: Curves.easeOutCubic)
+              .scaleX(
+                  begin: 0,
+                  end: 1,
+                  duration: 280.ms,
+                  delay: 70.ms,
+                  curve: Curves.easeOutCubic),
           const SizedBox(height: 4),
           Text(
             '${_formatMoney(budgetWithSpending.spentInCents, budget.limit.currencyCode)} / ${_formatMoney(budget.limit.amountInCents, budget.limit.currencyCode)}',

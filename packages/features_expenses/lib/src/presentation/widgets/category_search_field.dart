@@ -11,6 +11,7 @@ class CategorySearchField extends StatefulWidget {
     required this.onCategorySelected,
     required this.type,
     this.categorizationConfidence,
+    this.highlightSuggested = false,
   });
 
   final List<Category> categories;
@@ -20,6 +21,9 @@ class CategorySearchField extends StatefulWidget {
 
   /// Уверенность pipeline (null — нет подсказки или выбор пользователя).
   final double? categorizationConfidence;
+
+  /// Лёгкая подсветка: категория совпала с авто-подсказкой pipeline (ещё не зафиксирована вручную).
+  final bool highlightSuggested;
 
   @override
   State<CategorySearchField> createState() => _CategorySearchFieldState();
@@ -121,54 +125,117 @@ class _CategorySearchFieldState extends State<CategorySearchField> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final suggest = widget.highlightSuggested && widget.selectedCategoryId != null;
+    final accent = cs.primary;
+    final borderColor = suggest ? accent.withOpacity(0.55) : cs.outline.withOpacity(0.35);
+    final borderWidth = suggest ? 2.0 : 1.0;
+    final radius = BorderRadius.circular(16);
+
+    OutlineInputBorder borderFor({required bool focused}) {
+      return OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide(
+          color: focused ? accent : borderColor,
+          width: focused ? 2.0 : borderWidth,
+        ),
+      );
+    }
+
+    final field = TextFormField(
+      controller: _controller,
+      focusNode: _focusNode,
+      decoration: InputDecoration(
+        labelText: tr('expenses.form.category'),
+        hintText: tr('expenses.form.category_hint'),
+        suffixIcon: _controller.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear, size: 20),
+                onPressed: _clearCategory,
+              )
+            : Icon(
+                suggest ? Icons.auto_awesome : Icons.search,
+                color: suggest ? accent.withOpacity(0.9) : null,
+              ),
+        prefixIcon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, animation) {
+            return FadeTransition(
+              opacity: animation,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.82, end: 1).animate(animation),
+                child: child,
+              ),
+            );
+          },
+          child: widget.selectedCategoryId != null
+              ? Container(
+                  key: ValueKey<String>('cat-${widget.selectedCategoryId}'),
+                  margin: const EdgeInsets.all(8),
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Color(
+                      widget.categories
+                          .firstWhere((c) => c.id == widget.selectedCategoryId)
+                          .colorValue,
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: suggest
+                        ? [
+                            BoxShadow(
+                              color: accent.withOpacity(0.35),
+                              blurRadius: 8,
+                              spreadRadius: 0,
+                            ),
+                          ]
+                        : null,
+                  ),
+                )
+              : Container(
+                  key: const ValueKey<String>('cat-none'),
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.category_outlined,
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  ),
+                ),
+        ),
+        filled: true,
+        border: borderFor(focused: false),
+        enabledBorder: borderFor(focused: false),
+        focusedBorder: borderFor(focused: true),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      ),
+      onChanged: (_) => _onSearchChanged(),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextFormField(
-          controller: _controller,
-          focusNode: _focusNode,
-          decoration: InputDecoration(
-            labelText: tr('expenses.form.category'),
-            hintText: tr('expenses.form.category_hint'),
-            suffixIcon: _controller.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear, size: 20),
-                    onPressed: _clearCategory,
-                  )
-                : const Icon(Icons.search),
-            prefixIcon: widget.selectedCategoryId != null
-                ? Container(
-                    margin: const EdgeInsets.all(8),
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: Color(
-                        widget.categories
-                            .firstWhere((c) => c.id == widget.selectedCategoryId)
-                            .colorValue,
-                      ),
-                      shape: BoxShape.circle,
+        suggest
+            ? AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
+                decoration: BoxDecoration(
+                  borderRadius: radius,
+                  boxShadow: [
+                    BoxShadow(
+                      color: accent.withOpacity(0.12),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
-                  )
-                : Container(
-                    margin: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.secondaryContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.category_outlined,
-                      color: Theme.of(context).colorScheme.onSecondaryContainer,
-                    ),
-                  ),
-            filled: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          ),
-          onChanged: (_) => _onSearchChanged(),
-        ),
+                  ],
+                ),
+                child: field,
+              )
+            : field,
         if (_showSuggestions && _filteredCategories.isNotEmpty)
           Container(
             margin: const EdgeInsets.only(top: 8),

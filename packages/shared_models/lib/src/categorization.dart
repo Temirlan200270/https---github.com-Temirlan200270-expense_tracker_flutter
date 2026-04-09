@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'category.dart';
 import 'category_rule.dart';
 import 'expense.dart';
@@ -46,7 +48,8 @@ class CategorizationResult {
 
 /// Нормализует текст заметки в ключевое слово для правила (общая логика с [CategoryRulesController]).
 String extractKeywordFromNote(String text) {
-  var keyword = text.trim();
+  final cleaned = sanitizeTitleForMatch(text.trim());
+  var keyword = cleaned.isEmpty ? text.trim() : cleaned;
   if (keyword.contains(',')) {
     keyword = keyword.split(',').first.trim();
   }
@@ -59,12 +62,19 @@ String extractKeywordFromNote(String text) {
   return keyword;
 }
 
-/// Пороги Matching Engine (правила / история).
-/// Для коротких слов одна опечатка даёт ~0.83 (6 букв) — 0.82 ловит «Magnun»↔«Magnum».
-const double kFuzzyRuleMinSimilarity = 0.82;
-const double kHistoryFuzzyMinSimilarity = 0.82;
+/// Нижняя граница рейтинга схожести: ниже — не предлагаем категорию (fuzzy / history fuzzy).
+const double kMinCategorizationRating = 0.5;
 
-/// Пайплайн: точные правила → fuzzy-правила → точная история → частотная похожая история.
+/// Порог для fuzzy-правил (после санитизации и combined rating).
+const double kFuzzyRuleMinSimilarity = 0.5;
+
+/// Порог похожести заметок при голосовании по истории.
+const double kHistoryFuzzyMinSimilarity = 0.5;
+
+/// Допуск по score: кандидаты в «ничью» попадают в разрешение по частоте истории.
+const double kFuzzyScoreTieEpsilon = 0.08;
+
+/// Пайплайн: санитизация → точные правила → fuzzy (+ частота) → история.
 class TransactionCategorizationPipeline {
   TransactionCategorizationPipeline({
     required this.rules,
@@ -91,13 +101,16 @@ class TransactionCategorizationPipeline {
 
   /// Категоризация по тексту заметки / названия транзакции.
   CategorizationResult categorize(String rawNote) {
-    final note = rawNote.trim();
-    if (note.isEmpty) {
+    final trimmed = rawNote.trim();
+    if (trimmed.isEmpty) {
       return CategorizationResult.empty;
     }
 
+    final sanitized = sanitizeTitleForMatch(trimmed);
+    final working = sanitized.isEmpty ? trimmed : sanitized;
+
     final matcher = CategoryRuleMatcher(rules);
-    final exactRule = matcher.findMatchingRule(note);
+    final exactRule = matcher.findMatchingRule(working);
     if (exactRule != null) {
       final id = exactRule.categoryId;
       final cat = _categoryById(id);
@@ -115,12 +128,14 @@ class TransactionCategorizationPipeline {
       }
     }
 
-    final fuzzyRule = _bestFuzzyRule(note);
+    final fuzzyRule = _bestFuzzyRule(working);
     if (fuzzyRule != null) {
       final id = fuzzyRule.rule.categoryId;
       final cat = _categoryById(id);
       if (cat != null && cat.kind == _expectedKind) {
-        final confidence = (0.52 + fuzzyRule.score * 0.42).clamp(0.55, 0.94);
+        final confidence = (kMinCategorizationRating +
+                fuzzyRule.score * (1.0 - kMinCategorizationRating))
+            .clamp(kMinCategorizationRating, 0.94);
         return CategorizationResult(
           categoryId: id,
           category: cat,
@@ -131,13 +146,16 @@ class TransactionCategorizationPipeline {
       }
     }
 
-    final normalized = note.toLowerCase();
+    final workLow = working.toLowerCase();
     final exactHistoryCandidates = history
         .where((e) => !e.isDeleted && e.type == type)
         .where((e) => e.categoryId != null)
         .where((e) {
-          final n = e.note?.trim().toLowerCase();
-          return n != null && n == normalized;
+          final raw = e.note?.trim();
+          if (raw == null) return false;
+          final sn = sanitizeTitleForMatch(raw);
+          final histKey = (sn.isEmpty ? raw : sn).toLowerCase();
+          return histKey == workLow;
         })
         .toList()
       ..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
@@ -159,15 +177,21 @@ class TransactionCategorizationPipeline {
       }
     }
 
-    final fuzzyHistory = _bestCategoryFromFuzzyHistory(note);
+    final fuzzyHistory = _bestCategoryFromFuzzyHistory(working);
     if (fuzzyHistory != null) {
       final id = fuzzyHistory.categoryId;
       final cat = _categoryById(id);
       if (cat != null && cat.kind == _expectedKind) {
+        final adjusted = math
+            .max(
+              kMinCategorizationRating,
+              fuzzyHistory.confidence * fuzzyHistory.maxSimilarity,
+            )
+            .clamp(kMinCategorizationRating, 0.88);
         return CategorizationResult(
           categoryId: id,
           category: cat,
-          confidence: fuzzyHistory.confidence,
+          confidence: adjusted,
           source: CategorizationSource.historyFuzzy,
         );
       }
@@ -176,57 +200,128 @@ class TransactionCategorizationPipeline {
     return CategorizationResult.empty;
   }
 
-  _FuzzyRuleHit? _bestFuzzyRule(String note) {
-    CategoryRule? bestRule;
-    var bestScore = 0.0;
+  _FuzzyRuleHit? _bestFuzzyRule(String noteWorking) {
+    final candidates = <({CategoryRule rule, double score})>[];
+    final noteLow = noteWorking.toLowerCase();
 
     for (final rule in rules) {
       if (!rule.isActive) continue;
-      if (rule.matches(note)) continue;
+      if (rule.matches(noteWorking)) continue;
 
       final kw = rule.caseSensitive ? rule.keyword : rule.keyword.toLowerCase();
-      final text = rule.caseSensitive ? note : note.toLowerCase();
+      final text = rule.caseSensitive ? noteWorking : noteLow;
       final score = bestTokenToKeywordSimilarity(text, kw);
+      if (score < kMinCategorizationRating) continue;
       if (score < kFuzzyRuleMinSimilarity) continue;
+      candidates.add((rule: rule, score: score));
+    }
 
-      if (score > bestScore ||
-          (score == bestScore &&
-              bestRule != null &&
-              rule.priority > bestRule.priority)) {
-        bestScore = score;
-        bestRule = rule;
+    if (candidates.isEmpty) return null;
+
+    final maxScore = candidates.map((c) => c.score).reduce(math.max);
+    final nearTop = candidates
+        .where((c) => c.score >= maxScore - kFuzzyScoreTieEpsilon)
+        .toList();
+
+    if (nearTop.length == 1) {
+      final c = nearTop.single;
+      return _FuzzyRuleHit(rule: c.rule, score: c.score);
+    }
+
+    final byCategory = <String, List<({CategoryRule rule, double score})>>{};
+    for (final c in nearTop) {
+      byCategory.putIfAbsent(c.rule.categoryId, () => []).add(c);
+    }
+
+    CategoryRule? bestRule;
+    var bestFreq = -1;
+    var bestScorePick = 0.0;
+    var bestPriority = -999999;
+
+    for (final entry in byCategory.entries) {
+      final catId = entry.key;
+      final list = entry.value;
+      final freq = _historyMatchFrequency(catId, noteLow);
+      final bestInList = list.reduce((a, b) {
+        if (a.score > b.score) return a;
+        if (b.score > a.score) return b;
+        return a.rule.priority >= b.rule.priority ? a : b;
+      });
+      if (freq > bestFreq ||
+          (freq == bestFreq && bestInList.score > bestScorePick) ||
+          (freq == bestFreq &&
+              bestInList.score == bestScorePick &&
+              bestInList.rule.priority > bestPriority)) {
+        bestFreq = freq;
+        bestScorePick = bestInList.score;
+        bestPriority = bestInList.rule.priority;
+        bestRule = bestInList.rule;
       }
     }
 
     if (bestRule == null) return null;
-    return _FuzzyRuleHit(rule: bestRule, score: bestScore);
+    return _FuzzyRuleHit(rule: bestRule, score: maxScore);
   }
 
-  _HistoryFuzzyHit? _bestCategoryFromFuzzyHistory(String note) {
-    final counts = <String, int>{};
+  int _historyMatchFrequency(String categoryId, String noteWorkingLower) {
+    var n = 0;
+    for (final e in history) {
+      if (e.isDeleted || e.type != type) continue;
+      if (e.categoryId != categoryId) continue;
+      final raw = e.note?.trim();
+      if (raw == null || raw.isEmpty) continue;
+      final sn = sanitizeTitleForMatch(raw);
+      final histSide = (sn.isEmpty ? raw : sn).toLowerCase();
+      if (maxTokenCrossSimilarity(noteWorkingLower, histSide) >=
+          kHistoryFuzzyMinSimilarity) {
+        n++;
+      }
+    }
+    return n;
+  }
+
+  _HistoryFuzzyHit? _bestCategoryFromFuzzyHistory(String noteWorking) {
+    final noteLow = noteWorking.toLowerCase();
+    final perCategory = <String, ({int count, double maxSim})>{};
 
     for (final e in history) {
       if (e.isDeleted || e.type != type) continue;
       final cid = e.categoryId;
       if (cid == null) continue;
-      final n = e.note?.trim();
-      if (n == null || n.isEmpty) continue;
+      final raw = e.note?.trim();
+      if (raw == null || raw.isEmpty) continue;
+      final sn = sanitizeTitleForMatch(raw);
+      final histSide = (sn.isEmpty ? raw : sn).toLowerCase();
+      final sim = maxTokenCrossSimilarity(noteLow, histSide);
+      if (sim < kHistoryFuzzyMinSimilarity) continue;
+      if (sim < kMinCategorizationRating) continue;
 
-      if (maxTokenCrossSimilarity(note, n) >= kHistoryFuzzyMinSimilarity) {
-        counts[cid] = (counts[cid] ?? 0) + 1;
+      final prev = perCategory[cid];
+      if (prev == null) {
+        perCategory[cid] = (count: 1, maxSim: sim);
+      } else {
+        perCategory[cid] = (
+          count: prev.count + 1,
+          maxSim: sim > prev.maxSim ? sim : prev.maxSim,
+        );
       }
     }
 
-    if (counts.isEmpty) return null;
+    if (perCategory.isEmpty) return null;
 
-    var bestId = '';
+    String? bestId;
     var bestCount = 0;
-    counts.forEach((id, c) {
-      if (c > bestCount) {
-        bestCount = c;
+    var bestSim = 0.0;
+    perCategory.forEach((id, v) {
+      if (v.count > bestCount ||
+          (v.count == bestCount && v.maxSim > bestSim)) {
+        bestCount = v.count;
+        bestSim = v.maxSim;
         bestId = id;
       }
     });
+
+    if (bestId == null) return null;
 
     final confidence = bestCount >= 3
         ? 0.78
@@ -234,7 +329,11 @@ class TransactionCategorizationPipeline {
             ? 0.68
             : 0.58;
 
-    return _HistoryFuzzyHit(categoryId: bestId, confidence: confidence);
+    return _HistoryFuzzyHit(
+      categoryId: bestId!,
+      confidence: confidence,
+      maxSimilarity: bestSim,
+    );
   }
 }
 
@@ -246,8 +345,13 @@ class _FuzzyRuleHit {
 }
 
 class _HistoryFuzzyHit {
-  _HistoryFuzzyHit({required this.categoryId, required this.confidence});
+  _HistoryFuzzyHit({
+    required this.categoryId,
+    required this.confidence,
+    required this.maxSimilarity,
+  });
 
   final String categoryId;
   final double confidence;
+  final double maxSimilarity;
 }

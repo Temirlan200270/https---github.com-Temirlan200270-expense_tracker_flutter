@@ -16,13 +16,18 @@ class AnimatedAnalyticsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return child
         .animate()
-        .fadeIn(delay: (index * 50).ms, duration: 400.ms)
+        .fadeIn(
+          delay: (index * 32).ms,
+          duration: 200.ms,
+          curve: Curves.easeOutCubic,
+        )
         .slideY(
-            begin: 0.1,
-            end: 0,
-            delay: (index * 50).ms,
-            duration: 400.ms,
-            curve: Curves.easeOutCubic);
+          begin: 0.08,
+          end: 0,
+          delay: (index * 32).ms,
+          duration: 220.ms,
+          curve: Curves.easeOutCubic,
+        );
   }
 }
 

@@ -26,8 +26,8 @@ CustomTransitionPage<T> _buildPageTransition<T>({
   return CustomTransitionPage<T>(
     key: key,
     child: child,
-    transitionDuration: const Duration(milliseconds: 300),
-    reverseTransitionDuration: const Duration(milliseconds: 250),
+    transitionDuration: const Duration(milliseconds: 260),
+    reverseTransitionDuration: const Duration(milliseconds: 220),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curvedAnimation = CurvedAnimation(
         parent: animation,
@@ -99,6 +99,15 @@ final _routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => _buildPageTransition(
           key: state.pageKey,
           child: const ImportPage(),
+          slideFromRight: true,
+        ),
+      ),
+      GoRoute(
+        path: '/import/review',
+        name: 'importReview',
+        pageBuilder: (context, state) => _buildPageTransition(
+          key: state.pageKey,
+          child: const ImportReviewPage(),
           slideFromRight: true,
         ),
       ),

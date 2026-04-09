@@ -52,4 +52,33 @@ class CategorizationService {
     );
     return pipeline.categorize(title);
   }
+
+  /// Массовая категоризация импорта: один запрос правил/истории/категорий, затем пайплайн по каждой строке.
+  Future<List<PendingImportExpense>> enrichImportedExpenses(
+    List<Expense> parsed,
+  ) async {
+    if (parsed.isEmpty) return [];
+
+    final rules = await _rules.fetchRules();
+    final history = await _expenses.fetchExpenses();
+    final categories = await _categories.fetchAll();
+
+    return parsed.map((e) {
+      final pipeline = TransactionCategorizationPipeline(
+        rules: rules,
+        history: history,
+        categories: categories,
+        type: e.type,
+      );
+      final title = e.note ?? '';
+      final r = pipeline.categorize(title);
+      final row = PendingImportExpense(
+        parsed: e,
+        predictedCategoryId: r.categoryId,
+        confidence: r.confidence,
+        predictionSource: r.source,
+      );
+      return row.copyWith(isIncluded: row.defaultIsIncludedForReview);
+    }).toList();
+  }
 }

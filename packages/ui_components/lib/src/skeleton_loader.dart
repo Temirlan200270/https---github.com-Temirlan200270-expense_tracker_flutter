@@ -76,7 +76,7 @@ class _SkeletonBox extends StatelessWidget {
     )
         .animate(onPlay: (controller) => controller.repeat())
         .shimmer(
-          duration: 1500.ms,
+          duration: 1100.ms,
           color: isDark ? Colors.grey[700]! : Colors.grey[100]!,
         );
   }

@@ -4,9 +4,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_models/shared_models.dart';
 
 import '../../services/import_service.dart';
+import '../import_review/import_review_controller.dart';
 import 'package:features_expenses/features_expenses.dart';
 import 'package:expense_tracker_app/expense_tracker_app.dart';
 
@@ -103,17 +105,7 @@ class _ImportPageState extends ConsumerState<ImportPage> {
             );
           }
         } else {
-          await _saveExpenses(expenses);
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  tr('import.success').replaceAll('{0}', expenses.length.toString()),
-                ),
-              ),
-            );
-            Navigator.of(context).pop();
-          }
+          await _openImportReview(context, expenses);
         }
       }
     } catch (e) {
@@ -165,17 +157,7 @@ class _ImportPageState extends ConsumerState<ImportPage> {
             );
           }
         } else {
-          await _saveExpenses(expenses);
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  tr('import.success').replaceAll('{0}', expenses.length.toString()),
-                ),
-              ),
-            );
-            Navigator.of(context).pop();
-          }
+          await _openImportReview(context, expenses);
         }
       }
     } catch (e) {
@@ -267,17 +249,7 @@ class _ImportPageState extends ConsumerState<ImportPage> {
             );
           }
         } else {
-          await _saveExpenses(expenses);
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  tr('import.success').replaceAll('{0}', expenses.length.toString()),
-                ),
-              ),
-            );
-            Navigator.of(context).pop();
-          }
+          await _openImportReview(context, expenses);
         }
       }
     } catch (e) {
@@ -291,30 +263,19 @@ class _ImportPageState extends ConsumerState<ImportPage> {
     }
   }
 
-  Future<void> _saveExpenses(List<Expense> expenses) async {
-    if (expenses.isEmpty) {
-      return;
-    }
-    
-    final repo = ref.read(expensesRepositoryProvider);
-    int savedCount = 0;
-    int skippedCount = 0;
-    
-    for (final expense in expenses) {
-      try {
-        await repo.upsertExpense(expense);
-        savedCount++;
-      } catch (e) {
-        // Логируем ошибки сохранения
-        print('Ошибка сохранения записи: $e');
-        skippedCount++;
-      }
-    }
-    
-    print('💾 Сохранено транзакций: $savedCount из ${expenses.length}');
-    if (skippedCount > 0) {
-      print('⚠️ Пропущено транзакций: $skippedCount');
-    }
+  /// Обогащение и экран подтверждения перед записью в БД.
+  Future<void> _openImportReview(
+    BuildContext context,
+    List<Expense> expenses,
+  ) async {
+    if (expenses.isEmpty) return;
+
+    final service = ref.read(categorizationServiceProvider);
+    final pending = await service.enrichImportedExpenses(expenses);
+    ref.read(importReviewControllerProvider.notifier).stage(pending);
+
+    if (!context.mounted) return;
+    await context.push('/import/review');
   }
 }
 

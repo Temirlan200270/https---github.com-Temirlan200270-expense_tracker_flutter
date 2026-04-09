@@ -203,8 +203,12 @@ class ExpensesListPage extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             child: const ExpenseSearchField()
                 .animate()
-                .fadeIn(duration: 300.ms)
-                .slideY(begin: -0.1, end: 0, duration: 300.ms),
+                .fadeIn(duration: 200.ms, curve: Curves.easeOutCubic)
+                .slideY(
+                    begin: -0.06,
+                    end: 0,
+                    duration: 220.ms,
+                    curve: Curves.easeOutCubic),
           ),
           Expanded(
             child: RefreshIndicator(
@@ -281,8 +285,16 @@ class _GroupedExpensesList extends ConsumerWidget {
             formatter: formatter,
           )
               .animate()
-              .fadeIn(duration: 150.ms, delay: (15 * index).ms)
-              .slideY(begin: 0.05, end: 0, duration: 150.ms, delay: (15 * index).ms);
+              .fadeIn(
+                  duration: 140.ms,
+                  delay: (12 * index).ms,
+                  curve: Curves.easeOutCubic)
+              .slideY(
+                  begin: 0.04,
+                  end: 0,
+                  duration: 150.ms,
+                  delay: (12 * index).ms,
+                  curve: Curves.easeOutCubic);
         },
         separatorBuilder: (_, __) => const SizedBox(height: 8),
         itemCount: expenses.length,
@@ -305,8 +317,16 @@ class _GroupedExpensesList extends ConsumerWidget {
           color: group.color,
         )
             .animate()
-            .fadeIn(duration: 150.ms, delay: (20 * index).ms)
-            .slideY(begin: 0.05, end: 0, duration: 150.ms, delay: (20 * index).ms);
+            .fadeIn(
+                duration: 140.ms,
+                delay: (16 * index).ms,
+                curve: Curves.easeOutCubic)
+            .slideY(
+                begin: 0.04,
+                end: 0,
+                duration: 150.ms,
+                delay: (16 * index).ms,
+                curve: Curves.easeOutCubic);
       },
     );
   }
@@ -478,7 +498,11 @@ class _ExpenseGroup extends StatelessWidget {
                 ),
               )
                   .animate()
-                  .scaleX(begin: 0, end: 1, duration: 300.ms, curve: Curves.easeOut),
+                  .scaleX(
+                      begin: 0,
+                      end: 1,
+                      duration: 220.ms,
+                      curve: Curves.easeOutCubic),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -488,8 +512,16 @@ class _ExpenseGroup extends StatelessWidget {
                       ),
                 )
                     .animate()
-                    .fadeIn(duration: 300.ms, delay: 100.ms)
-                    .slideX(begin: -0.1, end: 0, duration: 300.ms, delay: 100.ms),
+                    .fadeIn(
+                        duration: 200.ms,
+                        delay: 70.ms,
+                        curve: Curves.easeOutCubic)
+                    .slideX(
+                        begin: -0.06,
+                        end: 0,
+                        duration: 220.ms,
+                        delay: 70.ms,
+                        curve: Curves.easeOutCubic),
               ),
               Text(
                 subtitle,
@@ -499,8 +531,16 @@ class _ExpenseGroup extends StatelessWidget {
                     ),
               )
                   .animate()
-                  .fadeIn(duration: 300.ms, delay: 150.ms)
-                  .slideX(begin: 0.1, end: 0, duration: 300.ms, delay: 150.ms),
+                  .fadeIn(
+                      duration: 200.ms,
+                      delay: 100.ms,
+                      curve: Curves.easeOutCubic)
+                  .slideX(
+                      begin: 0.06,
+                      end: 0,
+                      duration: 220.ms,
+                      delay: 100.ms,
+                      curve: Curves.easeOutCubic),
             ],
           ),
         ),
@@ -517,8 +557,16 @@ class _ExpenseGroup extends StatelessWidget {
               formatter: formatter,
             )
                 .animate()
-                .fadeIn(duration: 150.ms, delay: (10 * index).ms)
-                .slideX(begin: 0.03, end: 0, duration: 150.ms, delay: (10 * index).ms),
+                .fadeIn(
+                    duration: 130.ms,
+                    delay: (8 * index).ms,
+                    curve: Curves.easeOutCubic)
+                .slideX(
+                    begin: 0.025,
+                    end: 0,
+                    duration: 140.ms,
+                    delay: (8 * index).ms,
+                    curve: Curves.easeOutCubic),
           );
         }),
         const SizedBox(height: 8),

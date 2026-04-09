@@ -105,24 +105,31 @@ class _AnimatedStatCard extends StatelessWidget {
                 Icon(icon, color: color, size: 20)
                     .animate()
                     .scale(
-                        delay: 100.ms,
-                        duration: 400.ms,
+                        delay: 60.ms,
+                        duration: 200.ms,
+                        curve: Curves.easeOutCubic,
                         begin: const Offset(0.5, 0.5),
                         end: const Offset(1, 1))
-                    .fadeIn(delay: 100.ms, duration: 300.ms),
+                    .fadeIn(
+                        delay: 60.ms,
+                        duration: 180.ms,
+                        curve: Curves.easeOutCubic),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.bodyMedium,
-                  ).animate().fadeIn(delay: 50.ms, duration: 300.ms),
+                  ).animate().fadeIn(
+                        delay: 40.ms,
+                        duration: 180.ms,
+                        curve: Curves.easeOutCubic),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0, end: value),
-              duration: const Duration(milliseconds: 800),
+              duration: const Duration(milliseconds: 420),
               curve: Curves.easeOutCubic,
               builder: (context, animatedValue, _) {
                 return Text(
@@ -141,7 +148,10 @@ class _AnimatedStatCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.grey,
                     ),
-              ).animate().fadeIn(delay: 300.ms, duration: 300.ms),
+              ).animate().fadeIn(
+                    delay: 160.ms,
+                    duration: 180.ms,
+                    curve: Curves.easeOutCubic),
             ],
           ],
         ),

@@ -19,12 +19,11 @@ class AnalyticsCategoryChart extends ConsumerWidget {
     if (stats.isEmpty) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Center(
-            child: Text(
-              tr('analytics.no_data'),
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          child: EmptyState(
+            icon: Icons.pie_chart_outline_outlined,
+            title: tr('analytics.empty_charts_title'),
+            message: tr('analytics.empty_charts_message'),
           ),
         ),
       );
@@ -67,7 +66,7 @@ class AnalyticsCategoryChart extends ConsumerWidget {
                   sectionsSpace: 2,
                   centerSpaceRadius: 40,
                 ),
-                duration: const Duration(milliseconds: 500),
+                duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOutCubic,
               ),
             ),

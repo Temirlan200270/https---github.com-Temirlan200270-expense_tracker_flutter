@@ -7,7 +7,7 @@ class AppPageTransitions {
   static CustomTransitionPage<T> slideUpFade<T>({
     required Widget child,
     required LocalKey key,
-    Duration duration = const Duration(milliseconds: 300),
+    Duration duration = const Duration(milliseconds: 260),
   }) {
     return CustomTransitionPage<T>(
       key: key,
@@ -39,7 +39,7 @@ class AppPageTransitions {
   static CustomTransitionPage<T> slideFromRight<T>({
     required Widget child,
     required LocalKey key,
-    Duration duration = const Duration(milliseconds: 350),
+    Duration duration = const Duration(milliseconds: 280),
   }) {
     return CustomTransitionPage<T>(
       key: key,
@@ -68,7 +68,7 @@ class AppPageTransitions {
   static CustomTransitionPage<T> scaleFade<T>({
     required Widget child,
     required LocalKey key,
-    Duration duration = const Duration(milliseconds: 300),
+    Duration duration = const Duration(milliseconds: 260),
   }) {
     return CustomTransitionPage<T>(
       key: key,
@@ -78,12 +78,12 @@ class AppPageTransitions {
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         final curvedAnimation = CurvedAnimation(
           parent: animation,
-          curve: Curves.easeOutBack,
+          curve: Curves.easeOutCubic,
           reverseCurve: Curves.easeInCubic,
         );
 
         return ScaleTransition(
-          scale: Tween<double>(begin: 0.9, end: 1.0).animate(curvedAnimation),
+          scale: Tween<double>(begin: 0.96, end: 1.0).animate(curvedAnimation),
           child: FadeTransition(
             opacity: curvedAnimation,
             child: child,

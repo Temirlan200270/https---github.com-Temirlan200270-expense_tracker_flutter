@@ -213,12 +213,16 @@ class HomePage extends ConsumerWidget {
                   now: now,
                 )
                     .animate()
-                    .fadeIn(duration: 320.ms, delay: 80.ms)
+                    .fadeIn(
+                      duration: 200.ms,
+                      delay: 50.ms,
+                      curve: Curves.easeOutCubic,
+                    )
                     .slideY(
-                      begin: 0.05,
+                      begin: 0.04,
                       end: 0,
-                      duration: 320.ms,
-                      delay: 80.ms,
+                      duration: 220.ms,
+                      delay: 50.ms,
                       curve: Curves.easeOutCubic,
                     ),
                 loading: () => const SizedBox.shrink(),
@@ -260,14 +264,28 @@ class HomePage extends ConsumerWidget {
                       style: Theme.of(context).textTheme.titleLarge,
                     )
                         .animate()
-                        .fadeIn(duration: 400.ms, delay: 200.ms)
-                        .slideX(begin: -0.1, end: 0, duration: 400.ms, delay: 200.ms),
+                        .fadeIn(
+                          duration: 220.ms,
+                          delay: 120.ms,
+                          curve: Curves.easeOutCubic,
+                        )
+                        .slideX(
+                          begin: -0.06,
+                          end: 0,
+                          duration: 240.ms,
+                          delay: 120.ms,
+                          curve: Curves.easeOutCubic,
+                        ),
                   ),
                   TextButton(
                     onPressed: () => context.push('/expenses'),
                     child: Text(tr('home.view_all'))
                         .animate()
-                        .fadeIn(duration: 400.ms, delay: 250.ms),
+                        .fadeIn(
+                          duration: 220.ms,
+                          delay: 150.ms,
+                          curve: Curves.easeOutCubic,
+                        ),
                   ),
                 ],
               ),
@@ -295,21 +313,21 @@ class HomePage extends ConsumerWidget {
                         .asMap()
                         .entries
                         .map((entry) {
-                          final delay = (50 * entry.key).ms;
+                          final delay = (28 * entry.key).ms;
                           return _DismissibleTransactionTile(
                             expense: entry.value,
                             formatter: formatter,
                           )
                               .animate()
                               .fadeIn(
-                                duration: 300.ms,
+                                duration: 180.ms,
                                 delay: delay,
-                                curve: Curves.easeOut,
+                                curve: Curves.easeOutCubic,
                               )
                               .slideY(
-                                begin: 0.1,
+                                begin: 0.08,
                                 end: 0,
-                                duration: 300.ms,
+                                duration: 200.ms,
                                 delay: delay,
                                 curve: Curves.easeOutCubic,
                               );

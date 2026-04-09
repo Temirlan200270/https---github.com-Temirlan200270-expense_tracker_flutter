@@ -17,6 +17,12 @@ import '../../providers/expenses_providers.dart';
 import '../widgets/category_search_field.dart';
 import 'package:features_export/features_export.dart';
 
+/// Сценарий SnackBar обучения после сохранения новой траты.
+enum _LearningSnackKind { none, reinforce, correction }
+
+/// Минимальная длина заметки, после которой вызываем Matching Engine на лету.
+const int _kMinNoteLengthForLiveCategorize = 3;
+
 class NewExpensePage extends ConsumerStatefulWidget {
   const NewExpensePage({
     super.key,
@@ -46,6 +52,65 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
   bool _categoryUserLocked = false;
 
   bool get _isEditing => widget.expense != null;
+
+  /// Подсветка поля категории: совпало с последней авто-подсказкой, пользователь ещё не фиксировал выбор.
+  bool get _highlightSuggestedCategory {
+    if (_isEditing || _categoryUserLocked) return false;
+    final r = _lastCategorizationResult;
+    if (r == null ||
+        r.source == CategorizationSource.none ||
+        r.categoryId == null) {
+      return false;
+    }
+    return r.categoryId == _categoryId;
+  }
+
+  String _categoryDisplayName(String? id) {
+    if (id == null) return '';
+    final list = ref.read(categoriesStreamProvider).valueOrNull;
+    if (list == null) return id;
+    for (final c in list) {
+      if (c.id == id) return c.name;
+    }
+    return id;
+  }
+
+  /// Сценарий обучения после успешного сохранения новой транзакции.
+  _LearningSnackKind _learningSnackKindAfterSave() {
+    if (_isEditing) return _LearningSnackKind.none;
+    final note = _noteController.text.trim();
+    if (note.isEmpty || _categoryId == null) return _LearningSnackKind.none;
+    final r = _lastCategorizationResult;
+
+    if (r != null &&
+        r.source == CategorizationSource.rule &&
+        r.categoryId == _categoryId) {
+      return _LearningSnackKind.none;
+    }
+
+    final reinforce = r != null &&
+        r.source != CategorizationSource.rule &&
+        r.source != CategorizationSource.none &&
+        r.confidence >= 0.6 &&
+        r.categoryId != null &&
+        r.categoryId == _categoryId;
+
+    if (reinforce) return _LearningSnackKind.reinforce;
+
+    final predicted = r?.categoryId;
+    final hadPrediction = r != null &&
+        r.source != CategorizationSource.none &&
+        predicted != null;
+
+    if (hadPrediction && predicted != _categoryId) {
+      return _LearningSnackKind.correction;
+    }
+    if (!hadPrediction) {
+      if (note.length < 3) return _LearningSnackKind.none;
+      return _LearningSnackKind.correction;
+    }
+    return _LearningSnackKind.none;
+  }
 
   @override
   void initState() {
@@ -103,7 +168,7 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
     if (_isEditing) return;
     _categoryUserLocked = false;
     _noteDebounceTimer?.cancel();
-    _noteDebounceTimer = Timer(const Duration(milliseconds: 400), () {
+    _noteDebounceTimer = Timer(const Duration(milliseconds: 300), () {
       if (!mounted) return;
       _runCategorizationPipeline();
     });
@@ -111,6 +176,15 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
 
   void _runCategorizationPipeline() {
     if (_isEditing || !mounted) return;
+
+    final trimmedNote = _noteController.text.trim();
+    if (trimmedNote.length < _kMinNoteLengthForLiveCategorize) {
+      setState(() {
+        _lastCategorizationResult = CategorizationResult.empty;
+        _suggestionConfidence = null;
+      });
+      return;
+    }
 
     final rules = ref.read(categoryRulesStreamProvider).valueOrNull ?? [];
     final expenses = ref.read(expensesStreamProvider).valueOrNull ?? [];
@@ -151,18 +225,6 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
     });
   }
 
-  bool _shouldOfferLearningRule() {
-    if (_isEditing) return false;
-    final note = _noteController.text.trim();
-    if (note.isEmpty || _categoryId == null) return false;
-    final r = _lastCategorizationResult;
-    if (r == null) return false;
-    if (r.source == CategorizationSource.rule) return false;
-    if (r.confidence < 0.6) return false;
-    if (r.categoryId != _categoryId) return false;
-    return true;
-  }
-
   @override
   Widget build(BuildContext context) {
     if (!_isEditing) {
@@ -180,9 +242,12 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
       next.whenOrNull(
         data: (_) {
           final messenger = ScaffoldMessenger.of(context);
-          if (!_isEditing && _shouldOfferLearningRule()) {
-            final note = _noteController.text.trim();
-            final categoryId = _categoryId;
+          final note = _noteController.text.trim();
+          final categoryId = _categoryId;
+          final kind = _learningSnackKindAfterSave();
+
+          if (!_isEditing && kind == _LearningSnackKind.reinforce) {
+            final theme = Theme.of(context);
             messenger.showSnackBar(
               SnackBar(
                 content: Column(
@@ -190,8 +255,18 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(tr('expenses.form.success')),
-                    const SizedBox(height: 8),
-                    Text(tr('expenses.form.learning.remember_prompt')),
+                    const SizedBox(height: 10),
+                    Text(
+                      tr('expenses.form.learning.remember_choice_title'),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      tr('expenses.form.learning.remember_prompt'),
+                      style: theme.textTheme.bodyMedium,
+                    ),
                   ],
                 ),
                 action: SnackBarAction(
@@ -208,6 +283,53 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                   },
                 ),
                 duration: const Duration(seconds: 5),
+              ),
+            );
+          } else if (!_isEditing && kind == _LearningSnackKind.correction) {
+            final theme = Theme.of(context);
+            final snippet = extractKeywordFromNote(note);
+            final short = snippet.length > 42
+                ? '${snippet.substring(0, 39)}…'
+                : snippet;
+            final catName = _categoryDisplayName(categoryId);
+            messenger.showSnackBar(
+              SnackBar(
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(tr('expenses.form.success')),
+                    const SizedBox(height: 10),
+                    Text(
+                      tr('expenses.form.learning.remember_choice_title'),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      tr(
+                        'expenses.form.learning.remember_correction_body',
+                        args: [short, catName],
+                      ),
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+                action: SnackBarAction(
+                  label: tr('expenses.form.learning.remember_action'),
+                  onPressed: () {
+                    if (categoryId != null) {
+                      ref
+                          .read(categoryRulesControllerProvider.notifier)
+                          .createRuleFromText(
+                            text: note,
+                            categoryId: categoryId,
+                          );
+                    }
+                  },
+                ),
+                duration: const Duration(seconds: 6),
               ),
             );
           } else {
@@ -276,8 +398,12 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
               ),
             )
                 .animate()
-                .fadeIn(duration: 300.ms)
-                .slideY(begin: -0.1, end: 0, duration: 300.ms),
+                .fadeIn(duration: 200.ms, curve: Curves.easeOutCubic)
+                .slideY(
+                    begin: -0.08,
+                    end: 0,
+                    duration: 220.ms,
+                    curve: Curves.easeOutCubic),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -345,8 +471,16 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                     },
                   )
                       .animate()
-                      .fadeIn(duration: 300.ms, delay: 100.ms)
-                      .slideX(begin: -0.05, end: 0, duration: 300.ms, delay: 100.ms),
+                      .fadeIn(
+                          duration: 200.ms,
+                          delay: 70.ms,
+                          curve: Curves.easeOutCubic)
+                      .slideX(
+                          begin: -0.04,
+                          end: 0,
+                          duration: 220.ms,
+                          delay: 70.ms,
+                          curve: Curves.easeOutCubic),
                 ),
                 if (!_isEditing) ...[
                   const SizedBox(width: 12),
@@ -379,8 +513,16 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                     ),
                   )
                       .animate()
-                      .fadeIn(duration: 300.ms, delay: 150.ms)
-                      .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1), duration: 300.ms, delay: 150.ms),
+                      .fadeIn(
+                          duration: 200.ms,
+                          delay: 100.ms,
+                          curve: Curves.easeOutCubic)
+                      .scale(
+                          begin: const Offset(0.88, 0.88),
+                          end: const Offset(1, 1),
+                          duration: 220.ms,
+                          delay: 100.ms,
+                          curve: Curves.easeOutCubic),
                 ],
               ],
             ),
@@ -392,17 +534,32 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                 onCategorySelected: _onCategoryChosenByUser,
                 type: _type,
                 categorizationConfidence: _suggestionConfidence,
+                highlightSuggested: _highlightSuggestedCategory,
               )
                   .animate()
-                  .fadeIn(duration: 300.ms, delay: 200.ms)
-                  .slideY(begin: 0.1, end: 0, duration: 300.ms, delay: 200.ms),
+                  .fadeIn(
+                      duration: 200.ms,
+                      delay: 130.ms,
+                      curve: Curves.easeOutCubic)
+                  .slideY(
+                      begin: 0.08,
+                      end: 0,
+                      duration: 220.ms,
+                      delay: 130.ms,
+                      curve: Curves.easeOutCubic),
               loading: () => const LinearProgressIndicator()
                   .animate()
-                  .fadeIn(duration: 300.ms, delay: 200.ms),
+                  .fadeIn(
+                      duration: 200.ms,
+                      delay: 130.ms,
+                      curve: Curves.easeOutCubic),
               error: (error, _) => Text(tr('expenses.form.categories_error'))
                   .animate()
-                  .fadeIn(duration: 300.ms, delay: 200.ms)
-                  .shake(duration: 400.ms, delay: 300.ms),
+                  .fadeIn(
+                      duration: 200.ms,
+                      delay: 130.ms,
+                      curve: Curves.easeOutCubic)
+                  .shake(duration: 220.ms, delay: 160.ms),
             ),
             const SizedBox(height: 16),
             Card(
@@ -538,8 +695,16 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
               maxLines: 3,
             )
                 .animate()
-                .fadeIn(duration: 300.ms, delay: 300.ms)
-                .slideY(begin: 0.1, end: 0, duration: 300.ms, delay: 300.ms),
+                .fadeIn(
+                    duration: 200.ms,
+                    delay: 180.ms,
+                    curve: Curves.easeOutCubic)
+                .slideY(
+                    begin: 0.08,
+                    end: 0,
+                    duration: 220.ms,
+                    delay: 180.ms,
+                    curve: Curves.easeOutCubic),
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: () => _handleSubmit(ref),
@@ -562,8 +727,16 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
               ),
             )
                 .animate()
-                .fadeIn(duration: 300.ms, delay: 350.ms)
-                .scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1), duration: 300.ms, delay: 350.ms),
+                .fadeIn(
+                    duration: 200.ms,
+                    delay: 200.ms,
+                    curve: Curves.easeOutCubic)
+                .scale(
+                    begin: const Offset(0.96, 0.96),
+                    end: const Offset(1, 1),
+                    duration: 220.ms,
+                    delay: 200.ms,
+                    curve: Curves.easeOutCubic),
             if (_isEditing) ...[
               const SizedBox(height: 12),
               OutlinedButton.icon(

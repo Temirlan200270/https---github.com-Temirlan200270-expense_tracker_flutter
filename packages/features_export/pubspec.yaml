@@ -42,6 +42,10 @@ dependencies:
     path: ../features_budgets
   features_debts:
     path: ../features_debts
+  go_router: ^14.2.7
+  flutter_animate: ^4.5.0
+  ui_components:
+    path: ../ui_components
 
 dev_dependencies:
   flutter_test:

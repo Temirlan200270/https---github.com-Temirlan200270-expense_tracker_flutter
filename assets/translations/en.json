@@ -129,7 +129,9 @@
       "camera_error": "Camera error: {0}",
       "category_uncertain_hint": "Category was inferred from similar past entries — change it if needed.",
       "learning": {
-        "remember_prompt": "Remember this category for similar notes?",
+        "remember_choice_title": "Remember this choice?",
+        "remember_prompt": "Save this hint for similar notes?",
+        "remember_correction_body": "I'll map «{0}» to category «{1}».",
         "remember_action": "Remember"
       }
     },
@@ -185,6 +187,8 @@
     "by_month": "By Month",
     "by_time": "Over Time",
     "no_data": "No data to display",
+    "empty_charts_title": "Nothing to show yet",
+    "empty_charts_message": "Add your first expense or import a statement to see charts here.",
     "error": "Error loading: {0}",
     "period": {
       "today": "Today",
@@ -245,6 +249,7 @@
     "pdf": "PDF",
     "pdf_description": "Import from PDF file (supports files exported from the app)",
     "success": "Imported records: {0}",
+    "success_enriched": "Imported {0} records. Categories assigned to {1} of them.",
     "error": "Import error: {0}",
     "validation_errors": "Validation errors",
     "close": "Close",
@@ -254,7 +259,21 @@
     "pdf_alternative1": "• Export data from Kaspi app to CSV/JSON",
     "pdf_alternative2": "• Use online PDF → text converter",
     "pdf_alternative3": "• Copy text from PDF and paste into CSV file",
-    "pdf_alternative4": "• Use files exported from this app"
+    "pdf_alternative4": "• Use files exported from this app",
+    "review": {
+      "title": "Review import",
+      "empty": "No import draft. Go back and pick a file.",
+      "selected_count": "Selected: {0} of {1}",
+      "section_attention": "Needs attention",
+      "section_ready": "Almost ready",
+      "confirm_confident": "Confirm confident ({0})",
+      "apply_defaults": "Reset to auto",
+      "save": "Save to ledger",
+      "pick_category": "Category",
+      "clear_category": "No category",
+      "apply_same_title": "Same category for similar ({0})",
+      "success": "Saved entries: {0}"
+    }
   },
   "currency": {
     "update_rates": "Update rates",
