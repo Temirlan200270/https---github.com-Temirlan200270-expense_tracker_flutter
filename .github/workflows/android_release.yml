@@ -7,7 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  FLUTTER_VERSION: '3.24.0'
+  # ≥3.27: CardThemeData и нормализация тем; DropdownButtonFormField — initialValue (не 3.24).
+  FLUTTER_VERSION: '3.27.4'
 
 jobs:
   build_apk:

@@ -80,14 +80,14 @@ class _InsightCard extends StatelessWidget {
             ),
             if (insight.trend != null)
               Icon(
-                insight.trend == TrendDirection.up
+                insight.trend == InsightTrendDirection.up
                     ? Icons.arrow_upward
-                    : insight.trend == TrendDirection.down
+                    : insight.trend == InsightTrendDirection.down
                         ? Icons.arrow_downward
                         : Icons.remove,
-                color: insight.trend == TrendDirection.up
+                color: insight.trend == InsightTrendDirection.up
                     ? Colors.red
-                    : insight.trend == TrendDirection.down
+                    : insight.trend == InsightTrendDirection.down
                         ? Colors.green
                         : Colors.grey,
                 size: 16,

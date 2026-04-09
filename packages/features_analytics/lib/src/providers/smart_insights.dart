@@ -40,12 +40,12 @@ class SmartInsight {
   final InsightPriority priority;
   final double? value;
   final double? percentage;
-  final TrendDirection? trend;
+  final InsightTrendDirection? trend;
   final String? categoryName;
 }
 
-/// Направление тренда
-enum TrendDirection {
+/// Направление тренда для UI-инсайтов (стрелка вверх/вниз), не путать с TrendDirection движка поведения.
+enum InsightTrendDirection {
   up,
   down,
   stable,
@@ -116,7 +116,7 @@ class Forecast {
   final double projectedBalance;
   final double confidence; // 0-1
   final int daysRemaining;
-  final TrendDirection trend;
+  final InsightTrendDirection trend;
 }
 
 /// Сервис для генерации умных инсайтов
@@ -173,7 +173,7 @@ class SmartInsightsService {
           description: 'Вы потратили на ${changePercent.abs().toStringAsFixed(0)}% больше, чем в прошлый период',
           priority: InsightPriority.high,
           percentage: changePercent,
-          trend: TrendDirection.up,
+          trend: InsightTrendDirection.up,
         ));
       } else if (changePercent < -20) {
         insights.add(SmartInsight(
@@ -182,7 +182,7 @@ class SmartInsightsService {
           description: 'Расходы снизились на ${changePercent.abs().toStringAsFixed(0)}% по сравнению с прошлым периодом',
           priority: InsightPriority.high,
           percentage: changePercent,
-          trend: TrendDirection.down,
+          trend: InsightTrendDirection.down,
         ));
       }
     }
@@ -474,9 +474,9 @@ class SmartInsightsService {
       projectedBalance: projectedIncome - projectedExpenses,
       confidence: confidence,
       daysRemaining: daysRemaining,
-      trend: projectedExpenses > projectedIncome 
-          ? TrendDirection.down 
-          : TrendDirection.up,
+      trend: projectedExpenses > projectedIncome
+          ? InsightTrendDirection.down
+          : InsightTrendDirection.up,
     );
   }
 
