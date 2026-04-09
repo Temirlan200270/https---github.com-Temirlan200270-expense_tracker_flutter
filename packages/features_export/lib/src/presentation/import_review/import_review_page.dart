@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:expense_tracker_app/expense_tracker_app.dart';
 import 'package:features_expenses/features_expenses.dart';
+
+import '../../services/import_review_learning_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +11,53 @@ import 'package:shared_models/shared_models.dart';
 import 'package:ui_components/ui_components.dart';
 
 import 'import_review_controller.dart';
+
+/// Кластер строк «внимания» по санитизированному названию.
+class _AttentionCluster {
+  const _AttentionCluster({
+    required this.clusterKey,
+    required this.label,
+    required this.rows,
+  });
+
+  final String clusterKey;
+  final String label;
+  final List<(int, PendingImportExpense, int)> rows;
+}
+
+List<_AttentionCluster> _buildAttentionClusters(
+  List<(int, PendingImportExpense)> attention,
+) {
+  final orderedKeys = <String>[];
+  final map = <String, List<(int, PendingImportExpense)>>{};
+  for (final pair in attention) {
+    final sanitized = sanitizeTitleForMatch(pair.$2.parsed.note ?? '');
+    final key = sanitized.isEmpty ? '__empty__' : sanitized;
+    map.putIfAbsent(key, () => []).add(pair);
+    if (!orderedKeys.contains(key)) {
+      orderedKeys.add(key);
+    }
+  }
+
+  var anim = 0;
+  final out = <_AttentionCluster>[];
+  for (final key in orderedKeys) {
+    final pairs = map[key]!;
+    final rows = <(int, PendingImportExpense, int)>[];
+    for (final p in pairs) {
+      rows.add((p.$1, p.$2, anim++));
+    }
+    final label = key == '__empty__' ? '—' : key;
+    out.add(
+      _AttentionCluster(
+        clusterKey: key,
+        label: label,
+        rows: rows,
+      ),
+    );
+  }
+  return out;
+}
 
 /// Экран подтверждения импорта: приоритетный список, категории, bulk-действия.
 class ImportReviewPage extends ConsumerStatefulWidget {
@@ -75,6 +124,8 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
       }
     }
 
+    final attentionClusters = _buildAttentionClusters(attention);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(tr('import.review.title')),
@@ -130,7 +181,7 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
           Expanded(
             child: CustomScrollView(
               slivers: [
-                if (attention.isNotEmpty) ...[
+                if (attentionClusters.isNotEmpty) ...[
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -143,20 +194,44 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
                       ),
                     ),
                   ),
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, i) {
-                        final (index, e) = attention[i];
-                        return _ReviewTile(
-                          index: index,
-                          item: e,
-                          currencyCode: currency,
-                          animIndex: i,
-                        );
-                      },
-                      childCount: attention.length,
+                  for (final cluster in attentionClusters) ...[
+                    if (cluster.rows.length > 1)
+                      SliverToBoxAdapter(
+                        child: _AttentionClusterBar(
+                          label: cluster.label,
+                          count: cluster.rows.length,
+                          onCategoryPicked: (categoryId) {
+                            notifier.applyCategoryToSameSanitizedTitle(
+                              cluster.rows.first.$1,
+                              categoryId,
+                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(tr('import.review.reinforce_hint')),
+                                  duration: AppMotion.standard + AppMotion.fast,
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, i) {
+                          final row = cluster.rows[i];
+                          return _ReviewTile(
+                            index: row.$1,
+                            item: row.$2,
+                            currencyCode: currency,
+                            animIndex: row.$3,
+                            compact: false,
+                          );
+                        },
+                        childCount: cluster.rows.length,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
                 if (ready.isNotEmpty) ...[
                   SliverToBoxAdapter(
@@ -174,11 +249,13 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
                     delegate: SliverChildBuilderDelegate(
                       (context, i) {
                         final (index, e) = ready[i];
+                        final compact = e.confidence >= 0.85;
                         return _ReviewTile(
                           index: index,
                           item: e,
                           currencyCode: currency,
                           animIndex: attention.length + i,
+                          compact: compact,
                         );
                       },
                       childCount: ready.length,
@@ -217,11 +294,29 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
 
   Future<void> _save(BuildContext context) async {
     setState(() => _saving = true);
-    final items = ref.read(importReviewControllerProvider);
-    final toSave =
-        items.where((e) => e.isIncluded).map((e) => e.toExpenseForSave()).toList();
+    final snapshot = List<PendingImportExpense>.from(
+      ref.read(importReviewControllerProvider),
+    );
+    final toSave = snapshot
+        .where((e) => e.isIncluded)
+        .map((e) => e.toExpenseForSave())
+        .toList();
+    final skipped = snapshot.where((e) => !e.isIncluded).length;
+    final corrected = snapshot
+        .where(
+          (e) =>
+              e.isIncluded &&
+              e.effectiveCategoryId != null &&
+              e.effectiveCategoryId != e.predictedCategoryId,
+        )
+        .length;
+
     final repo = ref.read(expensesRepositoryProvider);
+    final rulesRepo = ref.read(categoryRulesRepositoryProvider);
+    final learning = ImportReviewLearningService(rulesRepo);
+
     var ok = 0;
+    var rulesLearned = 0;
     try {
       for (final e in toSave) {
         try {
@@ -229,13 +324,45 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
           ok++;
         } catch (_) {}
       }
+
+      try {
+        rulesLearned = await learning.learnFromReviewSnapshot(snapshot);
+      } catch (_) {
+        rulesLearned = 0;
+      }
+
       ref.read(importReviewControllerProvider.notifier).clear();
       if (!context.mounted) return;
+
+      final failed = toSave.length - ok;
+      var msg = failed > 0
+          ? tr(
+              'import.review.recap_with_errors',
+              args: [
+                ok.toString(),
+                skipped.toString(),
+                corrected.toString(),
+                failed.toString(),
+              ],
+            )
+          : tr(
+              'import.review.recap',
+              args: [
+                ok.toString(),
+                skipped.toString(),
+                corrected.toString(),
+              ],
+            );
+
+      if (rulesLearned > 0) {
+        msg =
+            '$msg\n${tr('import.review.recap_learned', args: [rulesLearned.toString()])}';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            tr('import.review.success', args: [ok.toString()]),
-          ),
+          content: Text(msg),
+          duration: AppMotion.screen + AppMotion.standard + AppMotion.fast,
         ),
       );
       if (context.canPop()) {
@@ -250,18 +377,88 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
   }
 }
 
+/// Заголовок кластера + групповое назначение категории.
+class _AttentionClusterBar extends ConsumerWidget {
+  const _AttentionClusterBar({
+    required this.label,
+    required this.count,
+    required this.onCategoryPicked,
+  });
+
+  final String label;
+  final int count;
+  final void Function(String categoryId) onCategoryPicked;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final categoriesAsync = ref.watch(categoriesStreamProvider);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
+      child: Material(
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              Icon(Icons.hub_outlined, size: 20, color: theme.colorScheme.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  tr(
+                    'import.review.cluster_count',
+                    args: [label, count.toString()],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final id = await _ReviewTile.pickCategoryIdStatic(
+                    context,
+                    categoriesAsync.valueOrNull ?? [],
+                  );
+                  if (!context.mounted || id == null || id.isEmpty) return;
+                  onCategoryPicked(id);
+                },
+                child: Text(tr('import.review.cluster_pick_category')),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ReviewTile extends ConsumerWidget {
   const _ReviewTile({
     required this.index,
     required this.item,
     required this.currencyCode,
     required this.animIndex,
+    this.compact = false,
   });
 
   final int index;
   final PendingImportExpense item;
   final String currencyCode;
   final int animIndex;
+  final bool compact;
+
+  /// Для групповых действий снаружи.
+  static Future<String?> pickCategoryIdStatic(
+    BuildContext context,
+    List<Category> categories,
+  ) {
+    return _openCategorySheet(context, categories);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -281,8 +478,19 @@ class _ReviewTile extends ConsumerWidget {
     final dotColor = _confidenceColor(theme, item);
     final sameCount = notifier.countWithSameSanitizedTitle(index);
 
+    final titleStyle = compact
+        ? theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)
+        : theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600);
+    final metaStyle = compact
+        ? theme.textTheme.labelSmall
+            ?.copyWith(color: theme.colorScheme.onSurfaceVariant)
+        : theme.textTheme.bodySmall
+            ?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    final barHeight = compact ? 36.0 : 48.0;
+    final vPad = compact ? 6.0 : 10.0;
+
     final tile = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: compact ? 3 : 6),
       child: EnhancedExpenseCard(
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
@@ -292,39 +500,35 @@ class _ReviewTile extends ConsumerWidget {
             categoriesAsync.valueOrNull ?? [],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: vPad),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 4,
-                  height: 48,
+                  width: 3,
+                  height: barHeight,
                   decoration: BoxDecoration(
                     color: dotColor,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: compact ? 8 : 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         displayTitle,
-                        maxLines: 2,
+                        maxLines: compact ? 1 : 2,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: titleStyle,
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: compact ? 2 : 4),
                       Text(
                         '$dateLabel · $amountLabel',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                        style: metaStyle,
                       ),
-                      if (sameCount > 1) ...[
+                      if (!compact && sameCount > 1) ...[
                         const SizedBox(height: 6),
                         TextButton(
                           style: TextButton.styleFrom(
@@ -333,7 +537,7 @@ class _ReviewTile extends ConsumerWidget {
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
                           onPressed: () async {
-                            final id = await _pickCategoryId(
+                            final id = await _openCategorySheet(
                               context,
                               categoriesAsync.valueOrNull ?? [],
                             );
@@ -344,6 +548,16 @@ class _ReviewTile extends ConsumerWidget {
                               index,
                               id,
                             );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text(tr('import.review.reinforce_hint')),
+                                  duration:
+                                      AppMotion.standard + AppMotion.fast,
+                                ),
+                              );
+                            }
                           },
                           child: Text(
                             tr(
@@ -357,7 +571,7 @@ class _ReviewTile extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: compact ? 4 : 8),
                 categoriesAsync.when(
                   data: (cats) {
                     Category? cat;
@@ -369,41 +583,53 @@ class _ReviewTile extends ConsumerWidget {
                         }
                       }
                     }
+                    final avR = compact ? 14.0 : 18.0;
                     return Column(
                       children: [
                         CircleAvatar(
-                          radius: 18,
+                          radius: avR,
                           backgroundColor: cat != null
                               ? Color(cat.colorValue)
                                   .withOpacity(0.85)
                               : theme.colorScheme.surfaceContainerHighest,
                           child: Icon(
                             cat != null ? Icons.label : Icons.label_outline,
-                            size: 20,
+                            size: compact ? 16 : 20,
                             color: cat != null
                                 ? Colors.white
                                 : theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          cat?.name ?? tr('import.review.pick_category'),
-                          style: theme.textTheme.labelSmall,
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        if (!compact) ...[
+                          const SizedBox(height: 4),
+                          SizedBox(
+                            width: 72,
+                            child: Text(
+                              cat?.name ?? tr('import.review.pick_category'),
+                              style: theme.textTheme.labelSmall,
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ],
                     );
                   },
-                  loading: () => const SizedBox(
-                    width: 36,
-                    height: 36,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                  loading: () => SizedBox(
+                    width: compact ? 28 : 36,
+                    height: compact ? 28 : 36,
+                    child: const CircularProgressIndicator(strokeWidth: 2),
                   ),
                   error: (_, __) => const Icon(Icons.error_outline),
                 ),
                 Checkbox(
+                  visualDensity: compact
+                      ? VisualDensity.compact
+                      : VisualDensity.standard,
+                  materialTapTargetSize: compact
+                      ? MaterialTapTargetSize.shrinkWrap
+                      : null,
                   value: item.isIncluded,
                   onChanged: (_) => notifier.toggleInclusion(index),
                 ),
@@ -460,7 +686,7 @@ class _ReviewTile extends ConsumerWidget {
     WidgetRef ref,
     List<Category> categories,
   ) async {
-    final result = await _pickCategoryId(context, categories);
+    final result = await _openCategorySheet(context, categories);
     if (!context.mounted || result == null) return;
     final notifier = ref.read(importReviewControllerProvider.notifier);
     if (result.isEmpty) {
@@ -470,8 +696,7 @@ class _ReviewTile extends ConsumerWidget {
     }
   }
 
-  /// `null` — отмена, `''` — сброс категории, иначе id.
-  static Future<String?> _pickCategoryId(
+  static Future<String?> _openCategorySheet(
     BuildContext context,
     List<Category> categories,
   ) {

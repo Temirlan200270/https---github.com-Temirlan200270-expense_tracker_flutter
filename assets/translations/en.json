@@ -272,7 +272,13 @@
       "pick_category": "Category",
       "clear_category": "No category",
       "apply_same_title": "Same category for similar ({0})",
-      "success": "Saved entries: {0}"
+      "success": "Saved entries: {0}",
+      "recap": "Saved: {0}. Skipped: {1}. Category changed from suggestion: {2}.",
+      "recap_with_errors": "Saved: {0}. Skipped: {1}. Category changed: {2}. Write errors: {3}.",
+      "cluster_count": "{0} · {1}",
+      "cluster_pick_category": "Category for group",
+      "reinforce_hint": "Similar rows updated. You can add rules in Categories.",
+      "recap_learned": "Saved {0} pattern(s) for auto-categorization."
     }
   },
   "currency": {

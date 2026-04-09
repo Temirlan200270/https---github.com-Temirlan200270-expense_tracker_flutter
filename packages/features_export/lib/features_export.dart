@@ -1,5 +1,6 @@
 export 'src/services/export_service.dart';
 export 'src/services/import_service.dart';
+export 'src/services/import_review_learning_service.dart';
 export 'src/services/backup_service.dart';
 export 'src/services/receipt_scanner_service.dart';
 export 'src/presentation/pages/export_page.dart';
