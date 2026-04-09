@@ -30,8 +30,33 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
+**/build/
+build/
 /coverage/
+**/coverage/
+
+# Melos
+.melos_tool/
+
+# FVM (версия Flutter фиксируется в .fvmrc; SDK не коммитим)
+.fvm/flutter_sdk
+
+# iOS / macOS (если появятся таргеты)
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/macos/Flutter/ephemeral/
+**/macos/Pods/
+
+# Windows / Linux
+**/windows/flutter/ephemeral/
+**/linux/flutter/ephemeral/
+
+# Локальные ключи и сертификаты (дополнительно к android/.gitignore)
+*.pem
+secrets/
 
 # Symbolication related
 app.*.symbols
