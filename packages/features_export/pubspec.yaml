@@ -16,7 +16,7 @@ dependencies:
   pdf: ^3.11.1
   csv: ^5.0.2
   file_picker: ^8.1.4
-  intl: ^0.20.2
+  intl: ">=0.19.0 <0.21.0"
   easy_localization: ^3.0.8
   archive: ^3.4.0
   # OCR зависимости для распознавания текста из PDF
