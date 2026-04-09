@@ -338,6 +338,17 @@ class HomePage extends ConsumerWidget {
   }
 }
 
+/// Результат синтеза: текст и флаг «не дублировать строку прогноза расходов».
+class _SynthesisOutcome {
+  const _SynthesisOutcome({
+    this.text,
+    this.suppressForecastExpensesLine = false,
+  });
+
+  final String? text;
+  final bool suppressForecastExpensesLine;
+}
+
 /// Decision Engine: предиктивный статус + один инсайт с «почему» и уверенностью формулировки.
 class _HomeDecisionEngineCard extends StatelessWidget {
   const _HomeDecisionEngineCard({
@@ -349,6 +360,26 @@ class _HomeDecisionEngineCard extends StatelessWidget {
   final HomeDecisionSnapshot snapshot;
   final NumberFormat formatter;
   final DateTime now;
+
+  /// Мало дней запаса → в синтезе сначала runway; иначе при сильном ratio — сначала отклонение.
+  static const int _kCriticalRunwayDays = 7;
+  static const double _kSharpDeviationRatio = 1.45;
+
+  static String _microActionTrKey(HomeFinancialStateTier tier) {
+    return switch (tier) {
+      HomeFinancialStateTier.stable => 'home.decision.micro_action_stable',
+      HomeFinancialStateTier.caution => 'home.decision.micro_action_caution',
+      HomeFinancialStateTier.danger => 'home.decision.micro_action_danger',
+    };
+  }
+
+  static String _detailTrKey(InsightConfidenceTier confidence) {
+    return switch (confidence) {
+      InsightConfidenceTier.high => 'home.decision.insight_detail_high',
+      InsightConfidenceTier.medium => 'home.decision.insight_detail_medium',
+      InsightConfidenceTier.low => 'home.decision.insight_detail_low',
+    };
+  }
 
   /// Лид с учётом тренда: stable → прежние ключи; иначе суффикс accel / slow.
   static String _leadTrKey(
@@ -372,32 +403,172 @@ class _HomeDecisionEngineCard extends StatelessWidget {
         : 'home.decision.insight_category_lead_${tier}_$suffix';
   }
 
-  /// Одна строка: отклонение + тренд + runway (без дубля с блоком прогноза).
-  static String? _synthesisLine(HomeDecisionSnapshot snapshot) {
+  /// Синтез: при `runway` — дни; иначе при перерасходе и прогнозе — сумма до конца месяца.
+  static _SynthesisOutcome _resolveSynthesis(
+    HomeDecisionSnapshot snapshot,
+    NumberFormat formatter,
+  ) {
     final insight = snapshot.behaviorInsight;
+    if (insight == null) {
+      return const _SynthesisOutcome();
+    }
+
     final runway = snapshot.runwayDays;
-    if (insight == null || runway == null) return null;
+    if (runway == null) {
+      final forecast = snapshot.forecast;
+      if (forecast == null) {
+        return const _SynthesisOutcome();
+      }
+      final amount = formatter.format(forecast.projectedExpenses);
+      final trend = snapshot.spendingTrend;
+      final isOverall =
+          insight.variant == HomeInsightVariant.overallOverspend;
+      final cat = insight.topContributor?.categoryName ?? '—';
+      if (isOverall) {
+        final key = switch (trend) {
+          TrendDirection.accelerating =>
+            'home.decision.synthesis_overall_forecast_accel',
+          TrendDirection.slowing =>
+            'home.decision.synthesis_overall_forecast_slow',
+          TrendDirection.stable =>
+            'home.decision.synthesis_overall_forecast_stable',
+        };
+        return _SynthesisOutcome(
+          text: tr(key, namedArgs: {'amount': amount}),
+          suppressForecastExpensesLine: true,
+        );
+      }
+      final key = switch (trend) {
+        TrendDirection.accelerating =>
+          'home.decision.synthesis_category_forecast_accel',
+        TrendDirection.slowing =>
+          'home.decision.synthesis_category_forecast_slow',
+        TrendDirection.stable =>
+          'home.decision.synthesis_category_forecast_stable',
+      };
+      return _SynthesisOutcome(
+        text: tr(key, namedArgs: {'amount': amount, 'category': cat}),
+        suppressForecastExpensesLine: true,
+      );
+    }
+
     final days = '$runway';
     final trend = snapshot.spendingTrend;
-    final isOverall =
-        insight.variant == HomeInsightVariant.overallOverspend;
-    if (isOverall) {
-      final key = switch (trend) {
+    final ratio = insight.deviation.velocityRatio;
+    final runwayFirst = runway <= _kCriticalRunwayDays;
+    final deviationFirst =
+        !runwayFirst && ratio >= _kSharpDeviationRatio;
+
+    String trendBalancedKeyOverall() {
+      return switch (trend) {
         TrendDirection.accelerating =>
           'home.decision.synthesis_overall_runway_accel',
         TrendDirection.slowing => 'home.decision.synthesis_overall_runway_slow',
         TrendDirection.stable => 'home.decision.synthesis_overall_runway_stable',
       };
-      return tr(key, namedArgs: {'days': days});
     }
+
+    String trendBalancedKeyCategory() {
+      return switch (trend) {
+        TrendDirection.accelerating =>
+          'home.decision.synthesis_category_runway_accel',
+        TrendDirection.slowing => 'home.decision.synthesis_category_runway_slow',
+        TrendDirection.stable => 'home.decision.synthesis_category_runway_stable',
+      };
+    }
+
+    String trendRunwayFirstKeyOverall() {
+      return switch (trend) {
+        TrendDirection.accelerating =>
+          'home.decision.synthesis_overall_runway_first_accel',
+        TrendDirection.slowing =>
+          'home.decision.synthesis_overall_runway_first_slow',
+        TrendDirection.stable =>
+          'home.decision.synthesis_overall_runway_first_stable',
+      };
+    }
+
+    String trendDeviationFirstKeyOverall() {
+      return switch (trend) {
+        TrendDirection.accelerating =>
+          'home.decision.synthesis_overall_deviation_first_accel',
+        TrendDirection.slowing =>
+          'home.decision.synthesis_overall_deviation_first_slow',
+        TrendDirection.stable =>
+          'home.decision.synthesis_overall_deviation_first_stable',
+      };
+    }
+
+    String trendRunwayFirstKeyCategory() {
+      return switch (trend) {
+        TrendDirection.accelerating =>
+          'home.decision.synthesis_category_runway_first_accel',
+        TrendDirection.slowing =>
+          'home.decision.synthesis_category_runway_first_slow',
+        TrendDirection.stable =>
+          'home.decision.synthesis_category_runway_first_stable',
+      };
+    }
+
+    String trendDeviationFirstKeyCategory() {
+      return switch (trend) {
+        TrendDirection.accelerating =>
+          'home.decision.synthesis_category_deviation_first_accel',
+        TrendDirection.slowing =>
+          'home.decision.synthesis_category_deviation_first_slow',
+        TrendDirection.stable =>
+          'home.decision.synthesis_category_deviation_first_stable',
+      };
+    }
+
+    final isOverall =
+        insight.variant == HomeInsightVariant.overallOverspend;
     final cat = insight.topContributor?.categoryName ?? '—';
-    final key = switch (trend) {
-      TrendDirection.accelerating =>
-        'home.decision.synthesis_category_runway_accel',
-      TrendDirection.slowing => 'home.decision.synthesis_category_runway_slow',
-      TrendDirection.stable => 'home.decision.synthesis_category_runway_stable',
-    };
-    return tr(key, namedArgs: {'days': days, 'category': cat});
+
+    if (isOverall) {
+      if (runwayFirst) {
+        return _SynthesisOutcome(
+          text: tr(
+            trendRunwayFirstKeyOverall(),
+            namedArgs: {'days': days},
+          ),
+        );
+      }
+      if (deviationFirst) {
+        return _SynthesisOutcome(
+          text: tr(
+            trendDeviationFirstKeyOverall(),
+            namedArgs: {'days': days},
+          ),
+        );
+      }
+      return _SynthesisOutcome(
+        text: tr(trendBalancedKeyOverall(), namedArgs: {'days': days}),
+      );
+    }
+
+    if (runwayFirst) {
+      return _SynthesisOutcome(
+        text: tr(
+          trendRunwayFirstKeyCategory(),
+          namedArgs: {'days': days, 'category': cat},
+        ),
+      );
+    }
+    if (deviationFirst) {
+      return _SynthesisOutcome(
+        text: tr(
+          trendDeviationFirstKeyCategory(),
+          namedArgs: {'days': days, 'category': cat},
+        ),
+      );
+    }
+    return _SynthesisOutcome(
+      text: tr(
+        trendBalancedKeyCategory(),
+        namedArgs: {'days': days, 'category': cat},
+      ),
+    );
   }
 
   @override
@@ -437,9 +608,14 @@ class _HomeDecisionEngineCard extends StatelessWidget {
             .toString()
         : '';
 
-    final synthesis = _synthesisLine(snapshot);
-    final hasForecastBlock = snapshot.forecast != null ||
-        (snapshot.runwayDays != null && synthesis == null);
+    final synthesisOutcome = _resolveSynthesis(snapshot, formatter);
+    final synthesis = synthesisOutcome.text;
+    final showForecastExpenses = snapshot.forecast != null &&
+        !synthesisOutcome.suppressForecastExpensesLine;
+    final showRunwayInForecastBlock =
+        snapshot.runwayDays != null && synthesis == null;
+    final hasForecastBlock =
+        showForecastExpenses || showRunwayInForecastBlock;
 
     return GlassCard(
       child: Padding(
@@ -487,6 +663,16 @@ class _HomeDecisionEngineCard extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                tr(_microActionTrKey(snapshot.stateTier)),
+                style: textTheme.bodySmall?.copyWith(
+                  height: 1.35,
+                  color: cs.onSurface.withValues(alpha: 0.72),
+                ),
+              ),
+            ),
             if (insight == null &&
                 (snapshot.spendingTrend == TrendDirection.accelerating ||
                     snapshot.spendingTrend == TrendDirection.slowing)) ...[
@@ -524,7 +710,7 @@ class _HomeDecisionEngineCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 tr(
-                  'home.decision.insight_detail',
+                  _detailTrKey(insight.confidence),
                   namedArgs: {
                     'time': timeLabel,
                     'usual': formatter.format(insight.baseline.expectedUntilNow),
@@ -583,7 +769,7 @@ class _HomeDecisionEngineCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              if (snapshot.forecast != null)
+              if (showForecastExpenses)
                 Text(
                   tr(
                     'home.decision.forecast_expenses',
@@ -594,7 +780,7 @@ class _HomeDecisionEngineCard extends StatelessWidget {
                   ),
                   style: textTheme.bodySmall?.copyWith(height: 1.35),
                 ),
-              if (snapshot.runwayDays != null)
+              if (showRunwayInForecastBlock)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
