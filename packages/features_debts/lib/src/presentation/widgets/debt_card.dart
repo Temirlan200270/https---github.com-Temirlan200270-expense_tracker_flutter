@@ -28,7 +28,7 @@ class DebtCard extends StatelessWidget {
     // Цвета в зависимости от типа
     final primaryColor = isTheyOwe ? Colors.green : Colors.red;
     final backgroundColor =
-        isTheyOwe ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1);
+        isTheyOwe ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -197,7 +197,7 @@ class DebtCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.2),
+                    color: Colors.green.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(

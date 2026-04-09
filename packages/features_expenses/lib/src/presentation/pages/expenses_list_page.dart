@@ -635,7 +635,7 @@ class _DismissibleExpenseTile extends ConsumerWidget {
             ),
             ListTile(
               leading: CircleAvatar(
-                backgroundColor: color.withValues(alpha: 0.2),
+                backgroundColor: color.withOpacity(0.2),
                 child: Icon(
                   expense.type.isIncome
                       ? Icons.trending_up
@@ -736,8 +736,8 @@ class _ExpenseTile extends StatelessWidget {
             const SizedBox(width: 12),
             CircleAvatar(
               backgroundColor: category != null
-                  ? Color(category!.colorValue).withValues(alpha: 0.2)
-                  : color.withValues(alpha: 0.2),
+                  ? Color(category!.colorValue).withOpacity(0.2)
+                  : color.withOpacity(0.2),
               child: Icon(
                 expense.type.isIncome ? Icons.trending_up : Icons.trending_down,
                 color: category != null ? Color(category!.colorValue) : color,
@@ -769,7 +769,7 @@ class _ExpenseTile extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Color(category!.colorValue).withValues(alpha: 0.1),
+                            color: Color(category!.colorValue).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(

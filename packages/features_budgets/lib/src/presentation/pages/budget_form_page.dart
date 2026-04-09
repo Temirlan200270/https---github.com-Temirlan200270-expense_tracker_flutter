@@ -108,7 +108,7 @@ class _BudgetFormPageState extends ConsumerState<BudgetFormPage> {
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -125,13 +125,13 @@ class _BudgetFormPageState extends ConsumerState<BudgetFormPage> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
@@ -169,7 +169,7 @@ class _BudgetFormPageState extends ConsumerState<BudgetFormPage> {
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -187,13 +187,13 @@ class _BudgetFormPageState extends ConsumerState<BudgetFormPage> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
@@ -285,7 +285,7 @@ class _BudgetFormPageState extends ConsumerState<BudgetFormPage> {
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
+                            color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -302,13 +302,13 @@ class _BudgetFormPageState extends ConsumerState<BudgetFormPage> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                        color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                        color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -375,7 +375,7 @@ class _BudgetFormPageState extends ConsumerState<BudgetFormPage> {
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                 ),
               ),
               child: Column(
@@ -401,7 +401,7 @@ class _BudgetFormPageState extends ConsumerState<BudgetFormPage> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                              color: theme.colorScheme.primary.withOpacity(0.2),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -434,7 +434,7 @@ class _BudgetFormPageState extends ConsumerState<BudgetFormPage> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
-                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                   width: 1,
                 ),
               ),

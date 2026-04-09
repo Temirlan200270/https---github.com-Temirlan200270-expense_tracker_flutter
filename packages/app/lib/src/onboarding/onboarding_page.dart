@@ -214,7 +214,7 @@ class _PageIndicator extends StatelessWidget {
             shape: BoxShape.circle,
             color: index == currentPage
                 ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                : Theme.of(context).colorScheme.primary.withOpacity(0.3),
           ),
         )
             .animate()

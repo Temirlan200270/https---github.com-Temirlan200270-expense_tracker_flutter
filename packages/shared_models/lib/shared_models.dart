@@ -5,5 +5,6 @@ export 'src/recurring_expense.dart';
 export 'src/budget.dart';
 export 'src/category_rule.dart';
 export 'src/categorization.dart';
+export 'src/string_similarity.dart';
 export 'src/debt.dart';
 

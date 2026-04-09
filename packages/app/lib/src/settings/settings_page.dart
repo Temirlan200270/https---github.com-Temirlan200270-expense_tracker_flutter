@@ -180,7 +180,7 @@ class SettingsPage extends ConsumerWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.15),
+                      color: Colors.red.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(Icons.fingerprint_rounded, color: Colors.red, size: 22),

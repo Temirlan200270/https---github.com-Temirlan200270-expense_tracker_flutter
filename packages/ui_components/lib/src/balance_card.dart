@@ -34,7 +34,7 @@ class BalanceCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: gradient.colors.first.withValues(alpha: 0.4),
+            color: gradient.colors.first.withOpacity(0.4),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -46,7 +46,7 @@ class BalanceCard extends StatelessWidget {
           Text(
             "Общий баланс",
             style: GoogleFonts.manrope(
-              color: Colors.white.withValues(alpha: 0.7),
+              color: Colors.white.withOpacity(0.7),
               fontSize: 14,
             ),
           ),
@@ -102,7 +102,7 @@ class BalanceCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
+            color: Colors.white.withOpacity(0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: Colors.white, size: 16),
@@ -114,7 +114,7 @@ class BalanceCard extends StatelessWidget {
             Text(
               label,
               style: GoogleFonts.manrope(
-                color: Colors.white.withValues(alpha: 0.7),
+                color: Colors.white.withOpacity(0.7),
                 fontSize: 12,
               ),
             ),

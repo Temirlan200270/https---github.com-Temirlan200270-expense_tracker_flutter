@@ -343,7 +343,7 @@ class _CategoryDialogState extends ConsumerState<_CategoryDialog> {
                         boxShadow: isSelected
                             ? [
                                 BoxShadow(
-                                  color: Color(color).withValues(alpha: 0.5),
+                                  color: Color(color).withOpacity(0.5),
                                   blurRadius: 8,
                                   spreadRadius: 2,
                                 ),

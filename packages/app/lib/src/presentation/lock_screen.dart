@@ -89,7 +89,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surface.withValues(alpha: 0.9),
+                      color: theme.colorScheme.surface.withOpacity(0.9),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(

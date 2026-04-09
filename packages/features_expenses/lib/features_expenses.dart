@@ -10,6 +10,8 @@ export 'src/presentation/pages/category_rules_page.dart';
 export 'src/presentation/pages/recurring_expenses_page.dart';
 export 'src/presentation/pages/new_recurring_expense_page.dart';
 export 'src/services/recurring_expenses_service.dart';
+export 'src/services/categorization_service.dart';
+export 'src/providers/categorization_providers.dart';
 
 // Экспорт провайдеров для использования в других пакетах
 export 'src/providers/expenses_providers.dart' show expensesStreamProvider, categoriesStreamProvider, recurringExpensesStreamProvider;

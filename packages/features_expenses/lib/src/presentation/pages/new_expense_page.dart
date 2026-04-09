@@ -12,6 +12,7 @@ import 'package:ui_components/ui_components.dart';
 
 import '../../controllers/expense_form_controller.dart';
 import '../../providers/category_rules_providers.dart';
+import '../../providers/categorization_providers.dart';
 import '../../providers/expenses_providers.dart';
 import '../widgets/category_search_field.dart';
 import 'package:features_export/features_export.dart';
@@ -114,14 +115,15 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
     final rules = ref.read(categoryRulesStreamProvider).valueOrNull ?? [];
     final expenses = ref.read(expensesStreamProvider).valueOrNull ?? [];
     final categories = ref.read(categoriesStreamProvider).valueOrNull ?? [];
+    final service = ref.read(categorizationServiceProvider);
 
-    final pipeline = TransactionCategorizationPipeline(
+    final result = service.suggestCategorySync(
+      title: _noteController.text,
+      type: _type,
       rules: rules,
       history: expenses,
       categories: categories,
-      type: _type,
     );
-    final result = pipeline.categorize(_noteController.text);
     if (!mounted) return;
     setState(() {
       _lastCategorizationResult = result;
@@ -165,6 +167,10 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
   Widget build(BuildContext context) {
     if (!_isEditing) {
       ref.listen(categoryRulesStreamProvider, (_, __) {
+        if (!mounted || _noteController.text.trim().isEmpty) return;
+        _runCategorizationPipeline();
+      });
+      ref.listen(expensesStreamProvider, (_, __) {
         if (!mounted || _noteController.text.trim().isEmpty) return;
         _runCategorizationPipeline();
       });
@@ -292,7 +298,7 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                           borderRadius: BorderRadius.circular(10),
                           boxShadow: [
                             BoxShadow(
-                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -309,13 +315,13 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                         borderSide: BorderSide(
-                          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                          color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                         borderSide: BorderSide(
-                          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                          color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -350,7 +356,7 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
+                          color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -404,7 +410,7 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
-                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                   width: 1,
                 ),
               ),
@@ -435,7 +441,7 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
@@ -473,7 +479,7 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                         ),
                         Icon(
                           Icons.chevron_right_rounded,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
                           size: 24,
                         ),
                       ],
@@ -494,7 +500,7 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
+                        color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -511,13 +517,13 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(

@@ -156,7 +156,7 @@ class _DebtFormPageState extends ConsumerState<DebtFormPage> {
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -173,13 +173,13 @@ class _DebtFormPageState extends ConsumerState<DebtFormPage> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
@@ -217,7 +217,7 @@ class _DebtFormPageState extends ConsumerState<DebtFormPage> {
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -235,13 +235,13 @@ class _DebtFormPageState extends ConsumerState<DebtFormPage> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
@@ -274,7 +274,7 @@ class _DebtFormPageState extends ConsumerState<DebtFormPage> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
-                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                   width: 1,
                 ),
               ),
@@ -318,7 +318,7 @@ class _DebtFormPageState extends ConsumerState<DebtFormPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                   side: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                     width: 1,
                   ),
                 ),
@@ -349,7 +349,7 @@ class _DebtFormPageState extends ConsumerState<DebtFormPage> {
                               borderRadius: BorderRadius.circular(14),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                                   blurRadius: 6,
                                   offset: const Offset(0, 2),
                                 ),
@@ -389,7 +389,7 @@ class _DebtFormPageState extends ConsumerState<DebtFormPage> {
                           ),
                           Icon(
                             Icons.chevron_right_rounded,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
                             size: 24,
                           ),
                         ],
@@ -414,7 +414,7 @@ class _DebtFormPageState extends ConsumerState<DebtFormPage> {
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
+                        color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -431,13 +431,13 @@ class _DebtFormPageState extends ConsumerState<DebtFormPage> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(

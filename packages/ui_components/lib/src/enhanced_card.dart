@@ -34,13 +34,13 @@ class EnhancedExpenseCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 8 * elevation,
             offset: Offset(0, 2 * elevation),
             spreadRadius: 0,
           ),
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 4 * elevation,
             offset: Offset(0, 1 * elevation),
             spreadRadius: 0,
@@ -69,7 +69,7 @@ class IncomeGradient extends LinearGradient {
           end: Alignment.bottomRight,
           colors: [
             Colors.green.shade50,
-            Colors.green.shade100.withValues(alpha: 0.3),
+            Colors.green.shade100.withOpacity(0.3),
             Colors.white,
           ],
         );
@@ -83,7 +83,7 @@ class ExpenseGradient extends LinearGradient {
           end: Alignment.bottomRight,
           colors: [
             Colors.red.shade50,
-            Colors.red.shade100.withValues(alpha: 0.3),
+            Colors.red.shade100.withOpacity(0.3),
             Colors.white,
           ],
         );
@@ -96,8 +96,8 @@ class CategoryGradient extends LinearGradient {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            color.withValues(alpha: 0.1),
-            color.withValues(alpha: 0.05),
+            color.withOpacity(0.1),
+            color.withOpacity(0.05),
             Colors.white,
           ],
         );

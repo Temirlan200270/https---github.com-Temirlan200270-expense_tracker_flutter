@@ -303,9 +303,9 @@ class BudgetProgressCard extends StatelessWidget {
       case BudgetStatus.normal:
         return theme.colorScheme.surface;
       case BudgetStatus.warning:
-        return Colors.orange.withValues(alpha: 0.1);
+        return Colors.orange.withOpacity(0.1);
       case BudgetStatus.exceeded:
-        return theme.colorScheme.errorContainer.withValues(alpha: 0.3);
+        return theme.colorScheme.errorContainer.withOpacity(0.3);
     }
   }
 

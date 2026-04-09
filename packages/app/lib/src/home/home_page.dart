@@ -579,19 +579,19 @@ class _HomeDecisionEngineCard extends StatelessWidget {
     final (Color tint, IconData icon, Color iconColor, String stateKey) =
         switch (snapshot.stateTier) {
       HomeFinancialStateTier.stable => (
-          cs.primary.withValues(alpha: 0.12),
+          cs.primary.withOpacity(0.12),
           Icons.shield_moon_outlined,
           cs.primary,
           'home.decision.state_stable',
         ),
       HomeFinancialStateTier.caution => (
-          cs.tertiary.withValues(alpha: 0.14),
+          cs.tertiary.withOpacity(0.14),
           Icons.visibility_outlined,
           cs.tertiary,
           'home.decision.state_caution',
         ),
       HomeFinancialStateTier.danger => (
-          cs.error.withValues(alpha: 0.12),
+          cs.error.withOpacity(0.12),
           Icons.warning_amber_rounded,
           cs.error,
           'home.decision.state_danger',
@@ -644,13 +644,13 @@ class _HomeDecisionEngineCard extends StatelessWidget {
                 if (snapshot.spendingTrend == TrendDirection.accelerating)
                   Icon(
                     Icons.trending_up_rounded,
-                    color: cs.error.withValues(alpha: 0.9),
+                    color: cs.error.withOpacity(0.9),
                     size: 26,
                   )
                 else if (snapshot.spendingTrend == TrendDirection.slowing)
                   Icon(
                     Icons.trending_down_rounded,
-                    color: cs.primary.withValues(alpha: 0.9),
+                    color: cs.primary.withOpacity(0.9),
                     size: 26,
                   ),
               ],
@@ -669,7 +669,7 @@ class _HomeDecisionEngineCard extends StatelessWidget {
                 tr(_microActionTrKey(snapshot.stateTier)),
                 style: textTheme.bodySmall?.copyWith(
                   height: 1.35,
-                  color: cs.onSurface.withValues(alpha: 0.72),
+                  color: cs.onSurface.withOpacity(0.72),
                 ),
               ),
             ),
@@ -685,8 +685,8 @@ class _HomeDecisionEngineCard extends StatelessWidget {
                   height: 1.35,
                   fontWeight: FontWeight.w600,
                   color: snapshot.spendingTrend == TrendDirection.accelerating
-                      ? cs.error.withValues(alpha: 0.88)
-                      : cs.primary.withValues(alpha: 0.88),
+                      ? cs.error.withOpacity(0.88)
+                      : cs.primary.withOpacity(0.88),
                 ),
               ),
             ],
@@ -721,7 +721,7 @@ class _HomeDecisionEngineCard extends StatelessWidget {
                 ),
                 style: textTheme.bodySmall?.copyWith(
                   height: 1.4,
-                  color: cs.onSurface.withValues(alpha: 0.88),
+                  color: cs.onSurface.withOpacity(0.88),
                 ),
               ),
               if (insight.variant == HomeInsightVariant.overallOverspend &&
@@ -753,7 +753,7 @@ class _HomeDecisionEngineCard extends StatelessWidget {
                     style: textTheme.bodyMedium?.copyWith(
                       height: 1.4,
                       fontWeight: FontWeight.w600,
-                      color: cs.onSurface.withValues(alpha: 0.92),
+                      color: cs.onSurface.withOpacity(0.92),
                     ),
                   ),
                 ),
@@ -763,7 +763,7 @@ class _HomeDecisionEngineCard extends StatelessWidget {
               Text(
                 tr('home.decision.forecast_heading'),
                 style: textTheme.labelLarge?.copyWith(
-                  color: cs.onSurface.withValues(alpha: 0.65),
+                  color: cs.onSurface.withOpacity(0.65),
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.3,
                 ),
@@ -792,7 +792,7 @@ class _HomeDecisionEngineCard extends StatelessWidget {
                     ),
                     style: textTheme.bodySmall?.copyWith(
                       height: 1.35,
-                      color: cs.onSurface.withValues(alpha: 0.72),
+                      color: cs.onSurface.withOpacity(0.72),
                     ),
                   ),
                 ),
@@ -845,7 +845,7 @@ class _DismissibleTransactionTile extends ConsumerWidget {
           child: Row(
             children: [
               CircleAvatar(
-                backgroundColor: color.withValues(alpha: 0.2),
+                backgroundColor: color.withOpacity(0.2),
                 child: Icon(
                   expense.type.isIncome
                       ? Icons.trending_up
@@ -972,7 +972,7 @@ class _DismissibleTransactionTile extends ConsumerWidget {
             ),
             ListTile(
               leading: CircleAvatar(
-                backgroundColor: color.withValues(alpha: 0.2),
+                backgroundColor: color.withOpacity(0.2),
                 child: Icon(
                   expense.type.isIncome
                       ? Icons.trending_up
