@@ -4,6 +4,7 @@ import 'package:features_expenses/features_expenses.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../behavior_engine/behavior_engine.dart';
+import '../domain/behavior_engine.dart';
 import 'analytics_models.dart';
 import 'smart_insights.dart';
 
@@ -46,6 +47,7 @@ class HomeDecisionSnapshot {
     this.behaviorInsight,
     this.forecast,
     this.runwayDays,
+    this.spendingTrend = TrendDirection.stable,
   });
 
   final HomeFinancialStateTier stateTier;
@@ -53,13 +55,17 @@ class HomeDecisionSnapshot {
   final HomeBehaviorInsight? behaviorInsight;
   final Forecast? forecast;
   final int? runwayDays;
+
+  /// Инерция трат: сравнение свежих дней с предыдущим окном (см. [BehaviorEngine.detectTrend]).
+  final TrendDirection spendingTrend;
 }
 
-/// Статус: баланс + прогноз + скорость трат (предиктивно).
+/// Статус: баланс + прогноз + скорость трат (предиктивно) + тренд относительно нормы.
 HomeFinancialStateTier resolveHomeFinancialState({
   required AnalyticsStats stats,
   required Forecast? forecast,
   required double? overallVelocityRatio,
+  TrendDirection spendingTrend = TrendDirection.stable,
 }) {
   if (stats.balance < 0) {
     return HomeFinancialStateTier.danger;
@@ -96,6 +102,20 @@ HomeFinancialStateTier resolveHomeFinancialState({
       forecast.projectedBalance < stats.balance * 0.35) {
     if (tier == HomeFinancialStateTier.stable) {
       tier = HomeFinancialStateTier.caution;
+    }
+  }
+
+  // Тренд «ускорение» при уже повышенной скорости → усиливаем уровень внимания.
+  if (spendingTrend == TrendDirection.accelerating &&
+      overallVelocityRatio != null &&
+      overallVelocityRatio >= 1.12) {
+    if (tier == HomeFinancialStateTier.stable) {
+      tier = HomeFinancialStateTier.caution;
+    } else if (tier == HomeFinancialStateTier.caution &&
+        overallVelocityRatio >= 1.22 &&
+        forecast != null &&
+        forecast.projectedBalance < stats.balance * 0.55) {
+      tier = HomeFinancialStateTier.danger;
     }
   }
 
@@ -155,6 +175,20 @@ final homeDecisionEngineProvider =
     targetCurrency: defaultCurrency,
     currencyService: currencyService,
   );
+
+  final trendRatios =
+      await ExpectedSpendingCalculator.computeDailyVelocityRatiosForTrendAsync(
+    now: now,
+    allExpenses: all,
+    targetCurrency: defaultCurrency,
+    currencyService: currencyService,
+  );
+  var spendingTrend = TrendDirection.stable;
+  // Минимум 7 дней ratio, иначе тренд нестабилен (нерегулярные траты / мало данных).
+  if (trendRatios != null && trendRatios.length >= 7) {
+    spendingTrend = BehaviorEngine.detectTrend(trendRatios);
+  }
+
   final overallRatio =
       SpendingVelocityAnalyzer.velocityRatio(overallBaseline);
   final overallDev = overallBaseline != null
@@ -168,6 +202,7 @@ final homeDecisionEngineProvider =
     stats: monthStats,
     forecast: forecast,
     overallVelocityRatio: overallRatio,
+    spendingTrend: spendingTrend,
   );
 
   final topContributor =
@@ -279,5 +314,6 @@ final homeDecisionEngineProvider =
     behaviorInsight: insight,
     forecast: forecast,
     runwayDays: runwayDays,
+    spendingTrend: spendingTrend,
   );
 });

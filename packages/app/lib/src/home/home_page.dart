@@ -350,15 +350,54 @@ class _HomeDecisionEngineCard extends StatelessWidget {
   final NumberFormat formatter;
   final DateTime now;
 
-  static String _leadTrKey(HomeBehaviorInsight insight) {
+  /// Лид с учётом тренда: stable → прежние ключи; иначе суффикс accel / slow.
+  static String _leadTrKey(
+    HomeBehaviorInsight insight,
+    TrendDirection trend,
+  ) {
     final tier = switch (insight.confidence) {
       InsightConfidenceTier.high => 'high',
       InsightConfidenceTier.medium => 'medium',
       InsightConfidenceTier.low => 'low',
     };
+    if (trend == TrendDirection.stable) {
+      return insight.variant == HomeInsightVariant.overallOverspend
+          ? 'home.decision.insight_overall_lead_$tier'
+          : 'home.decision.insight_category_lead_$tier';
+    }
+    final suffix =
+        trend == TrendDirection.accelerating ? 'accel' : 'slow';
     return insight.variant == HomeInsightVariant.overallOverspend
-        ? 'home.decision.insight_overall_lead_$tier'
-        : 'home.decision.insight_category_lead_$tier';
+        ? 'home.decision.insight_overall_lead_${tier}_$suffix'
+        : 'home.decision.insight_category_lead_${tier}_$suffix';
+  }
+
+  /// Одна строка: отклонение + тренд + runway (без дубля с блоком прогноза).
+  static String? _synthesisLine(HomeDecisionSnapshot snapshot) {
+    final insight = snapshot.behaviorInsight;
+    final runway = snapshot.runwayDays;
+    if (insight == null || runway == null) return null;
+    final days = '$runway';
+    final trend = snapshot.spendingTrend;
+    final isOverall =
+        insight.variant == HomeInsightVariant.overallOverspend;
+    if (isOverall) {
+      final key = switch (trend) {
+        TrendDirection.accelerating =>
+          'home.decision.synthesis_overall_runway_accel',
+        TrendDirection.slowing => 'home.decision.synthesis_overall_runway_slow',
+        TrendDirection.stable => 'home.decision.synthesis_overall_runway_stable',
+      };
+      return tr(key, namedArgs: {'days': days});
+    }
+    final cat = insight.topContributor?.categoryName ?? '—';
+    final key = switch (trend) {
+      TrendDirection.accelerating =>
+        'home.decision.synthesis_category_runway_accel',
+      TrendDirection.slowing => 'home.decision.synthesis_category_runway_slow',
+      TrendDirection.stable => 'home.decision.synthesis_category_runway_stable',
+    };
+    return tr(key, namedArgs: {'days': days, 'category': cat});
   }
 
   @override
@@ -398,8 +437,9 @@ class _HomeDecisionEngineCard extends StatelessWidget {
             .toString()
         : '';
 
-    final hasForecastBlock =
-        snapshot.forecast != null || snapshot.runwayDays != null;
+    final synthesis = _synthesisLine(snapshot);
+    final hasForecastBlock = snapshot.forecast != null ||
+        (snapshot.runwayDays != null && synthesis == null);
 
     return GlassCard(
       child: Padding(
@@ -425,6 +465,18 @@ class _HomeDecisionEngineCard extends StatelessWidget {
                         ?.copyWith(fontWeight: FontWeight.w700),
                   ),
                 ),
+                if (snapshot.spendingTrend == TrendDirection.accelerating)
+                  Icon(
+                    Icons.trending_up_rounded,
+                    color: cs.error.withValues(alpha: 0.9),
+                    size: 26,
+                  )
+                else if (snapshot.spendingTrend == TrendDirection.slowing)
+                  Icon(
+                    Icons.trending_down_rounded,
+                    color: cs.primary.withValues(alpha: 0.9),
+                    size: 26,
+                  ),
               ],
             ),
             const SizedBox(height: 10),
@@ -435,18 +487,35 @@ class _HomeDecisionEngineCard extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
+            if (insight == null &&
+                (snapshot.spendingTrend == TrendDirection.accelerating ||
+                    snapshot.spendingTrend == TrendDirection.slowing)) ...[
+              const SizedBox(height: 8),
+              Text(
+                snapshot.spendingTrend == TrendDirection.accelerating
+                    ? tr('home.decision.trend_accelerating')
+                    : tr('home.decision.trend_slowing'),
+                style: textTheme.bodySmall?.copyWith(
+                  height: 1.35,
+                  fontWeight: FontWeight.w600,
+                  color: snapshot.spendingTrend == TrendDirection.accelerating
+                      ? cs.error.withValues(alpha: 0.88)
+                      : cs.primary.withValues(alpha: 0.88),
+                ),
+              ),
+            ],
             if (insight != null) ...[
               const SizedBox(height: 14),
               Text(
                 insight.variant == HomeInsightVariant.categoryFocus
                     ? tr(
-                        _leadTrKey(insight),
+                        _leadTrKey(insight, snapshot.spendingTrend),
                         namedArgs: {
                           'category':
                               insight.topContributor?.categoryName ?? '—',
                         },
                       )
-                    : tr(_leadTrKey(insight)),
+                    : tr(_leadTrKey(insight, snapshot.spendingTrend)),
                 style: textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   height: 1.3,
@@ -487,6 +556,18 @@ class _HomeDecisionEngineCard extends StatelessWidget {
                       height: 1.35,
                       fontWeight: FontWeight.w600,
                       color: cs.tertiary,
+                    ),
+                  ),
+                ),
+              if (synthesis != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    synthesis,
+                    style: textTheme.bodyMedium?.copyWith(
+                      height: 1.4,
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurface.withValues(alpha: 0.92),
                     ),
                   ),
                 ),

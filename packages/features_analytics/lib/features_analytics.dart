@@ -5,5 +5,6 @@ export 'src/providers/analytics_models.dart';
 export 'src/providers/analytics_period_provider.dart';
 export 'src/providers/smart_insights.dart';
 export 'src/behavior_engine/behavior_engine.dart';
+export 'src/domain/behavior_engine.dart';
 export 'src/providers/home_decision_engine_provider.dart';
 

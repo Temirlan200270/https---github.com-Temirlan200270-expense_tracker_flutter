@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:features_currency/features_currency.dart';
 import 'package:shared_models/shared_models.dart';
 
+import '../domain/behavior_engine.dart';
+
 // --- Отклонение по скорости трат ---
 
 enum SpendingDeviationKind {
@@ -62,6 +64,12 @@ class InsightConfidenceScorer {
   InsightConfidenceScorer._();
 
   static InsightConfidenceTier forBaseline(TimeWeightedSpendingBaseline b) {
+    final tier = _tierFromSampleAndCv(b);
+    return _demoteIfHighVariance(b, tier);
+  }
+
+  /// Базовый уровень по N и CV (без доп. штрафа за нестабильность).
+  static InsightConfidenceTier _tierFromSampleAndCv(TimeWeightedSpendingBaseline b) {
     final n = b.baselineDayCount;
     if (n < 5) return InsightConfidenceTier.low;
     final mean = b.expectedUntilNow;
@@ -71,6 +79,32 @@ class InsightConfidenceScorer {
     if (n >= 8 && cv < 0.75) return InsightConfidenceTier.medium;
     if (n >= 6) return InsightConfidenceTier.medium;
     return InsightConfidenceTier.low;
+  }
+
+  /// Высокий разброс дневных сумм → не говорим слишком уверенно «как факт».
+  static InsightConfidenceTier _demoteIfHighVariance(
+    TimeWeightedSpendingBaseline b,
+    InsightConfidenceTier tier,
+  ) {
+    final mean = b.expectedUntilNow;
+    final sd = b.baselineSampleStdDev;
+    if (mean <= 1 || sd == null) return tier;
+    final cv = sd / mean;
+    if (cv >= 0.95) {
+      return _demoteTier(_demoteTier(tier));
+    }
+    if (cv >= 0.82) {
+      return _demoteTier(tier);
+    }
+    return tier;
+  }
+
+  static InsightConfidenceTier _demoteTier(InsightConfidenceTier t) {
+    return switch (t) {
+      InsightConfidenceTier.high => InsightConfidenceTier.medium,
+      InsightConfidenceTier.medium => InsightConfidenceTier.low,
+      InsightConfidenceTier.low => InsightConfidenceTier.low,
+    };
   }
 }
 
@@ -217,6 +251,26 @@ class ExpectedSpendingCalculator {
   static const int _minAnyDaySamples = 5;
   static const double _minTimePrecisionFraction = 0.28;
 
+  /// Дневные ratio для тренда с учётом валют (для главного экрана).
+  static Future<List<double>?> computeDailyVelocityRatiosForTrendAsync({
+    required DateTime now,
+    required List<Expense> allExpenses,
+    required String targetCurrency,
+    required CurrencyService currencyService,
+    int trendDays = 10,
+    int lookbackDays = defaultLookbackDays,
+  }) async {
+    final rates = await currencyService.getExchangeRates();
+    double convert(Expense e) => _convertExpense(e, targetCurrency, rates);
+    return computeDailyVelocityRatiosForTrend(
+      now: now,
+      expenses: allExpenses,
+      convert: convert,
+      trendDays: trendDays,
+      lookbackDays: lookbackDays,
+    );
+  }
+
   static Future<TimeWeightedSpendingBaseline?> computeOverall({
     required DateTime now,
     required List<Expense> allExpenses,
@@ -327,8 +381,7 @@ class ExpectedSpendingCalculator {
       return null;
     }
 
-    final expected =
-        baseline.reduce((a, b) => a + b) / baseline.length;
+    final expected = BehaviorEngine.calculateAdaptiveNorm(baseline);
     if (expected <= 0) return null;
 
     final std = _populationStdDev(baseline);
@@ -391,6 +444,59 @@ class ExpectedSpendingCalculator {
       if (od.hour != 0 || od.minute != 0) withTime++;
     }
     return withTime / take >= _minTimePrecisionFraction;
+  }
+
+  /// Дневные ratio «факт к адаптивной норме» для тренда; индекс 0 — вчера.
+  static List<double>? computeDailyVelocityRatiosForTrend({
+    required DateTime now,
+    required List<Expense> expenses,
+    required double Function(Expense) convert,
+    int trendDays = 10,
+    int lookbackDays = defaultLookbackDays,
+  }) {
+    final expenseList =
+        expenses.where((e) => e.type.isExpense && !e.isDeleted).toList();
+    if (expenseList.isEmpty) return null;
+    if (!_hasSufficientTimePrecision(expenseList, lookbackDays)) return null;
+
+    final todayDate = DateTime(now.year, now.month, now.day);
+    final cutoffMinutes = now.hour * 60 + now.minute;
+
+    final sameWeekdayValues = <double>[];
+    final anyDayValues = <double>[];
+
+    for (var delta = 1; delta <= lookbackDays; delta++) {
+      final d = todayDate.subtract(Duration(days: delta));
+      final partial = _partialDayTotal(
+        day: d,
+        expenses: expenseList,
+        cutoffMinutes: cutoffMinutes,
+        convert: convert,
+      );
+      anyDayValues.add(partial);
+      if (d.weekday == now.weekday) {
+        sameWeekdayValues.add(partial);
+      }
+    }
+
+    List<double> baseline;
+    if (sameWeekdayValues.length >= _minSameWeekdaySamples) {
+      baseline = sameWeekdayValues;
+    } else if (anyDayValues.length >= _minAnyDaySamples) {
+      baseline = anyDayValues;
+    } else {
+      return null;
+    }
+
+    final expected = BehaviorEngine.calculateAdaptiveNorm(baseline);
+    if (expected <= 0) return null;
+
+    final n = math.min(trendDays, anyDayValues.length);
+    final ratios = <double>[];
+    for (var i = 0; i < n; i++) {
+      ratios.add(anyDayValues[i] / expected);
+    }
+    return ratios;
   }
 
   static double? _getRate(String from, String to, Map<String, double> rates) {
