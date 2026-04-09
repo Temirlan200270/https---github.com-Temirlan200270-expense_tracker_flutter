@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -10,6 +11,7 @@ import 'package:shared_models/shared_models.dart';
 import 'package:ui_components/ui_components.dart';
 
 import '../../controllers/expense_form_controller.dart';
+import '../../providers/category_rules_providers.dart';
 import '../../providers/expenses_providers.dart';
 import '../widgets/category_search_field.dart';
 import 'package:features_export/features_export.dart';
@@ -37,6 +39,11 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
   late DateTime _date;
   String? _categoryId;
 
+  Timer? _noteDebounceTimer;
+  CategorizationResult? _lastCategorizationResult;
+  double? _suggestionConfidence;
+  bool _categoryUserLocked = false;
+
   bool get _isEditing => widget.expense != null;
 
   @override
@@ -52,7 +59,7 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
     } else {
       _type = widget.initialType ?? ExpenseType.expense;
       _date = DateTime.now();
-      // Автозаполнение на основе последних транзакций
+      _noteController.addListener(_onNoteChanged);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _autoFillFromLastTransaction();
       });
@@ -85,23 +92,129 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
 
   @override
   void dispose() {
+    _noteDebounceTimer?.cancel();
     _amountController.dispose();
     _noteController.dispose();
     super.dispose();
   }
 
+  void _onNoteChanged() {
+    if (_isEditing) return;
+    _categoryUserLocked = false;
+    _noteDebounceTimer?.cancel();
+    _noteDebounceTimer = Timer(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
+      _runCategorizationPipeline();
+    });
+  }
+
+  void _runCategorizationPipeline() {
+    if (_isEditing || !mounted) return;
+
+    final rules = ref.read(categoryRulesStreamProvider).valueOrNull ?? [];
+    final expenses = ref.read(expensesStreamProvider).valueOrNull ?? [];
+    final categories = ref.read(categoriesStreamProvider).valueOrNull ?? [];
+
+    final pipeline = TransactionCategorizationPipeline(
+      rules: rules,
+      history: expenses,
+      categories: categories,
+      type: _type,
+    );
+    final result = pipeline.categorize(_noteController.text);
+    if (!mounted) return;
+    setState(() {
+      _lastCategorizationResult = result;
+      if (result.categoryId != null &&
+          result.source != CategorizationSource.none) {
+        _suggestionConfidence = result.confidence;
+      } else {
+        _suggestionConfidence = null;
+      }
+      if (!_categoryUserLocked && result.categoryId != null) {
+        _categoryId = result.categoryId;
+      }
+    });
+  }
+
+  void _onCategoryChosenByUser(String? id) {
+    setState(() {
+      if (id != null) {
+        _categoryUserLocked = true;
+      } else {
+        _categoryUserLocked = false;
+      }
+      _categoryId = id;
+      _suggestionConfidence = null;
+    });
+  }
+
+  bool _shouldOfferLearningRule() {
+    if (_isEditing) return false;
+    final note = _noteController.text.trim();
+    if (note.isEmpty || _categoryId == null) return false;
+    final r = _lastCategorizationResult;
+    if (r == null) return false;
+    if (r.source == CategorizationSource.rule) return false;
+    if (r.confidence < 0.6) return false;
+    if (r.categoryId != _categoryId) return false;
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!_isEditing) {
+      ref.listen(categoryRulesStreamProvider, (_, __) {
+        if (!mounted || _noteController.text.trim().isEmpty) return;
+        _runCategorizationPipeline();
+      });
+    }
+
     ref.listen(expenseFormControllerProvider, (previous, next) {
       next.whenOrNull(
         data: (_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(_isEditing 
-                ? tr('expenses.form.updated')
-                : tr('expenses.form.success')),
-            ),
-          );
+          final messenger = ScaffoldMessenger.of(context);
+          if (!_isEditing && _shouldOfferLearningRule()) {
+            final note = _noteController.text.trim();
+            final categoryId = _categoryId;
+            messenger.showSnackBar(
+              SnackBar(
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(tr('expenses.form.success')),
+                    const SizedBox(height: 8),
+                    Text(tr('expenses.form.learning.remember_prompt')),
+                  ],
+                ),
+                action: SnackBarAction(
+                  label: tr('expenses.form.learning.remember_action'),
+                  onPressed: () {
+                    if (categoryId != null) {
+                      ref
+                          .read(categoryRulesControllerProvider.notifier)
+                          .createRuleFromText(
+                            text: note,
+                            categoryId: categoryId,
+                          );
+                    }
+                  },
+                ),
+                duration: const Duration(seconds: 5),
+              ),
+            );
+          } else {
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(
+                  _isEditing
+                      ? tr('expenses.form.updated')
+                      : tr('expenses.form.success'),
+                ),
+              ),
+            );
+          }
           if (mounted) Navigator.of(context).pop();
         },
         error: (error, stack) {
@@ -144,7 +257,13 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                   ),
                 ],
                 selected: {_type},
-                onSelectionChanged: (value) => setState(() => _type = value.first),
+                onSelectionChanged: (value) {
+                  setState(() {
+                    _type = value.first;
+                    _categoryUserLocked = false;
+                  });
+                  _runCategorizationPipeline();
+                },
                 style: SegmentedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
@@ -264,8 +383,9 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
               data: (categories) => CategorySearchField(
                 categories: categories,
                 selectedCategoryId: _categoryId,
-                onCategorySelected: (value) => setState(() => _categoryId = value),
+                onCategorySelected: _onCategoryChosenByUser,
                 type: _type,
+                categorizationConfidence: _suggestionConfidence,
               )
                   .animate()
                   .fadeIn(duration: 300.ms, delay: 200.ms)

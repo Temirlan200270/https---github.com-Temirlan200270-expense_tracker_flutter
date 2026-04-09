@@ -83,7 +83,12 @@
       "scan_success": "Receipt scanned successfully",
       "scan_failed": "Failed to recognize receipt. Try taking a clearer photo.",
       "scan_error": "Scan error: {0}",
-      "camera_error": "Camera error: {0}"
+      "camera_error": "Camera error: {0}",
+      "category_uncertain_hint": "Category was inferred from similar past entries — change it if needed.",
+      "learning": {
+        "remember_prompt": "Remember this category for similar notes?",
+        "remember_action": "Remember"
+      }
     },
     "delete": {
       "title": "Delete transaction?",

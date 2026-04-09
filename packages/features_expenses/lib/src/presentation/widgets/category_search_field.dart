@@ -10,12 +10,16 @@ class CategorySearchField extends StatefulWidget {
     required this.selectedCategoryId,
     required this.onCategorySelected,
     required this.type,
+    this.categorizationConfidence,
   });
 
   final List<Category> categories;
   final String? selectedCategoryId;
   final ValueChanged<String?> onCategorySelected;
   final ExpenseType type;
+
+  /// Уверенность pipeline (null — нет подсказки или выбор пользователя).
+  final double? categorizationConfidence;
 
   @override
   State<CategorySearchField> createState() => _CategorySearchFieldState();
@@ -225,6 +229,32 @@ class _CategorySearchFieldState extends State<CategorySearchField> {
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Colors.grey,
               ),
+            ),
+          ),
+        if (widget.categorizationConfidence != null &&
+            widget.categorizationConfidence! > 0 &&
+            widget.categorizationConfidence! < 1.0 &&
+            widget.selectedCategoryId != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, left: 12, right: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    tr('expenses.form.category_uncertain_hint'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ),
+              ],
             ),
           ),
       ],

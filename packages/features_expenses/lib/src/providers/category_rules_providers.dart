@@ -95,28 +95,12 @@ class CategoryRulesController extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  /// Быстрое создание правила из текста транзакции
-  /// Извлекает ключевое слово из текста (первое слово или название магазина)
+  /// Быстрое создание правила из текста транзакции (ключ — [extractKeywordFromNote]).
   Future<void> createRuleFromText({
     required String text,
     required String categoryId,
   }) async {
-    // Извлекаем ключевое слово - берём первое значимое слово или всё
-    String keyword = text.trim();
-    
-    // Если текст длинный, берём только первую часть (до запятой, точки с запятой и т.д.)
-    if (keyword.contains(',')) {
-      keyword = keyword.split(',').first.trim();
-    }
-    if (keyword.contains(';')) {
-      keyword = keyword.split(';').first.trim();
-    }
-    
-    // Ограничиваем длину
-    if (keyword.length > 50) {
-      keyword = keyword.substring(0, 50);
-    }
-    
+    final keyword = extractKeywordFromNote(text);
     if (keyword.isNotEmpty) {
       await createRule(keyword: keyword, categoryId: categoryId);
     }
