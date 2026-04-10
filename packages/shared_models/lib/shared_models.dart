@@ -12,4 +12,5 @@ export 'src/debt.dart';
 export 'src/ux_decision_view.dart';
 export 'src/ui_behavior_state.dart';
 export 'src/insight_feedback.dart';
+export 'src/ui_screen_phase.dart';
 

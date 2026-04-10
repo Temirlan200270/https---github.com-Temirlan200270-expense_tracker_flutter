@@ -246,3 +246,5 @@ dart tool/sss_ui_audit.dart --strict
 | Import Surface 1 | `packages/features_export/lib/src/presentation/widgets/import_surface_card.dart` |
 | Export / Backup / Import review (экраны) | `packages/features_export/lib/src/presentation/pages/` |
 | Motion tokens | `packages/ui_components/lib/src/theme/motion_tokens.dart` |
+| Home Architecture v3 | [SSS_HOME_ARCHITECTURE_V3.md](SSS_HOME_ARCHITECTURE_V3.md) |
+| Presentation Layer Standard | [SSS_PRESENTATION_LAYER_V1.md](SSS_PRESENTATION_LAYER_V1.md) |

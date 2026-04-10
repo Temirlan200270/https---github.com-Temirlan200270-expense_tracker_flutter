@@ -97,7 +97,12 @@
     "ftue": {
       "title": "Welcome to your financial hub",
       "message": "Add your first expense manually or import a statement so the app can start learning your habits.",
-      "import_cta": "Import statement"
+      "import_cta": "Import statement",
+      "primary_cta": "Add your first expense",
+      "hero_subtitle": "Start tracking — and get your pulse, forecast & tips.",
+      "step1": "Add an expense or import a statement",
+      "step2": "We'll calculate your balance and forecast",
+      "step3": "Get personalized financial tips"
     },
     "hero": {
       "month_balance": "Month balance",

@@ -32,6 +32,8 @@ class WalletHeroCard extends StatelessWidget {
     required this.forecastFormatted,
     this.budgetProgress,
     this.isCompactFtue = false,
+    this.showMetrics = true,
+    this.subtitle,
     this.insightContextLine,
     this.insightHintLine,
     this.gradientColors,
@@ -63,6 +65,12 @@ class WalletHeroCard extends StatelessWidget {
   final double? budgetProgress;
 
   final bool isCompactFtue;
+
+  /// Скрыть строку метрик (Расходы / Доходы / Прогноз) — для FTUE с нулями.
+  final bool showMetrics;
+
+  /// Опциональный subtitle под балансом (FTUE мотивация вместо метрик).
+  final String? subtitle;
 
   /// Если задано (3 цвета), задаёт настроение SAFE/WATCH/RISK; иначе стандартный градиент темы.
   final List<Color>? gradientColors;
@@ -116,6 +124,18 @@ class WalletHeroCard extends StatelessWidget {
             height: 1.05,
           ),
         ),
+        if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text(
+            subtitle!,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.72),
+              height: 1.35,
+            ),
+          ),
+        ],
       ],
     );
 
@@ -168,8 +188,10 @@ class WalletHeroCard extends StatelessWidget {
     if (contentOrder == WalletHeroContentOrder.balanceMetricsInsight) {
       columnChildren = [
         balanceBlock,
-        SizedBox(height: isCompactFtue ? 18 : 22),
-        metricsBlock,
+        if (showMetrics) ...[
+          SizedBox(height: isCompactFtue ? 18 : 22),
+          metricsBlock,
+        ],
         if (insightBlock != null) ...[
           SizedBox(height: isCompactFtue ? 16 : 20),
           insightBlock,
@@ -209,8 +231,10 @@ class WalletHeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 20),
         ],
-        SizedBox(height: isCompactFtue ? 18 : 22),
-        metricsBlock,
+        if (showMetrics) ...[
+          SizedBox(height: isCompactFtue ? 18 : 22),
+          metricsBlock,
+        ],
         if (footerCta != null) ...[
           const SizedBox(height: 16),
           footerCta!,
@@ -220,8 +244,10 @@ class WalletHeroCard extends StatelessWidget {
       columnChildren = [
         if (insightBlock != null) insightBlock,
         balanceBlock,
-        SizedBox(height: isCompactFtue ? 18 : 22),
-        metricsBlock,
+        if (showMetrics) ...[
+          SizedBox(height: isCompactFtue ? 18 : 22),
+          metricsBlock,
+        ],
         if (footerCta != null) ...[
           const SizedBox(height: 16),
           footerCta!,
