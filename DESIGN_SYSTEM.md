@@ -27,6 +27,8 @@
 | Token drift | Не вводить «временные» `0.72` / `13.0` / радиусы в фичах — добавить именованный токен в `visual_tokens.dart` и использовать его. |
 | Параллельные системы | Не заводить второй слой альф (`AppTextOpacity`, локальные `kAlpha*`), если смысл тот же — только **`SdsOnSurface`** (текст на surface), **`SdsOnGradient`** (белый/контент на градиенте), **`SdsStroke`**, **`SdsFill`**. |
 | Незавершённая миграция | Оставшиеся «сырые» числа — технический долг: при правке файла выравнивать на `Sds*` или явный `// TODO(token):` с ссылкой на issue. |
+| Линтер токенов | После миграции фич: `dart tool/sss_ui_audit.dart --strict --token-strict` (запрет `.withValues(alpha:` в `features_*` и жёстче `Color(0x…)` вне theme/tokens). Карта соответствий: [docs/TOKEN_MIGRATION_MAP.md](docs/TOKEN_MIGRATION_MAP.md). |
+| Визуальная регрессия | Опционально: golden tests — [docs/VISUAL_REGRESSION.md](docs/VISUAL_REGRESSION.md). |
 
 Motion по-прежнему только **`AppMotion`**.
 

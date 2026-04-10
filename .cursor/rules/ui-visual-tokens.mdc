@@ -21,4 +21,6 @@ When adding or changing Flutter UI in this repo:
 
 5. **Motion**: `AppMotion` for durations/curves.
 
-See `DESIGN_SYSTEM.md` §0.1.
+See `DESIGN_SYSTEM.md` §0.1 and `docs/TOKEN_MIGRATION_MAP.md`.
+
+Optional gate after migration: `dart tool/sss_ui_audit.dart --strict --token-strict` (CI currently runs `--strict` only).

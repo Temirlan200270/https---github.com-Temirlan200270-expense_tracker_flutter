@@ -1,6 +1,10 @@
 // SSS UI Audit — эвристики для PR (motion governor + сырые цвета + дубли hero).
-// Запуск из корня репозитория: dart tool/sss_ui_audit.dart [--strict]
-// Документация: docs/SSS_UI_SYSTEM_V2.md §8
+// Запуск из корня репозитория:
+//   dart tool/sss_ui_audit.dart [--strict] [--token-strict]
+// Документация: docs/SSS_UI_SYSTEM_V2.md §8, docs/TOKEN_MIGRATION_MAP.md
+//
+// --token-strict: features/* без .withValues(alpha:); Color(0x…) только theme/tokens
+// (пока не включайте в CI, пока идёт миграция — см. DESIGN_SYSTEM §0.1).
 //
 // Игнор всего файла: первая строка // sss-ui-audit-ignore-file
 // Игнор строки: в конце строки // sss-ui-audit-ignore
@@ -9,12 +13,13 @@ import 'dart:io';
 
 void main(List<String> args) {
   final strict = args.contains('--strict');
+  final tokenStrict = args.contains('--token-strict');
   final root = _resolveRepoRoot();
   final findings = <_Finding>[];
 
   final libRoots = _collectLibRoots(root);
   for (final lib in libRoots) {
-    _auditDirectory(lib, lib, findings);
+    _auditDirectory(lib, lib, findings, tokenStrict: tokenStrict);
   }
 
   findings.sort((a, b) {
@@ -90,11 +95,16 @@ List<Directory> _collectLibRoots(Directory root) {
   return out;
 }
 
-void _auditDirectory(Directory dir, Directory libRoot, List<_Finding> out) {
+void _auditDirectory(
+  Directory dir,
+  Directory libRoot,
+  List<_Finding> out, {
+  required bool tokenStrict,
+}) {
   for (final entity in dir.listSync(followLinks: false)) {
     if (entity is Directory) {
       if (entity.path.contains('.dart_tool')) continue;
-      _auditDirectory(entity, libRoot, out);
+      _auditDirectory(entity, libRoot, out, tokenStrict: tokenStrict);
     } else if (entity is File && entity.path.endsWith('.dart')) {
       final base = entity.uri.pathSegments.last;
       if (base.endsWith('.g.dart') ||
@@ -102,7 +112,7 @@ void _auditDirectory(Directory dir, Directory libRoot, List<_Finding> out) {
           base.endsWith('.gr.dart')) {
         continue;
       }
-      _auditFile(entity, libRoot, out);
+      _auditFile(entity, libRoot, out, tokenStrict: tokenStrict);
     }
   }
 }
@@ -120,6 +130,11 @@ final _animateBounceElastic = RegExp(
 
 final _rawArgbColor = RegExp(
   r'Color\s*\(\s*0x[0-9A-Fa-f]{8}\s*\)',
+);
+
+/// `.withValues(alpha: …)` — во фичах использовать Sds* (см. docs/TOKEN_MIGRATION_MAP.md).
+final _withValuesAlpha = RegExp(
+  r'\.withValues\s*\(\s*alpha\s*:',
 );
 
 final _homeWalletHeroCard = RegExp(r'homeWalletHeroCard\s*\(');
@@ -161,7 +176,12 @@ void _auditFeatureBoundaryPrimitives({
   }
 }
 
-void _auditFile(File file, Directory libRoot, List<_Finding> out) {
+void _auditFile(
+  File file,
+  Directory libRoot,
+  List<_Finding> out, {
+  required bool tokenStrict,
+}) {
   final rel = _relativeToPackages(file.path, libRoot);
   final lines = file.readAsLinesSync();
 
@@ -198,10 +218,22 @@ void _auditFile(File file, Directory libRoot, List<_Finding> out) {
       final severity = _rawColorSeverity(file.path);
       if (severity != null) {
         out.add(_Finding(
-          severity,
+          tokenStrict ? _Severity.error : severity,
           rel,
           lineNumber,
-          'Сырой Color(0x…). Предпочитай colorScheme / токены темы (см. DESIGN_SYSTEM §6).',
+          'Сырой Color(0x…). Предпочитай colorScheme / токены темы (см. DESIGN_SYSTEM §6, docs/TOKEN_MIGRATION_MAP.md).',
+        ));
+      }
+    }
+
+    if (tokenStrict && _withValuesAlpha.hasMatch(codeOnly)) {
+      final norm = file.path.replaceAll(r'\', '/');
+      if (norm.contains('/packages/features_')) {
+        out.add(_Finding(
+          _Severity.error,
+          rel,
+          lineNumber,
+          'Во фичах не используй .withValues(alpha: — только SdsOnSurface / SdsOnGradient / SdsStroke / SdsFill из visual_tokens (см. docs/TOKEN_MIGRATION_MAP.md).',
         ));
       }
     }
@@ -228,13 +260,27 @@ void _auditFile(File file, Directory libRoot, List<_Finding> out) {
   }
 }
 
-/// null = не репортим (ui_components и theme app).
+/// null = не репортим (только theme/tokens и явный allowlist legacy).
 _Severity? _rawColorSeverity(String absolutePath) {
   final norm = absolutePath.replaceAll(r'\', '/');
-  if (norm.contains('/ui_components/lib/')) {
+  final base = norm.split('/').last;
+
+  if (_rawColorLegacyAllowlist.contains(base)) {
     return null;
   }
+  if (norm.endsWith('/visual_tokens.dart')) {
+    return null;
+  }
+  if (norm.contains('/ui_components/lib/src/theme/')) {
+    return null;
+  }
+  if (norm.contains('/ui_components/lib/')) {
+    return _Severity.warning;
+  }
   if (norm.contains('/app/lib/src/core/theme/')) {
+    return null;
+  }
+  if (norm.endsWith('/wallet_hero_tone.dart')) {
     return null;
   }
   if (norm.contains('/packages/app/lib/')) {
@@ -245,6 +291,12 @@ _Severity? _rawColorSeverity(String absolutePath) {
   }
   return null;
 }
+
+/// Временный allowlist для `Color(0x…)` вне theme — сузить при миграции.
+const _rawColorLegacyAllowlist = <String>{
+  'balance_card.dart',
+  'app_animations.dart',
+};
 
 String _stripTrailingLineComment(String line) {
   final idx = line.indexOf('//');

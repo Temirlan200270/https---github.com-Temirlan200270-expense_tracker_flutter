@@ -221,6 +221,14 @@ dart tool/sss_ui_audit.dart
 dart tool/sss_ui_audit.dart --strict
 ```
 
+Режим **токенов** (ошибка на `.withValues(alpha:` в `packages/features_*` и на «сырой» `Color(0x…)` вне theme/tokens — **пока не включать в CI**, пока идёт миграция):
+
+```bash
+dart tool/sss_ui_audit.dart --strict --token-strict
+```
+
+Карта legacy → `Sds*`: [TOKEN_MIGRATION_MAP.md](TOKEN_MIGRATION_MAP.md).
+
 Подробности правил — комментарий в начале `tool/sss_ui_audit.dart`.
 
 Игнор строки/файла:
