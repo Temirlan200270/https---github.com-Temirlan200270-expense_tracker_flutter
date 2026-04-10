@@ -6,8 +6,10 @@ import 'package:ui_components/ui_components.dart';
 
 /// Hero-карточка кошелька (подписи из l10n, опционально градиент по тону).
 Widget homeWalletHeroCard({
+  Key? key,
   required String? insightLine,
   String? insightContextLine,
+  String? insightHintLine,
   double? budgetProgress,
   required String balanceAmountFormatted,
   required String expensesFormatted,
@@ -15,12 +17,20 @@ Widget homeWalletHeroCard({
   required String forecastFormatted,
   bool isCompactFtue = false,
   List<Color>? gradientColors,
+  WalletHeroContentOrder contentOrder = WalletHeroContentOrder.classic,
+  IconData? insightLeadingIcon,
+  Widget? footerCta,
 }) {
   return WalletHeroCard(
+    key: key,
     insightLine: insightLine,
     insightContextLine: insightContextLine,
+    insightHintLine: insightHintLine,
     budgetProgress: budgetProgress,
     gradientColors: gradientColors,
+    contentOrder: contentOrder,
+    insightLeadingIcon: insightLeadingIcon,
+    footerCta: footerCta,
     analysisSectionLabel: tr('home.hero.analysis_label'),
     totalBalanceLabel: tr('home.hero.total_balance'),
     balanceAmountFormatted: balanceAmountFormatted,
@@ -112,14 +122,59 @@ class HomeHeroInsightResult {
   final String? budgetEntityId;
 }
 
+bool _isBudgetHeroWarningRung(HomeBudgetPressure p) {
+  return p.worstLineStatus != BudgetStatus.exceeded &&
+      (p.worstLineStatus == BudgetStatus.warning ||
+          p.aggregateUtilization >= 0.9);
+}
+
+String? _trimInsightLine(String? s) {
+  if (s == null) return null;
+  final t = s.trim();
+  return t.isEmpty ? null : t;
+}
+
 /// Инсайт для hero: приоритет бюджет; иначе [UxDecisionView] (один смысл + контекст).
+///
+/// Если [unifiedHeroBudgetPressure] задан (поток SSS + [UxDecisionMapper.mapSnapshot]),
+/// текст из [ux] не подменяется вторым бюджетным инсайтом из списка бюджетов.
 HomeHeroInsightResult resolveHomeHeroInsight({
   required AsyncValue<List<BudgetWithSpending>> budgetsAsync,
   required UxDecisionView ux,
   required NumberFormat formatter,
   Set<String> softDeprioritizeBudgetIds = const {},
   Set<String> rateLimitedBudgetIds = const {},
+  HomeBudgetPressure? unifiedHeroBudgetPressure,
 }) {
+  if (unifiedHeroBudgetPressure != null) {
+    final p = unifiedHeroBudgetPressure;
+    if (p.worstLineStatus == BudgetStatus.exceeded) {
+      return HomeHeroInsightResult(
+        insightLine: ux.coreMessage.trim().isEmpty ? null : ux.coreMessage.trim(),
+        insightContextLine: _trimInsightLine(ux.contextLine),
+        actionHint: ux.actionHint.trim().isEmpty ? null : ux.actionHint.trim(),
+        budgetProgress: p.aggregateUtilization,
+        budgetEntityId: p.primaryBudgetId,
+      );
+    }
+    if (_isBudgetHeroWarningRung(p)) {
+      return HomeHeroInsightResult(
+        insightLine: ux.coreMessage.trim().isEmpty ? null : ux.coreMessage.trim(),
+        insightContextLine: _trimInsightLine(ux.contextLine),
+        actionHint: ux.actionHint.trim().isEmpty ? null : ux.actionHint.trim(),
+        budgetProgress: p.aggregateUtilization,
+        budgetEntityId: p.primaryBudgetId,
+      );
+    }
+    return HomeHeroInsightResult(
+      insightLine: ux.coreMessage.trim().isEmpty ? null : ux.coreMessage.trim(),
+      insightContextLine: _trimInsightLine(ux.contextLine),
+      actionHint: ux.actionHint.trim().isEmpty ? null : ux.actionHint.trim(),
+      budgetProgress: null,
+      budgetEntityId: null,
+    );
+  }
+
   final fromBudgets = budgetsAsync.maybeWhen(
     data: (list) {
       final b = pickBudgetForHeroInsight(

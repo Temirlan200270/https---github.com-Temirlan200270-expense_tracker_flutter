@@ -2,62 +2,49 @@ import 'package:flutter/material.dart';
 
 import 'haptic_feedback.dart';
 
-/// Единая главная CTA на экране: FilledButton, высота 56, скругление 20.
-/// См. DESIGN_SYSTEM §7.2 `PrimaryActionButton`.
-class PrimaryActionButton extends StatelessWidget {
-  const PrimaryActionButton({
+/// Вторичная CTA: OutlinedButton, те же высота/радиус/отступы, что у [PrimaryActionButton].
+class SecondaryActionButton extends StatelessWidget {
+  const SecondaryActionButton({
     super.key,
     required this.onPressed,
     required this.child,
     this.icon,
-    this.backgroundColor,
-    this.foregroundColor,
     this.hapticOnPress = true,
     this.height = 56,
   });
 
   final VoidCallback? onPressed;
   final Widget child;
-
-  /// При задании используется [FilledButton.icon] (иконка + подпись).
   final Widget? icon;
-
-  /// Поверх темы (например акцент `error` на градиентной hero-карточке).
-  final Color? backgroundColor;
-  final Color? foregroundColor;
   final bool hapticOnPress;
-
-  /// По умолчанию 56 (главная); для нижних панелей (импорт и т.п.) можно 52.
   final double height;
 
   void _onTap() {
     if (hapticOnPress) {
-      HapticUtils.mediumImpact();
+      HapticUtils.selection();
     }
     onPressed!();
   }
 
   @override
   Widget build(BuildContext context) {
-    final style = FilledButton.styleFrom(
+    final style = OutlinedButton.styleFrom(
       minimumSize: Size.fromHeight(height),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
-      backgroundColor: backgroundColor,
-      foregroundColor: foregroundColor,
     );
     return SizedBox(
       height: height,
       width: double.infinity,
       child: icon == null
-          ? FilledButton(
+          ? OutlinedButton(
               style: style,
               onPressed: onPressed == null ? null : _onTap,
               child: child,
             )
-          : FilledButton.icon(
+          : OutlinedButton.icon(
               style: style,
               onPressed: onPressed == null ? null : _onTap,
               icon: icon!,

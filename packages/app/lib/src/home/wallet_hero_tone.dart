@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_models/shared_models.dart';
 
+/// Иконка в блоке инсайта (семантика тона, без хардкода цвета — рисуется поверх градиента).
+IconData walletHeroLeadingIconForTone(UxFinancialTone tone) {
+  return switch (tone) {
+    UxFinancialTone.risk => Icons.warning_rounded,
+    UxFinancialTone.watch => Icons.info_outline_rounded,
+    UxFinancialTone.safe => Icons.check_circle_outline_rounded,
+  };
+}
+
 /// Градиент hero под ощущение SAFE / WATCH / RISK (только [ColorScheme], без «кричащего» красного).
 List<Color> walletHeroGradientForTone(ColorScheme cs, UxFinancialTone tone) {
   return switch (tone) {

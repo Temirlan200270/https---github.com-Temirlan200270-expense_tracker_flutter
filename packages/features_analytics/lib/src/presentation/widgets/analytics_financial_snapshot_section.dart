@@ -1,8 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:expense_tracker_app/expense_tracker_app.dart';
 import 'package:features_budgets/features_budgets.dart';
+import 'package:features_expenses/features_expenses.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_models/shared_models.dart';
+import 'package:ui_components/ui_components.dart';
 
 import '../../providers/home_decision_engine_provider.dart';
 import '../layout/analytics_layout_spacing.dart';
@@ -32,6 +35,44 @@ String _snapshotFreshnessLabel(BuildContext context, DateTime computedAt) {
   );
 }
 
+InsightChipTone _chipToneForUx(UxFinancialTone tone) {
+  return switch (tone) {
+    UxFinancialTone.risk => InsightChipTone.negative,
+    UxFinancialTone.watch => InsightChipTone.caution,
+    UxFinancialTone.safe => InsightChipTone.informational,
+  };
+}
+
+Widget _snapshotLoadingBlock(BuildContext context) {
+  final cs = Theme.of(context).colorScheme;
+  return AnalyticsSurfaceCard(
+    child: Padding(
+      padding: const EdgeInsets.all(AnalyticsLayoutSpacing.s20),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: cs.primary,
+            ),
+          ),
+          const SizedBox(width: AnalyticsLayoutSpacing.s12),
+          Expanded(
+            child: Text(
+              tr('analytics.snapshot.loading'),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 /// Блок «единой правды»: [FinancialSnapshot] + те же строки инсайта, что на главной.
 class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
   const AnalyticsFinancialSnapshotSection({super.key});
@@ -40,23 +81,86 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final snapAsync = ref.watch(financialSnapshotProvider);
     final budgetsAsync = ref.watch(budgetsWithSpendingProvider);
+    final expensesAsync = ref.watch(expensesStreamProvider);
     final currencyCode = ref.watch(defaultCurrencyProvider);
     final formatter = NumberFormat.currency(
       locale: context.locale.toLanguageTag(),
       symbol: currencyCode,
     );
 
+    if (expensesAsync.isLoading && !expensesAsync.hasValue) {
+      return _snapshotLoadingBlock(context);
+    }
+
+    final emptyLedger =
+        expensesAsync.hasValue && (expensesAsync.value?.isEmpty ?? false);
+    if (emptyLedger) {
+      final cs = Theme.of(context).colorScheme;
+      final theme = Theme.of(context);
+      final gradient = walletHeroGradientForTone(cs, UxFinancialTone.safe);
+      return DecisionGradientShell(
+        gradientColors: gradient,
+        child: Padding(
+          padding: const EdgeInsets.all(AnalyticsLayoutSpacing.s20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                tr('analytics.snapshot.title'),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white.withValues(alpha: 0.95),
+                ),
+              ),
+              const SizedBox(height: AnalyticsLayoutSpacing.s12),
+              Text(
+                tr('analytics.snapshot.ftue_title'),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white.withValues(alpha: 0.92),
+                  height: 1.25,
+                ),
+              ),
+              const SizedBox(height: AnalyticsLayoutSpacing.s8),
+              Text(
+                tr('analytics.snapshot.ftue_message'),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.72),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: AnalyticsLayoutSpacing.s16),
+              Text(
+                '${tr('analytics.balance')}: ${formatter.format(0)}',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.82),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AnalyticsLayoutSpacing.s12),
+              Center(
+                child: InsightChip(
+                  label: tr('analytics.snapshot.analysis_mode_chip'),
+                  icon: Icons.insights_outlined,
+                  tone: InsightChipTone.neutral,
+                  onGradient: true,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return snapAsync.when(
+      skipLoadingOnReload: true,
       data: (fin) {
         final cs = Theme.of(context).colorScheme;
-        final narrative = HomeDecisionHeroHelper.build(
+        final theme = Theme.of(context);
+        final ux = UxDecisionMapper.mapSnapshot(
+          fin.decision,
           colorScheme: cs,
-          snapshot: fin.decision,
           formatter: formatter,
-        );
-        final ux = UxDecisionMapper.fromHomeNarrative(
-          narrative: narrative,
-          tier: fin.decision.stateTier,
         );
         final softDep = ref
                 .watch(budgetHeroSoftDeprioritizeIdsProvider)
@@ -69,14 +173,14 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
           formatter: formatter,
           softDeprioritizeBudgetIds: softDep,
           rateLimitedBudgetIds: rateLimited,
+          unifiedHeroBudgetPressure: fin.decision.budgetPressure,
         );
         final gradient = walletHeroGradientForTone(cs, ux.tone);
-        final accent =
-            gradient.length >= 2 ? gradient[1] : cs.primary;
 
         final mainLine = lines.insightLine;
         final subLine = lines.insightContextLine;
-        final hint = lines.actionHint;
+        final hintRaw = lines.actionHint;
+        final hintTrimmed = (hintRaw ?? '').trim();
         final balance = fin.decision.monthStats.balance;
         final hasMain = mainLine != null && mainLine.trim().isNotEmpty;
         final fromBudget = lines.budgetProgress != null;
@@ -84,151 +188,90 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
             ? (hasMain ? tr('insight.source_budget') : null)
             : (hasMain ? tr('insight.source_behavior') : null);
 
-        return AnalyticsSurfaceCard(
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 5,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [gradient.first, accent],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AnalyticsLayoutSpacing.s16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tr('analytics.snapshot.title'),
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: AnalyticsLayoutSpacing.s8),
-                        Text(
-                          tr('analytics.snapshot.moment_label'),
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelLarge
-                              ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: cs.onSurface,
-                              ),
-                        ),
-                        const SizedBox(height: AnalyticsLayoutSpacing.s8),
-                        Text(
-                          _snapshotFreshnessLabel(context, fin.computedAt),
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelSmall
-                              ?.copyWith(color: cs.onSurfaceVariant),
-                        ),
-                        const SizedBox(height: AnalyticsLayoutSpacing.s8),
-                        Text(
-                          tr('analytics.snapshot.subtitle'),
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(color: cs.onSurfaceVariant),
-                        ),
-                        if (sourceLabel != null) ...[
-                          const SizedBox(height: AnalyticsLayoutSpacing.s12),
-                          Text(
-                            sourceLabel,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
-                                ?.copyWith(
-                                  color: cs.onSurface.withValues(alpha: 0.45),
-                                ),
-                          ),
-                        ],
-                        if (hasMain) ...[
-                          const SizedBox(height: AnalyticsLayoutSpacing.s12),
-                          Text(
-                            mainLine.trim(),
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.25,
-                                ),
-                          ),
-                        ],
-                        if (subLine != null && subLine.trim().isNotEmpty) ...[
-                          const SizedBox(height: AnalyticsLayoutSpacing.s8),
-                          Text(
-                            subLine.trim(),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: cs.onSurfaceVariant,
-                                  height: 1.35,
-                                ),
-                          ),
-                        ],
-                        const SizedBox(height: AnalyticsLayoutSpacing.s12),
-                        Text(
-                          '${tr('analytics.balance')}: ${formatter.format(balance)}',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelLarge
-                              ?.copyWith(color: cs.onSurfaceVariant),
-                        ),
-                        if (hint != null && hint.trim().isNotEmpty) ...[
-                          const SizedBox(height: AnalyticsLayoutSpacing.s8),
-                          Text(
-                            hint.trim(),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: cs.onSurface.withValues(alpha: 0.55),
-                                  height: 1.35,
-                                ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-      loading: () {
-        final cs = Theme.of(context).colorScheme;
-        return AnalyticsSurfaceCard(
+        return DecisionGradientShell(
+          gradientColors: gradient,
           child: Padding(
             padding: const EdgeInsets.all(AnalyticsLayoutSpacing.s20),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: cs.primary,
+                Text(
+                  tr('analytics.snapshot.title'),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white.withValues(alpha: 0.95),
                   ),
                 ),
-                const SizedBox(width: AnalyticsLayoutSpacing.s12),
-                Expanded(
-                  child: Text(
-                    tr('analytics.snapshot.loading'),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
+                const SizedBox(height: AnalyticsLayoutSpacing.s8),
+                Text(
+                  tr('analytics.snapshot.moment_label'),
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.88),
+                  ),
+                ),
+                const SizedBox(height: AnalyticsLayoutSpacing.s8),
+                Text(
+                  _snapshotFreshnessLabel(context, fin.computedAt),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.62),
+                  ),
+                ),
+                const SizedBox(height: AnalyticsLayoutSpacing.s8),
+                Text(
+                  tr('analytics.snapshot.subtitle'),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.55),
+                    height: 1.35,
+                  ),
+                ),
+                if (sourceLabel != null) ...[
+                  const SizedBox(height: AnalyticsLayoutSpacing.s12),
+                  Text(
+                    sourceLabel,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.48),
+                    ),
+                  ),
+                ],
+                if (hasMain) ...[
+                  const SizedBox(height: AnalyticsLayoutSpacing.s16),
+                  DecisionInsightBlock(
+                    analysisHeading: tr('home.hero.analysis_label'),
+                    insightLine: mainLine.trim(),
+                    contextLine: subLine,
+                    hintLine: hintTrimmed.isNotEmpty ? hintTrimmed : null,
+                    leadingIcon: walletHeroLeadingIconForTone(ux.tone),
+                    budgetProgress: lines.budgetProgress,
+                    bottomSpacing: 0,
+                  ),
+                ] else if (hintTrimmed.isNotEmpty) ...[
+                  const SizedBox(height: AnalyticsLayoutSpacing.s16),
+                  Text(
+                    hintTrimmed,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.72),
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AnalyticsLayoutSpacing.s16),
+                Text(
+                  '${tr('analytics.balance')}: ${formatter.format(balance)}',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.82),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: AnalyticsLayoutSpacing.s12),
+                Center(
+                  child: InsightChip(
+                    label: tr('analytics.snapshot.analysis_mode_chip'),
+                    icon: Icons.insights_outlined,
+                    tone: _chipToneForUx(ux.tone),
+                    onGradient: true,
                   ),
                 ),
               ],
@@ -236,6 +279,7 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
           ),
         );
       },
+      loading: () => _snapshotLoadingBlock(context),
       error: (e, _) => AnalyticsErrorCard(message: e.toString()),
     );
   }

@@ -7,6 +7,7 @@ import 'package:ui_components/ui_components.dart';
 
 import '../../providers/expenses_providers.dart';
 import '../widgets/category_search_field.dart';
+import '../widgets/expense_picker_sheets.dart';
 
 class NewRecurringExpensePage extends ConsumerStatefulWidget {
   const NewRecurringExpensePage({
@@ -70,25 +71,31 @@ class _NewRecurringExpensePageState
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final currencyCode = ref.watch(defaultCurrencyProvider);
+    final cs = Theme.of(context).colorScheme;
+    final mq = MediaQuery.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing
-            ? tr('recurring.edit_title')
-            : tr('recurring.create_title')),
-      ),
-      body: Form(
+    return PrimaryScaffold(
+      title: _isEditing
+          ? tr('recurring.edit_title')
+          : tr('recurring.create_title'),
+      child: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            FormLayoutSpacing.s20,
+            FormLayoutSpacing.s16,
+            FormLayoutSpacing.s20,
+            FormLayoutSpacing.s16 +
+                mq.padding.bottom +
+                mq.viewInsets.bottom,
+          ),
           children: [
-            // Название подписки
             TextFormField(
               controller: _nameController,
               decoration: InputDecoration(
                 labelText: tr('recurring.name'),
                 hintText: tr('recurring.name_hint'),
-                prefixIcon: const Icon(Icons.label),
+                prefixIcon: const Icon(Icons.label_rounded),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -97,36 +104,32 @@ class _NewRecurringExpensePageState
                 return null;
               },
             ),
-            const SizedBox(height: 16),
-
-            // Тип (доход/расход)
+            const SizedBox(height: FormLayoutSpacing.s16),
             SegmentedButton<ExpenseType>(
               segments: [
                 ButtonSegment(
                   value: ExpenseType.expense,
                   label: Text(tr('expenses.form.expense')),
-                  icon: const Icon(Icons.trending_down),
+                  icon: const Icon(Icons.trending_down_rounded),
                 ),
                 ButtonSegment(
                   value: ExpenseType.income,
                   label: Text(tr('expenses.form.income')),
-                  icon: const Icon(Icons.trending_up),
+                  icon: const Icon(Icons.trending_up_rounded),
                 ),
               ],
               selected: {_type},
               onSelectionChanged: (value) =>
                   setState(() => _type = value.first),
             ),
-            const SizedBox(height: 16),
-
-            // Сумма
+            const SizedBox(height: FormLayoutSpacing.s16),
             TextFormField(
               controller: _amountController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 labelText: tr('expenses.form.amount'),
                 suffixText: currencyCode,
-                prefixIcon: const Icon(Icons.attach_money),
+                prefixIcon: const Icon(Icons.attach_money_rounded),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -139,9 +142,7 @@ class _NewRecurringExpensePageState
                 return null;
               },
             ),
-            const SizedBox(height: 16),
-
-            // Категория
+            const SizedBox(height: FormLayoutSpacing.s16),
             categoriesAsync.when(
               data: (categories) => CategorySearchField(
                 categories: categories,
@@ -151,40 +152,44 @@ class _NewRecurringExpensePageState
                 type: _type,
               ),
               loading: () => const LinearProgressIndicator(),
-              error: (error, _) => Text(tr('expenses.form.categories_error')),
-            ),
-            const SizedBox(height: 16),
-
-            // Тип повторения
-            DropdownButtonFormField<RecurrenceType>(
-              value: _recurrenceType,
-              decoration: InputDecoration(
-                labelText: tr('recurring.frequency'),
-                prefixIcon: const Icon(Icons.repeat),
+              error: (_, __) => ErrorState(
+                compact: true,
+                title: tr('expenses.form.categories_error'),
+                message: tr('error_state.message'),
+                action: PrimaryActionButton(
+                  height: 52,
+                  onPressed: () =>
+                      ref.invalidate(categoriesStreamProvider),
+                  child: Text(tr('retry')),
+                ),
               ),
-              items: RecurrenceType.values.map((type) {
-                return DropdownMenuItem(
-                  value: type,
-                  child: Text(context.locale.languageCode == 'ru'
-                      ? type.displayName
-                      : type.displayNameEn),
+            ),
+            const SizedBox(height: FormLayoutSpacing.s16),
+            SettingsTile(
+              icon: Icons.repeat_rounded,
+              iconColor: cs.primary,
+              title: tr('recurring.frequency'),
+              subtitle: context.locale.languageCode == 'ru'
+                  ? _recurrenceType.displayName
+                  : _recurrenceType.displayNameEn,
+              onTap: () async {
+                final picked = await showRecurrenceTypePickerSheet(
+                  context: context,
+                  selected: _recurrenceType,
                 );
-              }).toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => _recurrenceType = value);
+                if (picked != null) {
+                  setState(() => _recurrenceType = picked);
                 }
               },
+              animationIndex: 1,
             ),
-            const SizedBox(height: 16),
-
-            // Дата начала
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(tr('recurring.start_date')),
-              subtitle: Text(DateFormat.yMMMMd(context.locale.toLanguageTag())
-                  .format(_startDate)),
-              trailing: const Icon(Icons.calendar_today),
+            const SizedBox(height: FormLayoutSpacing.s16),
+            SettingsTile(
+              icon: Icons.calendar_today_rounded,
+              iconColor: cs.primary,
+              title: tr('recurring.start_date'),
+              subtitle: DateFormat.yMMMMd(context.locale.toLanguageTag())
+                  .format(_startDate),
               onTap: () async {
                 final picked = await showDatePicker(
                   context: context,
@@ -196,10 +201,9 @@ class _NewRecurringExpensePageState
                   setState(() => _startDate = picked);
                 }
               },
+              animationIndex: 0,
             ),
-            const SizedBox(height: 8),
-
-            // Дата окончания (опционально)
+            const SizedBox(height: FormLayoutSpacing.s16),
             SwitchListTile(
               title: Text(tr('recurring.has_end_date')),
               subtitle: _endDate != null
@@ -223,27 +227,28 @@ class _NewRecurringExpensePageState
                   setState(() => _endDate = null);
                 }
               },
+              contentPadding: EdgeInsets.zero,
             ),
-            const SizedBox(height: 16),
-
-            // Заметка
+            const SizedBox(height: FormLayoutSpacing.s16),
             TextFormField(
               controller: _noteController,
               decoration: InputDecoration(
                 labelText: tr('expenses.form.note'),
-                prefixIcon: const Icon(Icons.note),
+                prefixIcon: const Icon(Icons.note_rounded),
               ),
               maxLines: 3,
             ),
-            const SizedBox(height: 24),
-
-            // Кнопка сохранения
-            FilledButton.icon(
+            const SizedBox(height: FormLayoutSpacing.s24),
+            PrimaryActionButton(
               onPressed: () => _handleSubmit(ref),
-              icon: const Icon(Icons.save),
-              label: Text(tr('save')),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(double.infinity, 48),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.save_rounded, size: 22),
+                  const SizedBox(width: 8),
+                  Text(tr('save')),
+                ],
               ),
             ),
           ],
@@ -253,6 +258,7 @@ class _NewRecurringExpensePageState
   }
 
   Future<void> _handleSubmit(WidgetRef ref) async {
+    FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
     HapticUtils.mediumImpact();
@@ -288,10 +294,17 @@ class _NewRecurringExpensePageState
       }
     } catch (e) {
       if (mounted) {
+        final cs = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(tr('recurring.error', args: [e.toString()])),
-            backgroundColor: Colors.red,
+            content: Text(
+              tr('recurring.error', args: [e.toString()]),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: cs.onError,
+                  ),
+            ),
+            backgroundColor: cs.error,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }

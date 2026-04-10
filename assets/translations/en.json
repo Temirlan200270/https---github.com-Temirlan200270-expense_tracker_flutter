@@ -32,6 +32,13 @@
   "save": "Save",
   "cancel": "Cancel",
   "delete": "Delete",
+  "error_state": {
+    "title": "Couldn’t load data",
+    "message": "Check your connection and try again."
+  },
+  "common": {
+    "tap_to_select": "Tap to choose"
+  },
   "onboarding_title": "Welcome",
   "onboarding_sub": "Track expenses, visualize your money, and keep things simple.",
   "home": {
@@ -69,6 +76,27 @@
         "feedback_yes": "Yes",
         "feedback_no": "Not really",
         "situation_improved": "Things are looking better"
+      }
+    },
+    "insight": {
+      "budget_exceeded": {
+        "title": "Budget exceeded",
+        "context": "One or more limits are over the line. The plan is off track.",
+        "hint": "Review spending today"
+      },
+      "budget_warning": {
+        "title": "Limit almost gone",
+        "context": "The budget is nearly used up — room for only a few transactions.",
+        "hint": "Ease off spending"
+      },
+      "safe": {
+        "title": "You’re on track",
+        "context": "Spending fits your budgets and your usual habits.",
+        "hint": "Keep it up"
+      },
+      "runway": {
+        "critical": "At this pace, surplus covers about {} more days",
+        "warning": "At this pace, the cushion runs out in about {} days"
       }
     },
     "feed": {
@@ -212,6 +240,7 @@
     "type": "Category type",
     "color": "Color",
     "empty": "No categories",
+    "item_subtitle": "Groups items in reports and analytics",
     "created": "Category created",
     "updated": "Category updated",
     "delete": {
@@ -277,7 +306,10 @@
       "updated_just_now": "Updated just now",
       "updated_minutes_ago": "Updated {n} min ago",
       "updated_at": "As of {time}",
-      "loading": "Computing snapshot…"
+      "loading": "Computing snapshot…",
+      "analysis_mode_chip": "Analysis view",
+      "ftue_title": "No activity yet",
+      "ftue_message": "Add an expense or import a statement — then this snapshot will match Home and stay in sync."
     },
     "insights": {
       "title": "Smart insights",
@@ -504,6 +536,7 @@
     "keyword_required": "Enter a keyword",
     "category": "Category",
     "category_required": "Select a category",
+    "category_missing": "Category removed",
     "priority": "Priority",
     "priority_hint": "Higher number means higher priority",
     "case_sensitive": "Case sensitive",
@@ -546,13 +579,13 @@
     "deleted": "Debt deleted",
     "created": "Debt created",
     "updated": "Debt updated",
-    "repaid": "Debt repaid",
+    "repaid": "Repaid",
+    "repaid_success": "Debt repaid",
     "repay_title": "Repay Debt",
     "repay_message": "How much did {0} return? Remaining: {1}",
     "repay_amount": "Repayment Amount",
     "repay_full": "Repay in full",
     "repay": "Repay",
-    "repaid": "Repaid",
     "total": "Total",
     "remaining": "Remaining",
     "closed": "Closed",

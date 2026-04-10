@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:ui_components/ui_components.dart';
 
 import '../layout/import_layout_spacing.dart';
 import '../widgets/import_surface_card.dart';
@@ -22,7 +23,12 @@ void _backupSnackError(BuildContext context, String message) {
     SnackBar(
       behavior: SnackBarBehavior.floating,
       backgroundColor: cs.errorContainer,
-      content: Text(message, style: TextStyle(color: cs.onErrorContainer)),
+      content: Text(
+        message,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: cs.onErrorContainer,
+            ),
+      ),
     ),
   );
 }
@@ -34,7 +40,12 @@ void _backupSnackSuccess(BuildContext context, String message) {
     SnackBar(
       behavior: SnackBarBehavior.floating,
       backgroundColor: cs.primaryContainer,
-      content: Text(message, style: TextStyle(color: cs.onPrimaryContainer)),
+      content: Text(
+        message,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: cs.onPrimaryContainer,
+            ),
+      ),
     ),
   );
 }
@@ -101,14 +112,9 @@ class _BackupPageState extends ConsumerState<BackupPage> {
     final backupService = ref.watch(backupServiceProvider);
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: cs.surface,
-      appBar: AppBar(
-        title: Text(tr('backup.title')),
-      ),
-      body: SafeArea(
-        bottom: true,
-        child: ListView(
+    return PrimaryScaffold(
+      title: tr('backup.title'),
+      child: ListView(
           padding: ImportLayoutSpacing.screenPadding,
           children: [
           ImportSurfaceCard(
@@ -259,7 +265,6 @@ class _BackupPageState extends ConsumerState<BackupPage> {
           ),
         ],
         ),
-      ),
     );
   }
 
@@ -463,54 +468,81 @@ class _BackupItem extends StatelessWidget {
         final dateFormat = DateFormat.yMMMMd(context.locale.toLanguageTag());
         final timeFormat = DateFormat.Hm(context.locale.toLanguageTag());
 
+        final titleText = info?.createdAt != null
+            ? '${dateFormat.format(info!.createdAt!)} ${timeFormat.format(info.createdAt!)}'
+            : backup.path.split('/').last;
+        final metaLine = info != null
+            ? [
+                if (info.expensesCount > 0) '${info.expensesCount} ${tr('backup.expenses')}',
+                if (info.categoriesCount > 0) '${info.categoriesCount} ${tr('backup.categories')}',
+                if (info.budgetsCount > 0) '${info.budgetsCount} ${tr('backup.budgets')}',
+                if (info.debtsCount > 0) '${info.debtsCount} ${tr('backup.debts')}',
+                if (info.categoryRulesCount > 0)
+                  '${info.categoryRulesCount} ${tr('backup.category_rules')}',
+                if (info.recurringExpensesCount > 0)
+                  '${info.recurringExpensesCount} ${tr('backup.recurring_expenses')}',
+                info.formattedSize,
+              ].where((s) => s.isNotEmpty).join(', ')
+            : '';
+
         return Padding(
           padding: const EdgeInsets.only(bottom: ImportLayoutSpacing.s8),
           child: ImportSurfaceCard(
-            child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: ImportLayoutSpacing.s12,
-              vertical: ImportLayoutSpacing.s8,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: ImportLayoutSpacing.s12,
+                vertical: ImportLayoutSpacing.s8,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.backup_rounded, size: 28, color: cs.primary),
+                  SizedBox(width: ImportLayoutSpacing.s12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          titleText,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        if (metaLine.isNotEmpty) ...[
+                          SizedBox(height: ImportLayoutSpacing.s4),
+                          Text(
+                            metaLine,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: cs.onSurfaceVariant,
+                                ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.restore_rounded),
+                        onPressed: onRestore,
+                        tooltip: tr('backup.restore'),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.share_rounded),
+                        onPressed: () => _shareBackup(context),
+                        tooltip: tr('backup.share'),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete_outline_rounded, color: cs.error),
+                        onPressed: () => _deleteBackup(context),
+                        tooltip: tr('delete'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            leading: Icon(Icons.backup_rounded, size: 28, color: cs.primary),
-            title: Text(
-              info?.createdAt != null
-                  ? '${dateFormat.format(info!.createdAt!)} ${timeFormat.format(info.createdAt!)}'
-                  : backup.path.split('/').last,
-            ),
-            subtitle: info != null
-                ? Text(
-                    [
-                      if (info.expensesCount > 0) '${info.expensesCount} ${tr('backup.expenses')}',
-                      if (info.categoriesCount > 0) '${info.categoriesCount} ${tr('backup.categories')}',
-                      if (info.budgetsCount > 0) '${info.budgetsCount} ${tr('backup.budgets')}',
-                      if (info.debtsCount > 0) '${info.debtsCount} ${tr('backup.debts')}',
-                      if (info.categoryRulesCount > 0) '${info.categoryRulesCount} ${tr('backup.category_rules')}',
-                      if (info.recurringExpensesCount > 0) '${info.recurringExpensesCount} ${tr('backup.recurring_expenses')}',
-                      info.formattedSize,
-                    ].where((s) => s.isNotEmpty).join(', '),
-                  )
-                : null,
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.restore_rounded),
-                  onPressed: onRestore,
-                  tooltip: tr('backup.restore'),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.share_rounded),
-                  onPressed: () => _shareBackup(context),
-                  tooltip: tr('backup.share'),
-                ),
-                IconButton(
-                  icon: Icon(Icons.delete_outline_rounded, color: cs.error),
-                  onPressed: () => _deleteBackup(context),
-                  tooltip: tr('delete'),
-                ),
-              ],
-            ),
-          ),
           ),
         );
       },

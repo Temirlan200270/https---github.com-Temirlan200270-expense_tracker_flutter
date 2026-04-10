@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -12,6 +14,27 @@ import 'settings_providers.dart';
 import 'biometric_providers.dart';
 import 'color_scheme_providers.dart';
 
+/// Включение/выключение биометрии (общая логика для Switch и тапа по строке).
+Future<void> applyBiometricSetting(
+  BuildContext context,
+  WidgetRef ref,
+  bool enabled,
+) async {
+  await ref.read(biometricEnabledProvider.notifier).setEnabled(enabled);
+  if (enabled) {
+    final service = ref.read(biometricServiceProvider);
+    final success = await service.authenticate(
+      reason: tr('biometric.enable_reason'),
+    );
+    if (!success && context.mounted) {
+      await ref.read(biometricEnabledProvider.notifier).setEnabled(false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr('biometric.enable_failed'))),
+      );
+    }
+  }
+}
+
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
@@ -24,14 +47,9 @@ class SettingsPage extends ConsumerWidget {
 
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: cs.surface,
-      appBar: AppBar(
-        title: Text(tr('settings')),
-      ),
-      body: SafeArea(
-        bottom: true,
-        child: ListView(
+    return PrimaryScaffold(
+      title: tr('settings'),
+      child: ListView(
           padding: EdgeInsets.fromLTRB(
             HomeLayoutSpacing.s20,
             HomeLayoutSpacing.s16,
@@ -172,10 +190,8 @@ class SettingsPage extends ConsumerWidget {
                 curve: AppMotion.curve,
               ),
           SizedBox(height: HomeLayoutSpacing.s12),
-          // Биометрия
           Consumer(
-            builder: (context, ref, child) {
-              final tileCs = Theme.of(context).colorScheme;
+            builder: (context, ref, _) {
               final biometricEnabled = ref.watch(biometricEnabledProvider);
               final biometricAvailable = ref.watch(biometricAvailableProvider);
               final biometricTypeName = ref.watch(biometricTypeNameProvider);
@@ -196,56 +212,26 @@ class SettingsPage extends ConsumerWidget {
                 error: (_, __) => tr('biometric.not_available'),
               );
 
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: ListTile(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  tileColor: tileCs.surfaceContainerHigh,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: tileCs.error.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(Icons.fingerprint_rounded, color: tileCs.error, size: 22),
-                  ),
-                  title: Text(
-                    tr('biometric.title'),
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  subtitle: Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: tileCs.onSurfaceVariant,
-                        ),
-                  ),
-                  trailing: Switch(
-                    value: biometricEnabled && isAvailable,
-                    onChanged: isAvailable
-                        ? (value) async {
-                            final navigatorContext = context;
-                            await ref.read(biometricEnabledProvider.notifier).setEnabled(value);
-                            if (value) {
-                              final service = ref.read(biometricServiceProvider);
-                              final success = await service.authenticate(
-                                reason: tr('biometric.enable_reason'),
-                              );
-                              if (!success && navigatorContext.mounted) {
-                                await ref.read(biometricEnabledProvider.notifier).setEnabled(false);
-                                ScaffoldMessenger.of(navigatorContext).showSnackBar(
-                                  SnackBar(content: Text(tr('biometric.enable_failed'))),
-                                );
-                              }
-                            }
-                          }
-                        : null,
-                  ),
+              final on = biometricEnabled && isAvailable;
+
+              return SettingsTile(
+                icon: Icons.fingerprint_rounded,
+                iconColor: cs.error,
+                title: tr('biometric.title'),
+                subtitle: subtitle,
+                animationIndex: 9,
+                onTap: isAvailable
+                    ? () => unawaited(
+                          applyBiometricSetting(context, ref, !on),
+                        )
+                    : () {},
+                trailing: Switch(
+                  value: on,
+                  onChanged: isAvailable
+                      ? (value) => unawaited(
+                            applyBiometricSetting(context, ref, value),
+                          )
+                      : null,
                 ),
               );
             },
@@ -253,7 +239,6 @@ class SettingsPage extends ConsumerWidget {
           // Дополнительный отступ снизу для навигационной панели
           SizedBox(height: MediaQuery.of(context).padding.bottom + HomeLayoutSpacing.s16),
         ],
-      ),
       ),
     );
   }
@@ -301,19 +286,23 @@ class SettingsPage extends ConsumerWidget {
           return AlertDialog(
             title: Text(tr('theme')),
             content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: ThemeMode.values.map((mode) {
-                  return RadioListTile<ThemeMode>(
-                    title: Text(_getThemeModeLabel(mode)),
-                    value: mode,
-                    groupValue: selected,
-                    onChanged: (value) {
-                      setState(() => selected = value);
-                      Navigator.of(dialogContext).pop(value);
-                    },
-                  );
-                }).toList(),
+              child: RadioGroup<ThemeMode>(
+                groupValue: selected,
+                onChanged: (ThemeMode? value) {
+                  if (value != null) {
+                    setState(() => selected = value);
+                    Navigator.of(dialogContext).pop(value);
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: ThemeMode.values.map((mode) {
+                    return RadioListTile<ThemeMode>(
+                      title: Text(_getThemeModeLabel(mode)),
+                      value: mode,
+                    );
+                  }).toList(),
+                ),
               ),
             ),
           );
@@ -336,19 +325,23 @@ class SettingsPage extends ConsumerWidget {
           return AlertDialog(
             title: Text(tr('language')),
             content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: supported.map((locale) {
-                  return RadioListTile<Locale>(
-                    title: Text(_getLocaleLabel(locale)),
-                    value: locale,
-                    groupValue: selected,
-                    onChanged: (value) {
-                      setState(() => selected = value);
-                      Navigator.of(dialogContext).pop(value);
-                    },
-                  );
-                }).toList(),
+              child: RadioGroup<Locale>(
+                groupValue: selected,
+                onChanged: (Locale? value) {
+                  if (value != null) {
+                    setState(() => selected = value);
+                    Navigator.of(dialogContext).pop(value);
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: supported.map((locale) {
+                    return RadioListTile<Locale>(
+                      title: Text(_getLocaleLabel(locale)),
+                      value: locale,
+                    );
+                  }).toList(),
+                ),
               ),
             ),
           );
@@ -373,19 +366,23 @@ class SettingsPage extends ConsumerWidget {
           return AlertDialog(
             title: Text(tr('default_currency')),
             content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: currencies.map((currency) {
-                  return RadioListTile<String>(
-                    title: Text(currency),
-                    value: currency,
-                    groupValue: selected,
-                    onChanged: (value) {
-                      setState(() => selected = value);
-                      Navigator.of(dialogContext).pop(value);
-                    },
-                  );
-                }).toList(),
+              child: RadioGroup<String>(
+                groupValue: selected,
+                onChanged: (String? value) {
+                  if (value != null) {
+                    setState(() => selected = value);
+                    Navigator.of(dialogContext).pop(value);
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: currencies.map((currency) {
+                    return RadioListTile<String>(
+                      title: Text(currency),
+                      value: currency,
+                    );
+                  }).toList(),
+                ),
               ),
             ),
           );
@@ -409,46 +406,50 @@ class SettingsPage extends ConsumerWidget {
           return AlertDialog(
             title: Text(tr('color_scheme')),
             content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: AppThemeType.values.map((type) {
-                  final name = _getAppThemeTypeLabel(type, locale);
-                  final color = AppTheme.brandSeedColor(type);
-                  final dialogCs = Theme.of(context).colorScheme;
+              child: RadioGroup<AppThemeType>(
+                groupValue: selected,
+                onChanged: (AppThemeType? value) {
+                  if (value != null) {
+                    setState(() => selected = value);
+                    Navigator.of(dialogContext).pop(value);
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: AppThemeType.values.map((type) {
+                    final name = _getAppThemeTypeLabel(type, locale);
+                    final color = AppTheme.brandSeedColor(type);
+                    final dialogCs = Theme.of(context).colorScheme;
 
-                  return RadioListTile<AppThemeType>(
-                    contentPadding: EdgeInsets.zero,
-                    title: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                            border: selected == type
-                                ? Border.all(color: dialogCs.primary, width: 2)
-                                : null,
+                    return RadioListTile<AppThemeType>(
+                      contentPadding: EdgeInsets.zero,
+                      title: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                              border: selected == type
+                                  ? Border.all(color: dialogCs.primary, width: 2)
+                                  : null,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Flexible(
-                          child: Text(
-                            name,
-                            overflow: TextOverflow.ellipsis,
+                          const SizedBox(width: 12),
+                          Flexible(
+                            child: Text(
+                              name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    value: type,
-                    groupValue: selected,
-                    onChanged: (value) {
-                      setState(() => selected = value);
-                      Navigator.of(dialogContext).pop(value);
-                    },
-                  );
-                }).toList(),
+                        ],
+                      ),
+                      value: type,
+                    );
+                  }).toList(),
+                ),
               ),
             ),
           );

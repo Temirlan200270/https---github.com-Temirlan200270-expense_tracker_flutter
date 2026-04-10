@@ -1,6 +1,16 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
+
+import 'decision_gradient_shell.dart';
+import 'decision_insight_block.dart';
+
+/// Порядок блоков внутри [WalletHeroCard].
+enum WalletHeroContentOrder {
+  /// Анализ сверху, затем баланс и метрики (историческое поведение).
+  classic,
+
+  /// §2.1 Decision Mode: баланс → инсайт → подсказка → метрики → опциональный CTA.
+  decision,
+}
 
 /// Премиальная hero-карточка кошелька: градиент, стекло, инсайт, баланс, три метрики.
 /// Все подписи передаются снаружи (l10n в приложении).
@@ -20,7 +30,11 @@ class WalletHeroCard extends StatelessWidget {
     this.budgetProgress,
     this.isCompactFtue = false,
     this.insightContextLine,
+    this.insightHintLine,
     this.gradientColors,
+    this.contentOrder = WalletHeroContentOrder.classic,
+    this.insightLeadingIcon,
+    this.footerCta,
   });
 
   /// Текст блока анализа; пусто/null — блок скрыт.
@@ -28,6 +42,9 @@ class WalletHeroCard extends StatelessWidget {
 
   /// Второй слой под основным инсайтом (короткий контекст без «техно»-метрик).
   final String? insightContextLine;
+
+  /// Третий слой: подсказка к действию (например [UxDecisionView.actionHint]).
+  final String? insightHintLine;
 
   final String analysisSectionLabel;
   final String totalBalanceLabel;
@@ -47,6 +64,15 @@ class WalletHeroCard extends StatelessWidget {
   /// Если задано (3 цвета), задаёт настроение SAFE/WATCH/RISK; иначе стандартный градиент темы.
   final List<Color>? gradientColors;
 
+  /// Порядок §2.1 vs классический.
+  final WalletHeroContentOrder contentOrder;
+
+  /// Иконка семантики тона (из [ColorScheme], логика в приложении).
+  final IconData? insightLeadingIcon;
+
+  /// Одна primary CTA внизу карточки (Decision Mode).
+  final Widget? footerCta;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -60,161 +86,130 @@ class WalletHeroCard extends StatelessWidget {
             cs.primaryContainer,
           ];
 
-    final gradient = LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: colors,
-    );
-
     final hasInsight =
         insightLine != null && insightLine!.trim().isNotEmpty;
-    final ctx = insightContextLine?.trim();
-    final hasContext = ctx != null && ctx.isNotEmpty;
+    final hint = insightHintLine?.trim();
+    final hasHint = hint != null && hint.isNotEmpty;
     final progress = budgetProgress;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: DecoratedBox(decoration: BoxDecoration(gradient: gradient)),
+    final balanceBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          totalBalanceLabel,
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: Colors.white.withValues(alpha: 0.72),
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.3,
           ),
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(
-                    alpha: isCompactFtue ? 0.04 : 0.08,
-                  ),
-                ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          balanceAmountFormatted,
+          style: theme.textTheme.displayLarge?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -2,
+            height: 1.05,
+          ),
+        ),
+      ],
+    );
+
+    Widget? insightBlock;
+    if (hasInsight) {
+      insightBlock = DecisionInsightBlock(
+        analysisHeading: analysisSectionLabel,
+        insightLine: insightLine!,
+        contextLine: insightContextLine,
+        hintLine: insightHintLine,
+        leadingIcon: insightLeadingIcon,
+        budgetProgress: progress,
+        bottomSpacing: 20,
+      );
+    }
+
+    final metricsBlock = Column(
+      children: [
+        Divider(
+          height: 1,
+          color: Colors.white.withValues(alpha: 0.22),
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: _WalletHeroStatColumn(
+                label: expensesLabel,
+                value: expensesFormatted,
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (hasInsight) ...[
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 3,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              analysisSectionLabel,
-                              style: theme.textTheme.labelLarge?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.75),
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.4,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              insightLine!.trim(),
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.95),
-                                height: 1.35,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            if (hasContext) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                ctx,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.72),
-                                  height: 1.3,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                            if (progress != null) ...[
-                              const SizedBox(height: 10),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: LinearProgressIndicator(
-                                  value: progress.clamp(0.0, 1.0),
-                                  minHeight: 5,
-                                  backgroundColor:
-                                      Colors.white.withValues(alpha: 0.22),
-                                  color: Colors.white.withValues(alpha: 0.92),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                ],
-                Text(
-                  totalBalanceLabel,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.72),
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  balanceAmountFormatted,
-                  style: theme.textTheme.displayLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -2,
-                    height: 1.05,
-                  ),
-                ),
-                SizedBox(height: isCompactFtue ? 18 : 22),
-                Divider(
-                  height: 1,
-                  color: Colors.white.withValues(alpha: 0.22),
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _WalletHeroStatColumn(
-                        label: expensesLabel,
-                        value: expensesFormatted,
-                      ),
-                    ),
-                    Expanded(
-                      child: _WalletHeroStatColumn(
-                        label: incomeLabel,
-                        value: incomeFormatted,
-                      ),
-                    ),
-                    Expanded(
-                      child: _WalletHeroStatColumn(
-                        label: forecastLabel,
-                        value: forecastFormatted,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            Expanded(
+              child: _WalletHeroStatColumn(
+                label: incomeLabel,
+                value: incomeFormatted,
+              ),
+            ),
+            Expanded(
+              child: _WalletHeroStatColumn(
+                label: forecastLabel,
+                value: forecastFormatted,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    final List<Widget> columnChildren;
+    if (contentOrder == WalletHeroContentOrder.decision) {
+      columnChildren = [
+        balanceBlock,
+        if (insightBlock != null) ...[
+          SizedBox(height: isCompactFtue ? 20 : 24),
+          insightBlock,
+        ] else if (hasHint) ...[
+          SizedBox(height: isCompactFtue ? 20 : 24),
+          Text(
+            hint,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.white.withValues(alpha: 0.72),
+              height: 1.35,
             ),
           ),
+          const SizedBox(height: 20),
         ],
+        SizedBox(height: isCompactFtue ? 18 : 22),
+        metricsBlock,
+        if (footerCta != null) ...[
+          const SizedBox(height: 16),
+          footerCta!,
+        ],
+      ];
+    } else {
+      columnChildren = [
+        if (insightBlock != null) insightBlock,
+        balanceBlock,
+        SizedBox(height: isCompactFtue ? 18 : 22),
+        metricsBlock,
+        if (footerCta != null) ...[
+          const SizedBox(height: 16),
+          footerCta!,
+        ],
+      ];
+    }
+
+    return DecisionGradientShell(
+      gradientColors: colors,
+      glassAlpha: isCompactFtue ? 0.04 : 0.08,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: columnChildren,
+        ),
       ),
     );
   }

@@ -1,24 +1,14 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:expense_tracker_app/expense_tracker_app.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_models/shared_models.dart';
 import 'package:ui_components/ui_components.dart';
 
 import '../../providers/expenses_providers.dart';
-import '../../services/recurring_expenses_service.dart';
-
-/// Провайдер для сервиса повторяющихся транзакций
-final recurringExpensesServiceProvider =
-    Provider<RecurringExpensesService>((ref) {
-  final recurringRepo = ref.watch(recurringExpensesRepositoryProvider);
-  final expensesRepo = ref.watch(expensesRepositoryProvider);
-  return RecurringExpensesService(
-    recurringRepo: recurringRepo,
-    expensesRepo: expensesRepo,
-  );
-});
+import '../../providers/recurring_expenses_controller.dart';
 
 class RecurringExpensesPage extends ConsumerWidget {
   const RecurringExpensesPage({super.key});
@@ -32,34 +22,30 @@ class RecurringExpensesPage extends ConsumerWidget {
       symbol: currencyCode,
     );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(tr('recurring.title')),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              HapticUtils.selection();
-              context.push('/recurring/new');
-            },
-            tooltip: tr('recurring.create'),
-          ),
-        ],
+    return PrimaryScaffold(
+      title: tr('recurring.title'),
+      fab: FloatingActionButton(
+        onPressed: () {
+          HapticUtils.mediumImpact();
+          context.push('/recurring/new');
+        },
+        child: const Icon(Icons.add_rounded),
       ),
-      body: recurringAsync.when(
-        data: (recurringList) {
+      child: recurringAsync.when(
+        data: (_) {
+          final recurringList = ref.watch(recurringExpensesDisplayListProvider);
           if (recurringList.isEmpty) {
             return EmptyState(
               icon: Icons.repeat,
               title: tr('recurring.empty'),
               message: tr('recurring.empty_hint'),
-              action: FilledButton.icon(
+              action: PrimaryActionButton(
                 onPressed: () {
                   HapticUtils.selection();
                   context.push('/recurring/new');
                 },
-                icon: const Icon(Icons.add),
-                label: Text(tr('recurring.create')),
+                icon: const Icon(Icons.add_rounded),
+                child: Text(tr('recurring.create')),
               ),
             );
           }
@@ -68,10 +54,11 @@ class RecurringExpensesPage extends ConsumerWidget {
             onRefresh: () =>
                 ref.refresh(recurringExpensesStreamProvider.future),
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
               itemCount: recurringList.length,
               itemBuilder: (context, index) {
                 final recurring = recurringList[index];
+                final rowDelay = AppMotion.staggerInterval * index;
                 return _RecurringExpenseCard(
                   recurring: recurring,
                   formatter: formatter,
@@ -83,22 +70,32 @@ class RecurringExpensesPage extends ConsumerWidget {
                   onToggleActive: () => _toggleActive(context, ref, recurring),
                   onGenerate: () => _generateExpense(context, ref, recurring),
                   onDelete: () => _deleteRecurring(context, ref, recurring),
-                );
+                )
+                    .animate()
+                    .fadeIn(
+                      duration: AppMotion.standard,
+                      delay: rowDelay,
+                      curve: AppMotion.curve,
+                    )
+                    .slideY(
+                      begin: 0.05,
+                      duration: AppMotion.standard,
+                      delay: rowDelay,
+                      curve: AppMotion.curve,
+                    );
               },
             ),
           );
         },
         loading: () => const SkeletonList(itemCount: 5),
-        error: (error, _) => Center(
-          child: Text(tr('recurring.error', args: [error.toString()])),
+        error: (_, __) => ErrorState(
+          title: tr('error_state.title'),
+          message: tr('error_state.message'),
+          action: PrimaryActionButton(
+            onPressed: () => ref.invalidate(recurringExpensesStreamProvider),
+            child: Text(tr('retry')),
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          HapticUtils.mediumImpact();
-          context.push('/recurring/new');
-        },
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -109,8 +106,26 @@ class RecurringExpensesPage extends ConsumerWidget {
     RecurringExpense recurring,
   ) async {
     HapticUtils.selection();
-    final repo = ref.read(recurringExpensesRepositoryProvider);
-    await repo.upsert(recurring.copyWith(isActive: !recurring.isActive));
+    final notifier = ref.read(recurringExpensesControllerProvider.notifier);
+    try {
+      await notifier.toggleActive(recurring);
+    } catch (e) {
+      if (context.mounted) {
+        final cs = Theme.of(context).colorScheme;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              tr('recurring.error', args: [e.toString()]),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: cs.onError,
+                  ),
+            ),
+            backgroundColor: cs.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _generateExpense(
@@ -119,10 +134,10 @@ class RecurringExpensesPage extends ConsumerWidget {
     RecurringExpense recurring,
   ) async {
     HapticUtils.mediumImpact();
-    final service = ref.read(recurringExpensesServiceProvider);
+    final notifier = ref.read(recurringExpensesControllerProvider.notifier);
 
     try {
-      await service.generateExpenseManually(recurring);
+      await notifier.generateNow(recurring);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(tr('recurring.generated'))),
@@ -130,10 +145,17 @@ class RecurringExpensesPage extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
+        final cs = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(tr('recurring.error', args: [e.toString()])),
-            backgroundColor: Colors.red,
+            content: Text(
+              tr('recurring.error', args: [e.toString()]),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: cs.onError,
+                  ),
+            ),
+            backgroundColor: cs.error,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -145,33 +167,41 @@ class RecurringExpensesPage extends ConsumerWidget {
     WidgetRef ref,
     RecurringExpense recurring,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showConfirmActionSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(tr('recurring.delete_title')),
-        content: Text(tr('recurring.delete_message')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(tr('cancel')),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(tr('delete')),
-          ),
-        ],
-      ),
+      title: tr('recurring.delete_title'),
+      message: tr('recurring.delete_message'),
+      cancelLabel: tr('cancel'),
+      confirmLabel: tr('delete'),
+      isDestructive: true,
     );
 
-    if (confirmed == true) {
+    if (confirmed) {
       HapticUtils.mediumImpact();
-      final repo = ref.read(recurringExpensesRepositoryProvider);
-      await repo.softDelete(recurring.id);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tr('recurring.deleted'))),
-        );
+      final notifier = ref.read(recurringExpensesControllerProvider.notifier);
+      try {
+        await notifier.delete(recurring.id);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(tr('recurring.deleted'))),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          final cs = Theme.of(context).colorScheme;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                tr('recurring.error', args: [e.toString()]),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: cs.onError,
+                    ),
+              ),
+              backgroundColor: cs.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     }
   }
@@ -219,15 +249,12 @@ class _RecurringExpenseCard extends StatelessWidget {
                     children: [
                       Text(
                         recurring.name,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         formatter.format(recurring.amount.amount),
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
                               color: accent,
                             ),
                       ),

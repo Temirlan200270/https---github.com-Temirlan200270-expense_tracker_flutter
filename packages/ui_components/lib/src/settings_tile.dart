@@ -11,16 +11,19 @@ class SettingsTile extends StatelessWidget {
     required this.iconColor,
     required this.title,
     this.subtitle,
-    required this.onTap,
+    this.onTap,
     this.trailing,
     this.animationIndex = 0, // Индекс для staggered анимации
-  });
+  }) : assert(
+          onTap != null || trailing != null,
+          'Нужен onTap или свой trailing (например Switch).',
+        );
 
   final IconData icon;
   final Color iconColor;
   final String title;
   final String? subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Widget? trailing;
   final int animationIndex;
 
@@ -33,7 +36,7 @@ class SettingsTile extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        tileColor: Theme.of(context).cardColor,
+        tileColor: Theme.of(context).colorScheme.surfaceContainerHigh,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
           width: 48,
@@ -59,10 +62,12 @@ class SettingsTile extends StatelessWidget {
               )
             : null,
         trailing: trailing ??
-            Icon(
-              Icons.chevron_right_rounded,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+            (onTap != null
+                ? Icon(
+                    Icons.chevron_right_rounded,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  )
+                : null),
       ),
     )
         .animate(effects: AppAnimations.settingsTile(animationIndex));

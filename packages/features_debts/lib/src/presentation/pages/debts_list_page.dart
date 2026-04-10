@@ -241,7 +241,7 @@ class _DebtsTab extends ConsumerWidget {
           );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tr('debts.repaid'))),
+          SnackBar(content: Text(tr('debts.repaid_success'))),
         );
       }
     }

@@ -2,6 +2,8 @@ import 'package:data_core/data_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_models/shared_models.dart';
 
+import '../services/recurring_expenses_service.dart';
+
 final expensesRepositoryProvider = Provider<ExpensesRepository>((ref) {
   throw UnimplementedError('Подмените expensesRepositoryProvider в пакете app');
 });
@@ -32,5 +34,14 @@ final recurringExpensesRepositoryProvider = Provider<RecurringExpensesRepository
 final recurringExpensesStreamProvider = StreamProvider.autoDispose<List<RecurringExpense>>((ref) {
   final repo = ref.watch(recurringExpensesRepositoryProvider);
   return repo.watchAll();
+});
+
+final recurringExpensesServiceProvider = Provider<RecurringExpensesService>((ref) {
+  final recurringRepo = ref.watch(recurringExpensesRepositoryProvider);
+  final expensesRepo = ref.watch(expensesRepositoryProvider);
+  return RecurringExpensesService(
+    recurringRepo: recurringRepo,
+    expensesRepo: expensesRepo,
+  );
 });
 

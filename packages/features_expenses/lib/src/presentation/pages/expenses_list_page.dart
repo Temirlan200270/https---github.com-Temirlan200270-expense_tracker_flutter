@@ -12,6 +12,38 @@ import '../../controllers/expenses_list_controller.dart';
 import '../widgets/expense_filters_sheet.dart';
 import '../widgets/expense_search_field.dart';
 
+/// Пункт меню «ещё» без вложенного ListTile.
+PopupMenuEntry<void> _expensesOverflowMenuItem(
+  BuildContext context, {
+  required IconData icon,
+  required String label,
+  required String route,
+}) {
+  final cs = Theme.of(context).colorScheme;
+  return PopupMenuItem<void>(
+    onTap: () {
+      Future.microtask(() {
+        if (context.mounted) context.push(route);
+      });
+    },
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 22, color: cs.onSurfaceVariant),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 /// Группировка расходов
 enum ExpenseGrouping {
   none,
@@ -137,58 +169,38 @@ class ExpensesListPage extends ConsumerWidget {
             );
           },
         ),
-        PopupMenuButton(
-          icon: const Icon(Icons.more_vert),
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              child: ListTile(
-                leading: const Icon(Icons.category),
-                title: Text(tr('categories.title')),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/categories');
-                },
-              ),
+        PopupMenuButton<void>(
+          icon: const Icon(Icons.more_vert_rounded),
+          itemBuilder: (ctx) => [
+            _expensesOverflowMenuItem(
+              ctx,
+              icon: Icons.category_rounded,
+              label: tr('categories.title'),
+              route: '/categories',
             ),
-            PopupMenuItem(
-              child: ListTile(
-                leading: const Icon(Icons.analytics),
-                title: Text(tr('analytics.title')),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/analytics');
-                },
-              ),
+            _expensesOverflowMenuItem(
+              ctx,
+              icon: Icons.bar_chart_rounded,
+              label: tr('analytics.title'),
+              route: '/analytics',
             ),
-            PopupMenuItem(
-              child: ListTile(
-                leading: const Icon(Icons.upload_file),
-                title: Text(tr('export.title')),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/export');
-                },
-              ),
+            _expensesOverflowMenuItem(
+              ctx,
+              icon: Icons.upload_file_rounded,
+              label: tr('export.title'),
+              route: '/export',
             ),
-            PopupMenuItem(
-              child: ListTile(
-                leading: const Icon(Icons.download),
-                title: Text(tr('import.title')),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/import');
-                },
-              ),
+            _expensesOverflowMenuItem(
+              ctx,
+              icon: Icons.download_rounded,
+              label: tr('import.title'),
+              route: '/import',
             ),
-            PopupMenuItem(
-              child: ListTile(
-                leading: const Icon(Icons.settings),
-                title: Text(tr('settings')),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/settings');
-                },
-              ),
+            _expensesOverflowMenuItem(
+              ctx,
+              icon: Icons.settings_rounded,
+              label: tr('settings'),
+              route: '/settings',
             ),
           ],
         ),
@@ -203,12 +215,12 @@ class ExpensesListPage extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             child: const ExpenseSearchField()
                 .animate()
-                .fadeIn(duration: 200.ms, curve: Curves.easeOutCubic)
+                .fadeIn(duration: AppMotion.standard, curve: AppMotion.curve)
                 .slideY(
                     begin: -0.06,
                     end: 0,
-                    duration: 220.ms,
-                    curve: Curves.easeOutCubic),
+                    duration: AppMotion.standard,
+                    curve: AppMotion.curve),
           ),
           Expanded(
             child: RefreshIndicator(
@@ -243,11 +255,31 @@ class ExpensesListPage extends ConsumerWidget {
                       );
                     },
                     loading: () => const SkeletonList(itemCount: 5),
-                    error: (e, _) => Center(child: Text('Error: $e')),
+                    error: (_, __) => ErrorState(
+                      title: tr('error_state.title'),
+                      message: tr('error_state.message'),
+                      action: PrimaryActionButton(
+                        onPressed: () {
+                          ref.invalidate(expensesStreamProvider);
+                          ref.invalidate(categoriesStreamProvider);
+                        },
+                        child: Text(tr('retry')),
+                      ),
+                    ),
                   );
                 },
                 loading: () => const SkeletonList(itemCount: 5),
-                error: (e, _) => Center(child: Text('Error: $e')),
+                error: (_, __) => ErrorState(
+                  title: tr('error_state.title'),
+                  message: tr('error_state.message'),
+                  action: PrimaryActionButton(
+                    onPressed: () {
+                      ref.invalidate(expensesStreamProvider);
+                      ref.invalidate(categoriesStreamProvider);
+                    },
+                    child: Text(tr('retry')),
+                  ),
+                ),
               ),
             ),
           ),
@@ -286,15 +318,15 @@ class _GroupedExpensesList extends ConsumerWidget {
           )
               .animate()
               .fadeIn(
-                  duration: 140.ms,
-                  delay: (12 * index).ms,
-                  curve: Curves.easeOutCubic)
+                  duration: AppMotion.fast,
+                  delay: AppMotion.staggerInterval * index,
+                  curve: AppMotion.curve)
               .slideY(
                   begin: 0.04,
                   end: 0,
-                  duration: 150.ms,
-                  delay: (12 * index).ms,
-                  curve: Curves.easeOutCubic);
+                  duration: AppMotion.standard,
+                  delay: AppMotion.staggerInterval * index,
+                  curve: AppMotion.curve);
         },
         separatorBuilder: (_, __) => const SizedBox(height: 8),
         itemCount: expenses.length,
@@ -323,15 +355,15 @@ class _GroupedExpensesList extends ConsumerWidget {
         )
             .animate()
             .fadeIn(
-                duration: 140.ms,
-                delay: (16 * index).ms,
-                curve: Curves.easeOutCubic)
+                duration: AppMotion.fast,
+                delay: AppMotion.staggerInterval * index,
+                curve: AppMotion.curve)
             .slideY(
                 begin: 0.04,
                 end: 0,
-                duration: 150.ms,
-                delay: (16 * index).ms,
-                curve: Curves.easeOutCubic);
+                duration: AppMotion.standard,
+                delay: AppMotion.staggerInterval * index,
+                curve: AppMotion.curve);
       },
     );
   }
@@ -518,8 +550,8 @@ class _ExpenseGroup extends StatelessWidget {
                   .scaleX(
                       begin: 0,
                       end: 1,
-                      duration: 220.ms,
-                      curve: Curves.easeOutCubic),
+                      duration: AppMotion.standard,
+                      curve: AppMotion.curve),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -530,15 +562,15 @@ class _ExpenseGroup extends StatelessWidget {
                 )
                     .animate()
                     .fadeIn(
-                        duration: 200.ms,
-                        delay: 70.ms,
-                        curve: Curves.easeOutCubic)
+                        duration: AppMotion.standard,
+                        delay: AppMotion.staggerInterval * 2,
+                        curve: AppMotion.curve)
                     .slideX(
                         begin: -0.06,
                         end: 0,
-                        duration: 220.ms,
-                        delay: 70.ms,
-                        curve: Curves.easeOutCubic),
+                        duration: AppMotion.standard,
+                        delay: AppMotion.staggerInterval * 2,
+                        curve: AppMotion.curve),
               ),
               Text(
                 subtitle,
@@ -549,15 +581,15 @@ class _ExpenseGroup extends StatelessWidget {
               )
                   .animate()
                   .fadeIn(
-                      duration: 200.ms,
-                      delay: 100.ms,
-                      curve: Curves.easeOutCubic)
+                      duration: AppMotion.standard,
+                      delay: AppMotion.staggerInterval * 3,
+                      curve: AppMotion.curve)
                   .slideX(
                       begin: 0.06,
                       end: 0,
-                      duration: 220.ms,
-                      delay: 100.ms,
-                      curve: Curves.easeOutCubic),
+                      duration: AppMotion.standard,
+                      delay: AppMotion.staggerInterval * 3,
+                      curve: AppMotion.curve),
             ],
           ),
         ),
@@ -575,15 +607,15 @@ class _ExpenseGroup extends StatelessWidget {
             )
                 .animate()
                 .fadeIn(
-                    duration: 130.ms,
-                    delay: (8 * index).ms,
-                    curve: Curves.easeOutCubic)
+                    duration: AppMotion.fast,
+                    delay: AppMotion.staggerInterval * index,
+                    curve: AppMotion.curve)
                 .slideX(
                     begin: 0.025,
                     end: 0,
-                    duration: 140.ms,
-                    delay: (8 * index).ms,
-                    curve: Curves.easeOutCubic),
+                    duration: AppMotion.standard,
+                    delay: AppMotion.staggerInterval * index,
+                    curve: AppMotion.curve),
           );
         }),
         const SizedBox(height: 8),
@@ -631,27 +663,14 @@ class _DismissibleExpenseTile extends ConsumerWidget {
   }
 
   Future<bool> _confirmDelete(BuildContext context) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(tr('expenses.delete.title')),
-            content: Text(tr('expenses.delete.message')),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(tr('cancel')),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.error,
-                ),
-                child: Text(tr('delete')),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+    return showConfirmActionSheet(
+      context: context,
+      title: tr('expenses.delete.title'),
+      message: tr('expenses.delete.message'),
+      cancelLabel: tr('cancel'),
+      confirmLabel: tr('delete'),
+      isDestructive: true,
+    );
   }
 
   Future<void> _deleteExpense(BuildContext context, WidgetRef ref) async {
@@ -687,56 +706,71 @@ class _DismissibleExpenseTile extends ConsumerWidget {
     final rootCs = Theme.of(context).colorScheme;
     final accent = expense.type.isIncome ? rootCs.primary : rootCs.error;
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Column(
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (sheetContext) {
+        final cs = Theme.of(sheetContext).colorScheme;
+        return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            ListTile(
-              leading: CircleAvatar(
-                backgroundColor: accent.withValues(alpha: 0.2),
-                child: Icon(
-                  expense.type.isIncome
-                      ? Icons.trending_up_rounded
-                      : Icons.trending_down_rounded,
-                  color: accent,
-                ),
-              ),
-              title: Text(
-                formatter.format(expense.amount.amount),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: accent.withValues(alpha: 0.2),
+                    child: Icon(
+                      expense.type.isIncome
+                          ? Icons.trending_up_rounded
+                          : Icons.trending_down_rounded,
                       color: accent,
                     ),
-              ),
-              subtitle: Text(
-                DateFormat.yMMMMd().format(expense.occurredAt),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          formatter.format(expense.amount.amount),
+                          style: Theme.of(sheetContext)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: accent,
+                              ),
+                        ),
+                        Text(
+                          DateFormat.yMMMMd(sheetContext.locale.toLanguageTag())
+                              .format(expense.occurredAt),
+                          style: Theme.of(sheetContext)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: cs.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: Text(tr('expenses.edit.title')),
+            Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.4)),
+            _ExpenseListSheetAction(
+              icon: Icons.edit_rounded,
+              label: tr('expenses.edit.title'),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(sheetContext);
                 context.push('/expenses/new', extra: {'expense': expense});
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.copy),
-              title: Text(tr('expenses.duplicate.title')),
+            _ExpenseListSheetAction(
+              icon: Icons.copy_rounded,
+              label: tr('expenses.duplicate.title'),
               onTap: () async {
-                Navigator.pop(context);
+                Navigator.pop(sheetContext);
                 final repo = ref.read(expensesRepositoryProvider);
                 final newExpense = Expense(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -754,22 +788,62 @@ class _DismissibleExpenseTile extends ConsumerWidget {
                 }
               },
             ),
-            ListTile(
-              leading: Icon(
-                Icons.delete_outline_rounded,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              title: Text(
-                tr('delete'),
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
+            _ExpenseListSheetAction(
+              icon: Icons.delete_outline_rounded,
+              label: tr('delete'),
+              foregroundColor: cs.error,
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(sheetContext);
                 _showDeleteDialog(context, ref);
               },
             ),
             const SizedBox(height: 8),
           ],
+        );
+      },
+    );
+  }
+}
+
+/// Строка действия в bottom sheet списка расходов (без ListTile).
+class _ExpenseListSheetAction extends StatelessWidget {
+  const _ExpenseListSheetAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.foregroundColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? foregroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final fg = foregroundColor ?? cs.onSurface;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Row(
+            children: [
+              Icon(icon, size: 22, color: fg),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: fg,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

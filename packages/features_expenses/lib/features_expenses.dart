@@ -1,6 +1,7 @@
 export 'src/controllers/expense_form_controller.dart';
 export 'src/controllers/expenses_list_controller.dart';
 export 'src/providers/expenses_providers.dart';
+export 'src/providers/recurring_expenses_controller.dart';
 export 'src/providers/category_rules_providers.dart';
 export 'src/routes/expenses_routes.dart';
 export 'src/presentation/pages/expenses_list_page.dart';

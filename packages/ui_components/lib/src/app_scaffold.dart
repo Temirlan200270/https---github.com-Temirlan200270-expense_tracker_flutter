@@ -7,12 +7,14 @@ class PrimaryScaffold extends StatelessWidget {
     this.title,
     this.actions,
     this.fab,
+    this.bottomNavigationBar,
   });
 
   final Widget child;
   final String? title;
   final List<Widget>? actions;
   final Widget? fab;
+  final Widget? bottomNavigationBar;
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +27,7 @@ class PrimaryScaffold extends StatelessWidget {
       ),
       body: SafeArea(child: child),
       floatingActionButton: fab,
+      bottomNavigationBar: bottomNavigationBar,
     );
   }
 }

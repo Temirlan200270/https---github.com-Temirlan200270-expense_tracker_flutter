@@ -24,9 +24,9 @@ void _showExportSnackBar(
       backgroundColor: isError ? cs.errorContainer : cs.primaryContainer,
       content: Text(
         message,
-        style: TextStyle(
-          color: isError ? cs.onErrorContainer : cs.onPrimaryContainer,
-        ),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: isError ? cs.onErrorContainer : cs.onPrimaryContainer,
+            ),
       ),
     ),
   );
@@ -38,26 +38,18 @@ class ExportPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final expensesAsync = ref.watch(expensesStreamProvider);
-    final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: cs.surface,
-      appBar: AppBar(
-        title: Text(tr('export.title')),
-      ),
-      body: expensesAsync.when(
+    return PrimaryScaffold(
+      title: tr('export.title'),
+      child: expensesAsync.when(
         data: (expenses) => _ExportOptions(expenses: expenses),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: ImportLayoutSpacing.screenPadding,
-            child: Text(
-              tr('export.error', args: [error.toString()]),
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: cs.error,
-                  ),
-              textAlign: TextAlign.center,
-            ),
+        error: (error, _) => ErrorState(
+          title: tr('error_state.title'),
+          message: tr('export.error', args: [error.toString()]),
+          action: PrimaryActionButton(
+            onPressed: () => ref.invalidate(expensesStreamProvider),
+            child: Text(tr('retry')),
           ),
         ),
       ),
@@ -75,36 +67,15 @@ class _ExportOptions extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     if (expenses.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: ImportLayoutSpacing.screenPadding,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.inbox_rounded,
-                size: 64,
-                color: cs.onSurfaceVariant.withValues(alpha: 0.45),
-              ),
-              SizedBox(height: ImportLayoutSpacing.s16),
-              Text(
-                tr('export.no_data'),
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+      return EmptyState(
+        icon: Icons.inbox_rounded,
+        title: tr('export.no_data'),
       );
     }
 
     final exportService = ExportService();
 
-    return SafeArea(
-      bottom: true,
-      child: ListView(
+    return ListView(
         padding: ImportLayoutSpacing.screenPadding,
         children: [
           Text(
@@ -156,7 +127,6 @@ class _ExportOptions extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ],
-      ),
     );
   }
 
@@ -230,34 +200,33 @@ class _ExportOption extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     return ImportSurfaceCard(
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: ImportLayoutSpacing.s20,
-          vertical: ImportLayoutSpacing.s12,
-        ),
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(14),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: CompactRow(
+            leading: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: iconColor, size: 24),
+            ),
+            title: title,
+            subtitle: subtitle,
+            trailing: Icon(
+              Icons.chevron_right_rounded,
+              color: cs.onSurfaceVariant,
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: ImportLayoutSpacing.s20,
+              vertical: ImportLayoutSpacing.s12,
+            ),
           ),
-          child: Icon(icon, color: iconColor, size: 24),
         ),
-        title: Text(
-          title,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
-        ),
-        trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
-        onTap: onTap,
       ),
     )
         .animate()

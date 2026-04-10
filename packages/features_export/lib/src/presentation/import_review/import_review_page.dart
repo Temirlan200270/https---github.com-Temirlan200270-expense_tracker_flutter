@@ -11,6 +11,7 @@ import 'package:shared_models/shared_models.dart';
 import 'package:ui_components/ui_components.dart';
 
 import '../layout/import_layout_spacing.dart';
+import '../widgets/import_surface_card.dart';
 import 'import_review_controller.dart';
 
 /// Кластер строк «внимания» по санитизированному названию.
@@ -79,28 +80,15 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
     final currency = ref.watch(defaultCurrencyProvider);
 
     if (items.isEmpty) {
-      return Scaffold(
-        backgroundColor: theme.colorScheme.surface,
-        appBar: AppBar(title: Text(tr('import.review.title'))),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(ImportLayoutSpacing.s24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  tr('import.review.empty'),
-                  style: theme.textTheme.titleMedium,
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: ImportLayoutSpacing.s16),
-                PrimaryActionButton(
-                  height: 48,
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  child: Text(tr('import.close')),
-                ),
-              ],
-            ),
+      return PrimaryScaffold(
+        title: tr('import.review.title'),
+        child: EmptyState(
+          icon: Icons.playlist_remove_rounded,
+          title: tr('import.review.empty'),
+          action: PrimaryActionButton(
+            height: 48,
+            onPressed: () => Navigator.of(context).maybePop(),
+            child: Text(tr('import.close')),
           ),
         ),
       );
@@ -129,22 +117,41 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
 
     final attentionClusters = _buildAttentionClusters(attention);
 
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(
-        title: Text(tr('import.review.title')),
-        actions: [
-          TextButton(
-            onPressed: _saving
-                ? null
-                : () {
-                    notifier.applyDefaultInclusion();
-                  },
-            child: Text(tr('import.review.apply_defaults')),
+    return PrimaryScaffold(
+      title: tr('import.review.title'),
+      actions: [
+        TextButton(
+          onPressed: _saving
+              ? null
+              : () {
+                  notifier.applyDefaultInclusion();
+                },
+          child: Text(tr('import.review.apply_defaults')),
+        ),
+      ],
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            ImportLayoutSpacing.s20,
+            ImportLayoutSpacing.s8,
+            ImportLayoutSpacing.s20,
+            ImportLayoutSpacing.s16,
           ),
-        ],
+          child: PrimaryActionButton(
+            height: 52,
+            hapticOnPress: !_saving && selected > 0,
+            onPressed: _saving || selected == 0 ? null : () => _save(context),
+            child: _saving
+                ? const SizedBox(
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(tr('import.review.save')),
+          ),
+        ),
       ),
-      body: Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
@@ -282,34 +289,12 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
                   ),
                 ],
                 SliverToBoxAdapter(
-                  child: SizedBox(height: ImportLayoutSpacing.s32 + 56),
+                  child: SizedBox(height: ImportLayoutSpacing.s32),
                 ),
               ],
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            ImportLayoutSpacing.s20,
-            ImportLayoutSpacing.s8,
-            ImportLayoutSpacing.s20,
-            ImportLayoutSpacing.s16,
-          ),
-          child: PrimaryActionButton(
-            height: 52,
-            hapticOnPress: !_saving && selected > 0,
-            onPressed: _saving || selected == 0 ? null : () => _save(context),
-            child: _saving
-                ? const SizedBox(
-                    height: 22,
-                    width: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(tr('import.review.save')),
-          ),
-        ),
       ),
     );
   }
@@ -423,15 +408,22 @@ class _AttentionClusterBar extends ConsumerWidget {
         ImportLayoutSpacing.s20,
         ImportLayoutSpacing.s4,
       ),
-      child: Material(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(12),
+      child: ImportSurfaceCard(
+        backgroundColor:
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: ImportLayoutSpacing.s12,
+            vertical: ImportLayoutSpacing.s8,
+          ),
           child: Row(
             children: [
-              Icon(Icons.hub_outlined, size: 20, color: theme.colorScheme.primary),
-              const SizedBox(width: 8),
+              Icon(
+                Icons.hub_rounded,
+                size: 20,
+                color: theme.colorScheme.primary,
+              ),
+              SizedBox(width: ImportLayoutSpacing.s8),
               Expanded(
                 child: Text(
                   tr(
@@ -699,24 +691,32 @@ class _ReviewTile extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      useSafeArea: true,
       builder: (ctx) {
-        return SafeArea(
+        final cs = Theme.of(ctx).colorScheme;
+        final maxH = MediaQuery.sizeOf(ctx).height * 0.65;
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxH),
           child: ListView(
             shrinkWrap: true,
+            padding: const EdgeInsets.only(bottom: ImportLayoutSpacing.s16),
             children: [
-              ListTile(
-                title: Text(tr('import.review.clear_category')),
-                leading: const Icon(Icons.clear),
+              _ImportReviewSheetRow(
+                leading: Icon(Icons.clear_rounded, color: cs.onSurfaceVariant),
+                label: tr('import.review.clear_category'),
                 onTap: () => Navigator.pop(ctx, ''),
               ),
-              const Divider(height: 1),
+              Divider(
+                height: 1,
+                color: cs.outlineVariant.withValues(alpha: 0.4),
+              ),
               ...categories.map(
-                (c) => ListTile(
+                (c) => _ImportReviewSheetRow(
                   leading: CircleAvatar(
                     backgroundColor: Color(c.colorValue),
                     radius: 16,
                   ),
-                  title: Text(c.name),
+                  label: c.name,
                   onTap: () => Navigator.pop(ctx, c.id),
                 ),
               ),
@@ -724,6 +724,47 @@ class _ReviewTile extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Строка выбора категории без ListTile (Action Mode).
+class _ImportReviewSheetRow extends StatelessWidget {
+  const _ImportReviewSheetRow({
+    required this.leading,
+    required this.label,
+    required this.onTap,
+  });
+
+  final Widget leading;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: ImportLayoutSpacing.s20,
+            vertical: ImportLayoutSpacing.s12,
+          ),
+          child: Row(
+            children: [
+              leading,
+              SizedBox(width: ImportLayoutSpacing.s16),
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

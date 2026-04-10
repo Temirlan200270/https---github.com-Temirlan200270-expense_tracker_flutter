@@ -1,7 +1,9 @@
 import 'package:expense_tracker_app/expense_tracker_app.dart';
+import 'package:features_budgets/features_budgets.dart';
 import 'package:features_currency/features_currency.dart';
 import 'package:features_expenses/features_expenses.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_models/shared_models.dart';
 
 import '../behavior_engine/behavior_engine.dart';
 import '../domain/behavior_engine.dart';
@@ -47,6 +49,7 @@ class HomeDecisionSnapshot {
     this.forecast,
     this.runwayDays,
     this.spendingTrend = TrendDirection.stable,
+    this.budgetPressure,
   });
 
   final HomeFinancialStateTier stateTier;
@@ -57,6 +60,9 @@ class HomeDecisionSnapshot {
 
   /// Инерция трат: сравнение свежих дней с предыдущим окном (см. [BehaviorEngine.detectTrend]).
   final TrendDirection spendingTrend;
+
+  /// Сырой сигнал бюджетов (лимиты vs факт) для слоя перевода и приоритета инсайтов.
+  final HomeBudgetPressure? budgetPressure;
 }
 
 /// Единый снимок для Home и связанных экранов (см. [financialSnapshotProvider]).
@@ -159,6 +165,8 @@ int? _monthRunwayDays({
 Future<HomeDecisionSnapshot> _computeHomeDecisionSnapshot(Ref ref) async {
   final all = await ref.watch(expensesStreamProvider.future);
   final categories = await ref.watch(categoriesStreamProvider.future);
+  final budgetsWithSpending = await ref.watch(budgetsWithSpendingProvider.future);
+  final budgetPressure = HomeBudgetPressure.fromActiveBudgets(budgetsWithSpending);
   final defaultCurrency = ref.watch(defaultCurrencyProvider);
   final currencyService = ref.watch(currencyServiceProvider);
 
@@ -343,6 +351,7 @@ Future<HomeDecisionSnapshot> _computeHomeDecisionSnapshot(Ref ref) async {
     forecast: forecast,
     runwayDays: runwayDays,
     spendingTrend: spendingTrend,
+    budgetPressure: budgetPressure,
   );
 }
 

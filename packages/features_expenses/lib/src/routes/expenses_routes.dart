@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_models/shared_models.dart';
+import 'package:ui_components/ui_components.dart';
 
 import '../presentation/pages/expenses_list_page.dart';
 import '../presentation/pages/new_expense_page.dart';
@@ -18,13 +19,13 @@ CustomTransitionPage<T> _buildPageTransition<T>({
   return CustomTransitionPage<T>(
     key: key,
     child: child,
-    transitionDuration: const Duration(milliseconds: 260),
-    reverseTransitionDuration: const Duration(milliseconds: 220),
+    transitionDuration: AppMotion.screen,
+    reverseTransitionDuration: AppMotion.standard,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curvedAnimation = CurvedAnimation(
         parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
+        curve: AppMotion.curve,
+        reverseCurve: AppMotion.curveReverse,
       );
 
       if (slideFromRight) {

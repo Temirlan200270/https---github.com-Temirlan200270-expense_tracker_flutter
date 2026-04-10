@@ -31,14 +31,9 @@ class _ImportPageState extends ConsumerState<ImportPage> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: cs.surface,
-      appBar: AppBar(
-        title: Text(tr('import.title')),
-      ),
-      body: SafeArea(
-        bottom: true,
-        child: ListView(
+    return PrimaryScaffold(
+      title: tr('import.title'),
+      child: ListView(
           padding: ImportLayoutSpacing.screenPadding,
           children: [
             Text(
@@ -90,7 +85,6 @@ class _ImportPageState extends ConsumerState<ImportPage> {
             ],
           ],
         ),
-      ),
     );
   }
 
@@ -331,35 +325,36 @@ class _ImportOption extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     return ImportSurfaceCard(
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: ImportLayoutSpacing.s20,
-          vertical: ImportLayoutSpacing.s12,
-        ),
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(icon, color: iconColor, size: 24),
-        ),
-        title: Text(
-          title,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(24),
+          child: Opacity(
+            opacity: enabled ? 1 : 0.45,
+            child: CompactRow(
+              leading: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: iconColor, size: 24),
               ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              title: title,
+              subtitle: subtitle,
+              trailing: Icon(
+                Icons.chevron_right_rounded,
                 color: cs.onSurfaceVariant,
               ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: ImportLayoutSpacing.s20,
+                vertical: ImportLayoutSpacing.s12,
+              ),
+            ),
+          ),
         ),
-        trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
-        onTap: enabled ? onTap : null,
-        enabled: enabled,
       ),
     )
         .animate()

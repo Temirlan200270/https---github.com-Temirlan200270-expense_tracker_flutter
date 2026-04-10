@@ -19,6 +19,38 @@ import 'home_wallet_shell.dart';
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
+  /// Пункт меню без ListTile: Action Mode / Configuration в одном визуальном языке.
+  static PopupMenuEntry<void> _quickNavMenuItem(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String route,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return PopupMenuItem<void>(
+      onTap: () {
+        Future.microtask(() {
+          if (context.mounted) context.push(route);
+        });
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: cs.onSurfaceVariant),
+            SizedBox(width: HomeLayoutSpacing.s12),
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   static Widget _headerActions(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Row(
@@ -41,76 +73,48 @@ class HomePage extends ConsumerWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  child: ListTile(
-                    leading: const Icon(Icons.account_balance_wallet),
-                    title: Text(tr('budget.title')),
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/budgets');
-                    },
-                  ),
+              itemBuilder: (ctx) => [
+                _quickNavMenuItem(
+                  ctx,
+                  icon: Icons.account_balance_wallet_rounded,
+                  label: tr('budget.title'),
+                  route: '/budgets',
                 ),
-                PopupMenuItem(
-                  child: ListTile(
-                    leading: const Icon(Icons.account_balance),
-                    title: Text(tr('debts.title')),
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/debts');
-                    },
-                  ),
+                _quickNavMenuItem(
+                  ctx,
+                  icon: Icons.account_balance_rounded,
+                  label: tr('debts.title'),
+                  route: '/debts',
                 ),
-                PopupMenuItem(
-                  child: ListTile(
-                    leading: const Icon(Icons.category),
-                    title: Text(tr('categories.title')),
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/categories');
-                    },
-                  ),
+                _quickNavMenuItem(
+                  ctx,
+                  icon: Icons.category_rounded,
+                  label: tr('categories.title'),
+                  route: '/categories',
                 ),
-                PopupMenuItem(
-                  child: ListTile(
-                    leading: const Icon(Icons.repeat),
-                    title: Text(tr('recurring.title')),
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/recurring');
-                    },
-                  ),
+                _quickNavMenuItem(
+                  ctx,
+                  icon: Icons.repeat_rounded,
+                  label: tr('recurring.title'),
+                  route: '/recurring',
                 ),
-                PopupMenuItem(
-                  child: ListTile(
-                    leading: const Icon(Icons.upload_file),
-                    title: Text(tr('export.title')),
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/export');
-                    },
-                  ),
+                _quickNavMenuItem(
+                  ctx,
+                  icon: Icons.upload_file_rounded,
+                  label: tr('export.title'),
+                  route: '/export',
                 ),
-                PopupMenuItem(
-                  child: ListTile(
-                    leading: const Icon(Icons.download),
-                    title: Text(tr('import.title')),
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/import');
-                    },
-                  ),
+                _quickNavMenuItem(
+                  ctx,
+                  icon: Icons.download_rounded,
+                  label: tr('import.title'),
+                  route: '/import',
                 ),
-                PopupMenuItem(
-                  child: ListTile(
-                    leading: const Icon(Icons.settings),
-                    title: Text(tr('settings')),
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/settings');
-                    },
-                  ),
+                _quickNavMenuItem(
+                  ctx,
+                  icon: Icons.settings_rounded,
+                  label: tr('settings'),
+                  route: '/settings',
                 ),
               ],
             ),
@@ -219,34 +223,21 @@ class HomePage extends ConsumerWidget {
                         );
                       },
                       loading: () => const _WalletHeroLoadingCard(),
-                      error: (_, __) => Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            tr('home.stats_error'),
-                            textAlign: TextAlign.center,
+                      error: (_, __) => ErrorState(
+                        compact: true,
+                        title: tr('home.stats_error'),
+                        action: PrimaryActionButton(
+                          onPressed: () => context.push('/expenses/new'),
+                          child: Text(
+                            tr('home.hero.new_operation'),
                             style: Theme.of(context)
                                 .textTheme
-                                .bodyMedium
+                                .titleMedium
                                 ?.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.error,
+                                  fontWeight: FontWeight.w600,
                                 ),
                           ),
-                          SizedBox(height: HomeLayoutSpacing.s16),
-                          PrimaryActionButton(
-                            onPressed: () => context.push('/expenses/new'),
-                            child: Text(
-                              tr('home.hero.new_operation'),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
               feedHeader: globalEmpty
@@ -258,10 +249,10 @@ class HomePage extends ConsumerWidget {
                         onPressed: () => context.push('/expenses'),
                         child: Text(
                           tr('home.feed.all_link'),
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
                         ),
                       ),
                     ),
@@ -330,15 +321,12 @@ class HomePage extends ConsumerWidget {
               ],
             ),
           ),
-          error: (error, _) => Center(
-            child: Padding(
-              padding: EdgeInsets.all(HomeLayoutSpacing.s24),
-              child: Text(
-                tr('home.transactions_error'),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-              ),
+          error: (error, _) => ErrorState(
+            title: tr('home.transactions_error'),
+            message: tr('error_state.message'),
+            action: PrimaryActionButton(
+              onPressed: () => ref.invalidate(expensesStreamProvider),
+              child: Text(tr('retry')),
             ),
           ),
         ),
@@ -419,6 +407,11 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
   /// Исчерпан лимит показов бюджета в hero за окно.
   Set<String> _budgetRateLimitedIds = {};
 
+  /// Enter-animation (fade/slide) только до первого завершения; апдейты — без повторного motion.
+  bool _heroEnterAnimationPlayed = false;
+
+  final GlobalKey _walletHeroCardKey = GlobalKey();
+
   @override
   void dispose() {
     _revealTimer?.cancel();
@@ -494,14 +487,10 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
 
   void _syncInsightDisplay() {
     if (!mounted) return;
-    final narrative = HomeDecisionHeroHelper.build(
+    final ux = UxDecisionMapper.mapSnapshot(
+      widget.snapshot,
       colorScheme: Theme.of(context).colorScheme,
-      snapshot: widget.snapshot,
       formatter: widget.formatter,
-    );
-    final ux = UxDecisionMapper.fromHomeNarrative(
-      narrative: narrative,
-      tier: widget.snapshot.stateTier,
     );
     final raw = resolveHomeHeroInsight(
       budgetsAsync: widget.budgetsAsync,
@@ -509,6 +498,7 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
       formatter: widget.formatter,
       softDeprioritizeBudgetIds: _budgetSoftDepIds,
       rateLimitedBudgetIds: _budgetRateLimitedIds,
+      unifiedHeroBudgetPressure: widget.snapshot.budgetPressure,
     );
     final revealFp = homeHeroRevealFingerprintForSync(
       snapshot: widget.snapshot,
@@ -610,14 +600,10 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
 
   Future<void> _sendFeedback(FeedbackType type) async {
     if (_feedbackSent) return;
-    final narrative = HomeDecisionHeroHelper.build(
+    final ux = UxDecisionMapper.mapSnapshot(
+      widget.snapshot,
       colorScheme: Theme.of(context).colorScheme,
-      snapshot: widget.snapshot,
       formatter: widget.formatter,
-    );
-    final ux = UxDecisionMapper.fromHomeNarrative(
-      narrative: narrative,
-      tier: widget.snapshot.stateTier,
     );
     final raw = resolveHomeHeroInsight(
       budgetsAsync: widget.budgetsAsync,
@@ -625,6 +611,7 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
       formatter: widget.formatter,
       softDeprioritizeBudgetIds: _budgetSoftDepIds,
       rateLimitedBudgetIds: _budgetRateLimitedIds,
+      unifiedHeroBudgetPressure: widget.snapshot.budgetPressure,
     );
     final classKey = homeInsightClassKeyForHero(
       snapshot: widget.snapshot,
@@ -661,14 +648,10 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
           .addPostFrameCallback((_) => _syncInsightDisplay());
     }
 
-    final narrative = HomeDecisionHeroHelper.build(
+    final ux = UxDecisionMapper.mapSnapshot(
+      widget.snapshot,
       colorScheme: Theme.of(context).colorScheme,
-      snapshot: widget.snapshot,
       formatter: widget.formatter,
-    );
-    final ux = UxDecisionMapper.fromHomeNarrative(
-      narrative: narrative,
-      tier: widget.snapshot.stateTier,
     );
     final raw = resolveHomeHeroInsight(
       budgetsAsync: widget.budgetsAsync,
@@ -676,6 +659,7 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
       formatter: widget.formatter,
       softDeprioritizeBudgetIds: _budgetSoftDepIds,
       rateLimitedBudgetIds: _budgetRateLimitedIds,
+      unifiedHeroBudgetPressure: widget.snapshot.budgetPressure,
     );
     final fromBudget = raw.budgetProgress != null;
     final toneShort = switch (ux.tone) {
@@ -696,6 +680,9 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
     );
 
     final hint = _stableHint ?? raw.actionHint;
+    final hintTrimmed = (hint ?? '').trim();
+    final insightHintForCard =
+        hintTrimmed.isNotEmpty ? hintTrimmed : null;
 
     final hasInsightLine =
         displayLine != null && displayLine.trim().isNotEmpty;
@@ -718,30 +705,59 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
       visualDensity: VisualDensity.compact,
     );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        homeWalletHeroCard(
-          insightLine: displayLine,
-          insightContextLine: displayContext,
-          budgetProgress: raw.budgetProgress,
-          balanceAmountFormatted:
-              widget.formatter.format(widget.stats.balance),
-          expensesFormatted:
-              widget.formatter.format(widget.stats.totalExpenses),
-          incomeFormatted:
-              widget.formatter.format(widget.stats.totalIncome),
-          forecastFormatted: widget.forecastStr,
-          gradientColors: gradient,
-        )
-            .animate()
+    final heroCard = homeWalletHeroCard(
+      key: _walletHeroCardKey,
+      insightLine: displayLine,
+      insightContextLine: displayContext,
+      insightHintLine: insightHintForCard,
+      budgetProgress: raw.budgetProgress,
+      balanceAmountFormatted: widget.formatter.format(widget.stats.balance),
+      expensesFormatted:
+          widget.formatter.format(widget.stats.totalExpenses),
+      incomeFormatted: widget.formatter.format(widget.stats.totalIncome),
+      forecastFormatted: widget.forecastStr,
+      gradientColors: gradient,
+      contentOrder: WalletHeroContentOrder.decision,
+      insightLeadingIcon: hasInsightLine
+          ? walletHeroLeadingIconForTone(ux.tone)
+          : null,
+      footerCta: PrimaryActionButton(
+        onPressed: () => context.push('/expenses/new'),
+        backgroundColor:
+            ux.tone == UxFinancialTone.risk ? cs.error : null,
+        foregroundColor:
+            ux.tone == UxFinancialTone.risk ? cs.onError : null,
+        child: Text(
+          tr('home.hero.new_operation'),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+      ),
+    );
+
+    final heroWrapped = _heroEnterAnimationPlayed
+        ? heroCard
+        : heroCard
+            .animate(
+              onComplete: (_) {
+                if (mounted) {
+                  setState(() => _heroEnterAnimationPlayed = true);
+                }
+              },
+            )
             .fadeIn(duration: AppMotion.standard, curve: AppMotion.curve)
             .slideY(
               begin: 0.04,
               end: 0,
               duration: AppMotion.screen,
               curve: AppMotion.curve,
-            ),
+            );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        heroWrapped,
         if (_showSituationImproved)
           Padding(
             padding: const EdgeInsets.only(top: HomeLayoutSpacing.s12),
@@ -803,38 +819,55 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
               ],
             ),
           ),
-        SizedBox(height: HomeLayoutSpacing.s20),
-        PrimaryActionButton(
-          onPressed: () => context.push('/expenses/new'),
-          child: Text(
-            tr('home.hero.new_operation'),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+      ],
+    );
+  }
+}
+
+/// Строка действия в bottom sheet ленты (без ListTile).
+class _HomeSheetAction extends StatelessWidget {
+  const _HomeSheetAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.foregroundColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? foregroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final fg = foregroundColor ?? cs.onSurface;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: HomeLayoutSpacing.s20,
+            vertical: HomeLayoutSpacing.s12,
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 22, color: fg),
+              SizedBox(width: HomeLayoutSpacing.s16),
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: fg,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
+              ),
+            ],
           ),
         ),
-        if (hint != null && hint.trim().isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: HomeLayoutSpacing.s12),
-            child: Text(
-              hint.trim(),
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: cs.onSurface.withValues(
-                      alpha: switch (ux.tone) {
-                        UxFinancialTone.risk => 0.72,
-                        UxFinancialTone.watch => 0.55,
-                        UxFinancialTone.safe => 0.38,
-                      },
-                    ),
-                    fontWeight: ux.tone == UxFinancialTone.risk
-                        ? FontWeight.w500
-                        : FontWeight.w400,
-                    height: 1.35,
-                  ),
-            ),
-          ),
-      ],
+      ),
     );
   }
 }
@@ -916,130 +949,126 @@ class _HomeFeedCard extends ConsumerWidget {
       ),
       confirmDismiss: (direction) => _confirmDelete(context),
       onDismissed: (direction) => _deleteExpense(context, ref),
-      child: Material(
-        color: cs.surface,
-        elevation: 2,
-        shadowColor: cs.shadow.withValues(alpha: 0.12),
-        surfaceTintColor: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => context.push('/expenses'),
-          onLongPress: () => _showContextMenu(context, ref),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: HomeLayoutSpacing.s16,
-              vertical: HomeLayoutSpacing.s16,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (showDayHeader) ...[
-                  Text(
-                    dayHeaderText,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: cs.onSurface.withValues(alpha: 0.5),
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.35,
-                        ),
-                  ),
-                  SizedBox(height: HomeLayoutSpacing.s12),
-                ],
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: amountColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
+      child: EnhancedExpenseCard(
+        margin: EdgeInsets.zero,
+        gradient: isIncome
+            ? IncomeGradient.fromScheme(cs)
+            : ExpenseGradient.fromScheme(cs),
+        onTap: () => context.push('/expenses'),
+        onLongPress: () => _showContextMenu(context, ref),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: HomeLayoutSpacing.s16,
+            vertical: HomeLayoutSpacing.s16,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (showDayHeader) ...[
+                Text(
+                  dayHeaderText,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: cs.onSurface.withValues(alpha: 0.5),
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.35,
                       ),
-                      child: Icon(
-                        isIncome
-                            ? Icons.payments_outlined
-                            : Icons.shopping_cart_outlined,
-                        color: amountColor,
-                        size: 22,
-                      ),
+                ),
+                SizedBox(height: HomeLayoutSpacing.s12),
+              ],
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: amountColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    SizedBox(width: HomeLayoutSpacing.s12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w700),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (categoryName != null) ...[
-                            SizedBox(height: HomeLayoutSpacing.s8),
-                            Text(
-                              categoryName,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: cs.onSurface
-                                        .withValues(alpha: 0.5),
-                                  ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                    child: Icon(
+                      isIncome
+                          ? Icons.payments_outlined
+                          : Icons.shopping_cart_outlined,
+                      color: amountColor,
+                      size: 22,
+                    ),
+                  ),
+                  SizedBox(width: HomeLayoutSpacing.s12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (categoryName != null) ...[
                           SizedBox(height: HomeLayoutSpacing.s8),
                           Text(
-                            timeLabel,
+                            categoryName,
                             style: Theme.of(context)
                                 .textTheme
                                 .bodySmall
                                 ?.copyWith(
-                                  color: cs.onSurface
-                                      .withValues(alpha: 0.45),
+                                  color:
+                                      cs.onSurface.withValues(alpha: 0.5),
                                 ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
+                        SizedBox(height: HomeLayoutSpacing.s8),
                         Text(
-                          '${isIncome ? '+' : '−'}${formatter.format(expense.amount.amount)}',
+                          timeLabel,
                           style: Theme.of(context)
                               .textTheme
-                              .titleMedium
+                              .bodySmall
                               ?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: amountColor,
-                                letterSpacing: -0.6,
+                                color:
+                                    cs.onSurface.withValues(alpha: 0.45),
                               ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.delete_outline,
-                            size: 20,
-                            color: cs.onSurface.withValues(alpha: 0.3),
-                          ),
-                          onPressed: () => _showDeleteDialog(context, ref),
-                          tooltip: tr('delete'),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
-                          ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${isIncome ? '+' : '−'}${formatter.format(expense.amount.amount)}',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: amountColor,
+                              letterSpacing: -0.6,
+                            ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.delete_outline_rounded,
+                          size: 20,
+                          color: cs.onSurface.withValues(alpha: 0.3),
+                        ),
+                        onPressed: () => _showDeleteDialog(context, ref),
+                        tooltip: tr('delete'),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -1107,91 +1136,105 @@ class _HomeFeedCard extends ConsumerWidget {
 
     showModalBottomSheet<void>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.symmetric(
-                vertical: HomeLayoutSpacing.s12,
-              ),
-              decoration: BoxDecoration(
-                color: cs.outline.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(2),
-              ),
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (sheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              HomeLayoutSpacing.s20,
+              HomeLayoutSpacing.s8,
+              HomeLayoutSpacing.s20,
+              HomeLayoutSpacing.s12,
             ),
-            ListTile(
-              leading: CircleAvatar(
-                backgroundColor: amountColor.withValues(alpha: 0.15),
-                child: Icon(
-                  isIncome ? Icons.trending_up : Icons.trending_down,
-                  color: amountColor,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: amountColor.withValues(alpha: 0.15),
+                  child: Icon(
+                    isIncome
+                        ? Icons.trending_up_rounded
+                        : Icons.trending_down_rounded,
+                    color: amountColor,
+                  ),
                 ),
-              ),
-              title: Text(
-                formatter.format(expense.amount.amount),
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: amountColor,
+                SizedBox(width: HomeLayoutSpacing.s12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        formatter.format(expense.amount.amount),
+                        style: Theme.of(sheetContext)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: amountColor,
+                            ),
+                      ),
+                      Text(
+                        DateFormat.yMMMMd(sheetContext.locale.toLanguageTag())
+                            .format(expense.occurredAt),
+                        style: Theme.of(sheetContext)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: cs.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              subtitle: Text(
-                DateFormat.yMMMMd(context.locale.toLanguageTag())
-                    .format(expense.occurredAt),
-              ),
+              ],
             ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: Text(tr('expenses.edit.title')),
-              onTap: () {
-                HapticUtils.selection();
-                Navigator.pop(context);
-                context.push('/expenses/new', extra: {'expense': expense});
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.copy),
-              title: Text(tr('expenses.duplicate.title')),
-              onTap: () async {
-                HapticUtils.selection();
-                Navigator.pop(context);
-                final repo = ref.read(expensesRepositoryProvider);
-                final newExpense = Expense(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  amount: expense.amount,
-                  type: expense.type,
-                  occurredAt: DateTime.now(),
-                  categoryId: expense.categoryId,
-                  note: expense.note,
+          ),
+          Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.4)),
+          _HomeSheetAction(
+            icon: Icons.edit_rounded,
+            label: tr('expenses.edit.title'),
+            onTap: () {
+              HapticUtils.selection();
+              Navigator.pop(sheetContext);
+              context.push('/expenses/new', extra: {'expense': expense});
+            },
+          ),
+          _HomeSheetAction(
+            icon: Icons.copy_rounded,
+            label: tr('expenses.duplicate.title'),
+            onTap: () async {
+              HapticUtils.selection();
+              Navigator.pop(sheetContext);
+              final repo = ref.read(expensesRepositoryProvider);
+              final newExpense = Expense(
+                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                amount: expense.amount,
+                type: expense.type,
+                occurredAt: DateTime.now(),
+                categoryId: expense.categoryId,
+                note: expense.note,
+              );
+              await repo.upsertExpense(newExpense);
+              if (context.mounted) {
+                HapticUtils.success();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(tr('expenses.duplicate.success')),
+                  ),
                 );
-                await repo.upsertExpense(newExpense);
-                if (context.mounted) {
-                  HapticUtils.success();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(tr('expenses.duplicate.success')),
-                    ),
-                  );
-                }
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.delete, color: cs.error),
-              title: Text(
-                tr('delete'),
-                style: TextStyle(color: cs.error),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _showDeleteDialog(context, ref);
-              },
-            ),
-            SizedBox(height: HomeLayoutSpacing.s8),
-          ],
-        ),
+              }
+            },
+          ),
+          _HomeSheetAction(
+            icon: Icons.delete_outline_rounded,
+            label: tr('delete'),
+            foregroundColor: cs.error,
+            onTap: () {
+              Navigator.pop(sheetContext);
+              _showDeleteDialog(context, ref);
+            },
+          ),
+          SizedBox(height: HomeLayoutSpacing.s8),
+        ],
       ),
     );
   }

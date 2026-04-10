@@ -355,6 +355,7 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
 
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final currencyCode = ref.watch(defaultCurrencyProvider);
+    final mq = MediaQuery.of(context);
 
     return PrimaryScaffold(
       title: _isEditing 
@@ -363,12 +364,22 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
       child: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            FormLayoutSpacing.s20,
+            FormLayoutSpacing.s16,
+            FormLayoutSpacing.s20,
+            FormLayoutSpacing.s16 +
+                mq.padding.bottom +
+                mq.viewInsets.bottom,
+          ),
           children: [
             Container(
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(FormLayoutSpacing.inputRadius),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
               ),
               padding: const EdgeInsets.all(4),
               child: SegmentedButton<ExpenseType>(
@@ -376,12 +387,12 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                   ButtonSegment(
                     value: ExpenseType.expense,
                     label: Text(tr('expenses.form.expense')),
-                    icon: const Icon(Icons.trending_down, size: 20),
+                    icon: const Icon(Icons.trending_down_rounded, size: 20),
                   ),
                   ButtonSegment(
                     value: ExpenseType.income,
                     label: Text(tr('expenses.form.income')),
-                    icon: const Icon(Icons.trending_up, size: 20),
+                    icon: const Icon(Icons.trending_up_rounded, size: 20),
                   ),
                 ],
                 selected: {_type},
@@ -398,13 +409,13 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
               ),
             )
                 .animate()
-                .fadeIn(duration: 200.ms, curve: Curves.easeOutCubic)
+                .fadeIn(duration: AppMotion.standard, curve: AppMotion.curve)
                 .slideY(
                     begin: -0.08,
                     end: 0,
-                    duration: 220.ms,
-                    curve: Curves.easeOutCubic),
-            const SizedBox(height: 16),
+                    duration: AppMotion.standard,
+                    curve: AppMotion.curve),
+            SizedBox(height: FormLayoutSpacing.s16),
             Row(
               children: [
                 Expanded(
@@ -417,47 +428,49 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                     decoration: InputDecoration(
                       labelText: tr('expenses.form.amount'),
                       suffixText: currencyCode,
-                      prefixIcon: Container(
-                        margin: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(FormLayoutSpacing.s12),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(FormLayoutSpacing.s12),
+                          ),
+                          child: Icon(
+                            Icons.attach_money_rounded,
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            size: 20,
+                          ),
                         ),
-                        child: Icon(
-                          Icons.attach_money,
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
-                          size: 20,
-                        ),
+                      ),
+                      prefixIconConstraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
                       ),
                       filled: true,
                       fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(FormLayoutSpacing.inputRadius),
                         borderSide: BorderSide(
-                          color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
+                          color: Theme.of(context).colorScheme.outlineVariant,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(FormLayoutSpacing.inputRadius),
                         borderSide: BorderSide(
-                          color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
+                          color: Theme.of(context).colorScheme.outlineVariant,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(FormLayoutSpacing.inputRadius),
                         borderSide: BorderSide(
                           color: Theme.of(context).colorScheme.primary,
                           width: 2,
                         ),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: FormLayoutSpacing.s16,
+                        vertical: FormLayoutSpacing.s16,
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -472,39 +485,35 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                   )
                       .animate()
                       .fadeIn(
-                          duration: 200.ms,
-                          delay: 70.ms,
-                          curve: Curves.easeOutCubic)
+                          duration: AppMotion.standard,
+                          delay: AppMotion.staggerInterval * 2,
+                          curve: AppMotion.curve)
                       .slideX(
                           begin: -0.04,
                           end: 0,
-                          duration: 220.ms,
-                          delay: 70.ms,
-                          curve: Curves.easeOutCubic),
+                          duration: AppMotion.standard,
+                          delay: AppMotion.staggerInterval * 2,
+                          curve: AppMotion.curve),
                 ),
                 if (!_isEditing) ...[
-                  const SizedBox(width: 12),
+                  SizedBox(width: FormLayoutSpacing.s12),
                   Container(
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.secondaryContainer,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(FormLayoutSpacing.inputRadius),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
                     ),
                     child: Material(
-                      color: Colors.transparent,
+                      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0),
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(FormLayoutSpacing.inputRadius),
                         onTap: () => _scanReceipt(context),
                         child: Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(FormLayoutSpacing.s12),
                           child: Icon(
-                            Icons.camera_alt,
+                            Icons.photo_camera_rounded,
                             color: Theme.of(context).colorScheme.onSecondaryContainer,
                             size: 28,
                           ),
@@ -514,19 +523,19 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                   )
                       .animate()
                       .fadeIn(
-                          duration: 200.ms,
-                          delay: 100.ms,
-                          curve: Curves.easeOutCubic)
+                          duration: AppMotion.standard,
+                          delay: AppMotion.staggerInterval * 3,
+                          curve: AppMotion.curve)
                       .scale(
                           begin: const Offset(0.88, 0.88),
                           end: const Offset(1, 1),
-                          duration: 220.ms,
-                          delay: 100.ms,
-                          curve: Curves.easeOutCubic),
+                          duration: AppMotion.standard,
+                          delay: AppMotion.staggerInterval * 3,
+                          curve: AppMotion.curve),
                 ],
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: FormLayoutSpacing.s16),
             categoriesAsync.when(
               data: (categories) => CategorySearchField(
                 categories: categories,
@@ -538,41 +547,50 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
               )
                   .animate()
                   .fadeIn(
-                      duration: 200.ms,
-                      delay: 130.ms,
-                      curve: Curves.easeOutCubic)
+                      duration: AppMotion.standard,
+                      delay: AppMotion.staggerInterval * 4,
+                      curve: AppMotion.curve)
                   .slideY(
                       begin: 0.08,
                       end: 0,
-                      duration: 220.ms,
-                      delay: 130.ms,
-                      curve: Curves.easeOutCubic),
+                      duration: AppMotion.standard,
+                      delay: AppMotion.staggerInterval * 4,
+                      curve: AppMotion.curve),
               loading: () => const LinearProgressIndicator()
                   .animate()
                   .fadeIn(
-                      duration: 200.ms,
-                      delay: 130.ms,
-                      curve: Curves.easeOutCubic),
-              error: (error, _) => Text(tr('expenses.form.categories_error'))
+                      duration: AppMotion.standard,
+                      delay: AppMotion.staggerInterval * 4,
+                      curve: AppMotion.curve),
+              error: (_, __) => ErrorState(
+                    compact: true,
+                    title: tr('expenses.form.categories_error'),
+                    message: tr('error_state.message'),
+                    action: PrimaryActionButton(
+                      height: 52,
+                      onPressed: () =>
+                          ref.invalidate(categoriesStreamProvider),
+                      child: Text(tr('retry')),
+                    ),
+                  )
                   .animate()
                   .fadeIn(
-                      duration: 200.ms,
-                      delay: 130.ms,
-                      curve: Curves.easeOutCubic)
-                  .shake(duration: 220.ms, delay: 160.ms),
+                      duration: AppMotion.standard,
+                      delay: AppMotion.staggerInterval * 4,
+                      curve: AppMotion.curve),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: FormLayoutSpacing.s16),
             Card(
               elevation: 0,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(FormLayoutSpacing.inputRadius),
                 side: BorderSide(
-                  color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
-                  width: 1,
+                  color: Theme.of(context).colorScheme.outlineVariant,
                 ),
               ),
               child: Material(
-                color: Colors.transparent,
+                color: Theme.of(context).colorScheme.surface.withValues(alpha: 0),
                 child: InkWell(
                   onTap: () async {
                     final navigatorContext = context;
@@ -586,31 +604,26 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                       setState(() => _date = picked);
                     }
                   },
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(FormLayoutSpacing.inputRadius),
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(FormLayoutSpacing.s20),
                     child: Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(14),
+                        DecoratedBox(
                           decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                            borderRadius: BorderRadius.circular(FormLayoutSpacing.s12),
                           ),
-                          child: Icon(
-                            Icons.calendar_today_rounded,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
-                            size: 22,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Icon(
+                              Icons.calendar_today_rounded,
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              size: 22,
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: FormLayoutSpacing.s16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -636,7 +649,7 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                         ),
                         Icon(
                           Icons.chevron_right_rounded,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                           size: 24,
                         ),
                       ],
@@ -645,114 +658,113 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: FormLayoutSpacing.s16),
             TextFormField(
               controller: _noteController,
               decoration: InputDecoration(
                 labelText: tr('expenses.form.note'),
-                prefixIcon: Container(
-                  margin: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.all(FormLayoutSpacing.s12),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(FormLayoutSpacing.s12),
+                    ),
+                    child: Icon(
+                      Icons.sticky_note_2_rounded,
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                      size: 20,
+                    ),
                   ),
-                  child: Icon(
-                    Icons.note_outlined,
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
-                    size: 20,
-                  ),
+                ),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 48,
+                  minHeight: 48,
                 ),
                 filled: true,
                 fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(FormLayoutSpacing.inputRadius),
                   borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
+                    color: Theme.of(context).colorScheme.outlineVariant,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(FormLayoutSpacing.inputRadius),
                   borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
+                    color: Theme.of(context).colorScheme.outlineVariant,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(FormLayoutSpacing.inputRadius),
                   borderSide: BorderSide(
                     color: Theme.of(context).colorScheme.primary,
                     width: 2,
                   ),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: FormLayoutSpacing.s16,
+                  vertical: FormLayoutSpacing.s16,
+                ),
               ),
               maxLines: 3,
             )
                 .animate()
                 .fadeIn(
-                    duration: 200.ms,
-                    delay: 180.ms,
-                    curve: Curves.easeOutCubic)
+                    duration: AppMotion.standard,
+                    delay: AppMotion.staggerInterval * 6,
+                    curve: AppMotion.curve)
                 .slideY(
                     begin: 0.08,
                     end: 0,
-                    duration: 220.ms,
-                    delay: 180.ms,
-                    curve: Curves.easeOutCubic),
-            const SizedBox(height: 24),
-            FilledButton.icon(
+                    duration: AppMotion.standard,
+                    delay: AppMotion.staggerInterval * 6,
+                    curve: AppMotion.curve),
+            SizedBox(height: FormLayoutSpacing.s24),
+            PrimaryActionButton(
               onPressed: () => _handleSubmit(ref),
-              icon: const Icon(Icons.check_rounded, size: 22),
-              label: Text(
-                tr('expenses.form.submit'),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(double.infinity, 56),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                elevation: 2,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check_rounded, size: 22),
+                  SizedBox(width: FormLayoutSpacing.s12),
+                  Text(
+                    tr('expenses.form.submit'),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                  ),
+                ],
               ),
             )
                 .animate()
                 .fadeIn(
-                    duration: 200.ms,
-                    delay: 200.ms,
-                    curve: Curves.easeOutCubic)
+                    duration: AppMotion.standard,
+                    delay: AppMotion.staggerInterval * 7,
+                    curve: AppMotion.curve)
                 .scale(
                     begin: const Offset(0.96, 0.96),
                     end: const Offset(1, 1),
-                    duration: 220.ms,
-                    delay: 200.ms,
-                    curve: Curves.easeOutCubic),
+                    duration: AppMotion.standard,
+                    delay: AppMotion.staggerInterval * 7,
+                    curve: AppMotion.curve),
             if (_isEditing) ...[
-              const SizedBox(height: 12),
+              SizedBox(height: FormLayoutSpacing.s12),
               OutlinedButton.icon(
                 onPressed: () => _showDeleteDialog(context, ref),
-                icon: const Icon(Icons.delete),
+                icon: const Icon(Icons.delete_outline_rounded),
                 label: Text(tr('delete')),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
+                  foregroundColor: Theme.of(context).colorScheme.error,
                   minimumSize: const Size(double.infinity, 56),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
               ),
             ],
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
           ],
         ),
       ),
@@ -863,26 +875,16 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage> {
 
   void _showDeleteDialog(BuildContext context, WidgetRef ref) async {
     final navigatorContext = context;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showConfirmActionSheet(
       context: navigatorContext,
-      builder: (context) => AlertDialog(
-        title: Text(tr('expenses.delete.title')),
-        content: Text(tr('expenses.delete.message')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(tr('cancel')),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(tr('delete')),
-          ),
-        ],
-      ),
+      title: tr('expenses.delete.title'),
+      message: tr('expenses.delete.message'),
+      cancelLabel: tr('cancel'),
+      confirmLabel: tr('delete'),
+      isDestructive: true,
     );
 
-    if (confirmed == true && mounted) {
+    if (confirmed && mounted) {
       final repo = ref.read(expensesRepositoryProvider);
       await repo.softDelete(widget.expense!.id);
       if (mounted) {

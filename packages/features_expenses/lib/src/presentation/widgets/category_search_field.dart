@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_models/shared_models.dart';
+import 'package:ui_components/ui_components.dart';
 
 /// Поле поиска категорий с выпадающим списком
 class CategorySearchField extends StatefulWidget {
@@ -128,7 +129,8 @@ class _CategorySearchFieldState extends State<CategorySearchField> {
     final cs = Theme.of(context).colorScheme;
     final suggest = widget.highlightSuggested && widget.selectedCategoryId != null;
     final accent = cs.primary;
-    final borderColor = suggest ? accent.withOpacity(0.55) : cs.outline.withOpacity(0.35);
+    final borderColor =
+        suggest ? accent.withValues(alpha: 0.55) : cs.outlineVariant;
     final borderWidth = suggest ? 2.0 : 1.0;
     final radius = BorderRadius.circular(16);
 
@@ -150,17 +152,17 @@ class _CategorySearchFieldState extends State<CategorySearchField> {
         hintText: tr('expenses.form.category_hint'),
         suffixIcon: _controller.text.isNotEmpty
             ? IconButton(
-                icon: const Icon(Icons.clear, size: 20),
+                icon: const Icon(Icons.clear_rounded, size: 20),
                 onPressed: _clearCategory,
               )
             : Icon(
-                suggest ? Icons.auto_awesome : Icons.search,
-                color: suggest ? accent.withOpacity(0.9) : null,
+                suggest ? Icons.auto_awesome_rounded : Icons.search_rounded,
+                color: suggest ? accent.withValues(alpha: 0.9) : null,
               ),
         prefixIcon: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 180),
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeInCubic,
+          duration: AppMotion.fast,
+          switchInCurve: AppMotion.curve,
+          switchOutCurve: AppMotion.curveReverse,
           transitionBuilder: (child, animation) {
             return FadeTransition(
               opacity: animation,
@@ -183,15 +185,6 @@ class _CategorySearchFieldState extends State<CategorySearchField> {
                           .colorValue,
                     ),
                     shape: BoxShape.circle,
-                    boxShadow: suggest
-                        ? [
-                            BoxShadow(
-                              color: accent.withOpacity(0.35),
-                              blurRadius: 8,
-                              spreadRadius: 0,
-                            ),
-                          ]
-                        : null,
                   ),
                 )
               : Container(
@@ -202,12 +195,13 @@ class _CategorySearchFieldState extends State<CategorySearchField> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    Icons.category_outlined,
+                    Icons.category_rounded,
                     color: Theme.of(context).colorScheme.onSecondaryContainer,
                   ),
                 ),
         ),
         filled: true,
+        fillColor: cs.surfaceContainerHighest,
         border: borderFor(focused: false),
         enabledBorder: borderFor(focused: false),
         focusedBorder: borderFor(focused: true),
@@ -221,17 +215,14 @@ class _CategorySearchFieldState extends State<CategorySearchField> {
       children: [
         suggest
             ? AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutCubic,
+                duration: AppMotion.standard,
+                curve: AppMotion.curve,
                 decoration: BoxDecoration(
                   borderRadius: radius,
-                  boxShadow: [
-                    BoxShadow(
-                      color: accent.withOpacity(0.12),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  border: Border.all(
+                    color: accent.withValues(alpha: 0.35),
+                    width: 1,
+                  ),
                 ),
                 child: field,
               )
@@ -240,18 +231,11 @@ class _CategorySearchFieldState extends State<CategorySearchField> {
           Container(
             margin: const EdgeInsets.only(top: 8),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                color: Theme.of(context).colorScheme.outlineVariant,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
             constraints: const BoxConstraints(maxHeight: 200),
             child: ListView.builder(
@@ -294,8 +278,8 @@ class _CategorySearchFieldState extends State<CategorySearchField> {
             child: Text(
               tr('expenses.form.category_not_found'),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey,
-              ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
             ),
           ),
         if (widget.categorizationConfidence != null &&
@@ -308,7 +292,7 @@ class _CategorySearchFieldState extends State<CategorySearchField> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
-                  Icons.info_outline,
+                  Icons.info_outline_rounded,
                   size: 18,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),

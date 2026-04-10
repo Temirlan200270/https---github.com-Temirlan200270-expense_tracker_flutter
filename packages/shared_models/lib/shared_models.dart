@@ -3,6 +3,7 @@ export 'src/expense.dart';
 export 'src/category.dart';
 export 'src/recurring_expense.dart';
 export 'src/budget.dart';
+export 'src/home_budget_pressure.dart';
 export 'src/category_rule.dart';
 export 'src/categorization.dart';
 export 'src/pending_import_expense.dart';
