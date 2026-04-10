@@ -170,6 +170,9 @@ class AppTheme {
     );
   }
 
+  /// Акцентный seed (превью в настройках, согласован с [light]/[dark]).
+  static Color brandSeedColor(AppThemeType type) => _getSeedColor(type);
+
   // Маппинг Enum в цвета для colorSchemeSeed
   // Используем цвета, похожие на FlexColor схемы
   static Color _getSeedColor(AppThemeType type) {

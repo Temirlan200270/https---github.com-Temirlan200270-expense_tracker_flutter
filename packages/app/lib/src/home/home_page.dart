@@ -912,14 +912,14 @@ class _HomeFeedCard extends ConsumerWidget {
           color: cs.error,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: Icon(Icons.delete_rounded, color: cs.onError),
       ),
       confirmDismiss: (direction) => _confirmDelete(context),
       onDismissed: (direction) => _deleteExpense(context, ref),
       child: Material(
         color: cs.surface,
         elevation: 2,
-        shadowColor: Colors.black.withValues(alpha: 0.08),
+        shadowColor: cs.shadow.withValues(alpha: 0.12),
         surfaceTintColor: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(

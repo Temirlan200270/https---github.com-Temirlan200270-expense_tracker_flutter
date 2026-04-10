@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/home_decision_engine_provider.dart';
+import '../layout/analytics_layout_spacing.dart';
 import 'analytics_common.dart';
+import 'analytics_surface_card.dart';
 
 String _snapshotFreshnessLabel(BuildContext context, DateTime computedAt) {
   final d = DateTime.now().difference(computedAt);
@@ -82,8 +84,7 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
             ? (hasMain ? tr('insight.source_budget') : null)
             : (hasMain ? tr('insight.source_behavior') : null);
 
-        return Card(
-          clipBehavior: Clip.antiAlias,
+        return AnalyticsSurfaceCard(
           child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -100,7 +101,7 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AnalyticsLayoutSpacing.s16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -111,7 +112,7 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
                               .titleSmall
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: AnalyticsLayoutSpacing.s8),
                         Text(
                           tr('analytics.snapshot.moment_label'),
                           style: Theme.of(context)
@@ -122,7 +123,7 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
                                 color: cs.onSurface,
                               ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AnalyticsLayoutSpacing.s8),
                         Text(
                           _snapshotFreshnessLabel(context, fin.computedAt),
                           style: Theme.of(context)
@@ -130,7 +131,7 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
                               .labelSmall
                               ?.copyWith(color: cs.onSurfaceVariant),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: AnalyticsLayoutSpacing.s8),
                         Text(
                           tr('analytics.snapshot.subtitle'),
                           style: Theme.of(context)
@@ -139,7 +140,7 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
                               ?.copyWith(color: cs.onSurfaceVariant),
                         ),
                         if (sourceLabel != null) ...[
-                          const SizedBox(height: 10),
+                          const SizedBox(height: AnalyticsLayoutSpacing.s12),
                           Text(
                             sourceLabel,
                             style: Theme.of(context)
@@ -151,7 +152,7 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
                           ),
                         ],
                         if (hasMain) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AnalyticsLayoutSpacing.s12),
                           Text(
                             mainLine.trim(),
                             style: Theme.of(context)
@@ -164,7 +165,7 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
                           ),
                         ],
                         if (subLine != null && subLine.trim().isNotEmpty) ...[
-                          const SizedBox(height: 6),
+                          const SizedBox(height: AnalyticsLayoutSpacing.s8),
                           Text(
                             subLine.trim(),
                             style: Theme.of(context)
@@ -176,7 +177,7 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
                                 ),
                           ),
                         ],
-                        const SizedBox(height: 10),
+                        const SizedBox(height: AnalyticsLayoutSpacing.s12),
                         Text(
                           '${tr('analytics.balance')}: ${formatter.format(balance)}',
                           style: Theme.of(context)
@@ -185,7 +186,7 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
                               ?.copyWith(color: cs.onSurfaceVariant),
                         ),
                         if (hint != null && hint.trim().isNotEmpty) ...[
-                          const SizedBox(height: 8),
+                          const SizedBox(height: AnalyticsLayoutSpacing.s8),
                           Text(
                             hint.trim(),
                             style: Theme.of(context)
@@ -206,27 +207,35 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
           ),
         );
       },
-      loading: () => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  tr('analytics.snapshot.loading'),
-                  style: Theme.of(context).textTheme.bodyMedium,
+      loading: () {
+        final cs = Theme.of(context).colorScheme;
+        return AnalyticsSurfaceCard(
+          child: Padding(
+            padding: const EdgeInsets.all(AnalyticsLayoutSpacing.s20),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: cs.primary,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: AnalyticsLayoutSpacing.s12),
+                Expanded(
+                  child: Text(
+                    tr('analytics.snapshot.loading'),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
       error: (e, _) => AnalyticsErrorCard(message: e.toString()),
     );
   }

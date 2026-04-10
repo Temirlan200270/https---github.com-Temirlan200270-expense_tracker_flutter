@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:ui_components/ui_components.dart';
 import 'package:features_expenses/features_expenses.dart';
 
 import '../core/theme/app_theme.dart';
+import '../home/home_layout_shell.dart';
 import 'settings_providers.dart';
 import 'biometric_providers.dart';
 import 'color_scheme_providers.dart';
@@ -22,30 +22,41 @@ class SettingsPage extends ConsumerWidget {
     final defaultCurrency = ref.watch(defaultCurrencyProvider);
     final appThemeType = ref.watch(appThemeTypeProvider);
 
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
+      backgroundColor: cs.surface,
       appBar: AppBar(
         title: Text(tr('settings')),
       ),
       body: SafeArea(
         bottom: true,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            HomeLayoutSpacing.s20,
+            HomeLayoutSpacing.s16,
+            HomeLayoutSpacing.s20,
+            HomeLayoutSpacing.s8,
+          ),
           children: [
-          // Внешний вид
           Text(
-            "Внешний вид",
-            style: GoogleFonts.manrope(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+            tr('settings_section_appearance'),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
           )
               .animate()
-              .fadeIn(duration: 300.ms)
-              .slideX(begin: -0.1, end: 0, duration: 300.ms),
-          const SizedBox(height: 10),
+              .fadeIn(duration: AppMotion.standard, curve: AppMotion.curve)
+              .slideX(
+                begin: -0.06,
+                end: 0,
+                duration: AppMotion.standard,
+                curve: AppMotion.curve,
+              ),
+          SizedBox(height: HomeLayoutSpacing.s12),
           SettingsTile(
             icon: Icons.palette_rounded,
-            iconColor: Colors.purple,
+            iconColor: cs.primary,
             title: tr('theme'),
             subtitle: _getThemeModeLabel(themeMode),
             onTap: () => _showThemeDialog(context, ref),
@@ -53,7 +64,7 @@ class SettingsPage extends ConsumerWidget {
           ),
           SettingsTile(
             icon: Icons.color_lens_rounded,
-            iconColor: Colors.blue,
+            iconColor: cs.secondary,
             title: tr('color_scheme'),
             subtitle: _getAppThemeTypeLabel(appThemeType, context.locale),
             onTap: () => _showAppThemeTypeDialog(context, ref),
@@ -61,7 +72,7 @@ class SettingsPage extends ConsumerWidget {
           ),
           SettingsTile(
             icon: Icons.language_rounded,
-            iconColor: Colors.indigo,
+            iconColor: cs.tertiary,
             title: tr('language'),
             subtitle: _getLocaleLabel(locale ?? context.locale),
             onTap: () => _showLanguageDialog(context, ref),
@@ -69,28 +80,36 @@ class SettingsPage extends ConsumerWidget {
           ),
           SettingsTile(
             icon: Icons.attach_money_rounded,
-            iconColor: Colors.green,
+            iconColor: cs.primary,
             title: tr('default_currency'),
             subtitle: defaultCurrency,
             onTap: () => _showCurrencyDialog(context, ref),
             animationIndex: 3,
           ),
-          const SizedBox(height: 24),
-          // Данные
+          SizedBox(height: HomeLayoutSpacing.s24),
           Text(
-            "Данные",
-            style: GoogleFonts.manrope(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+            tr('settings_section_data'),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
           )
               .animate()
-              .fadeIn(duration: 300.ms, delay: 400.ms)
-              .slideX(begin: -0.1, end: 0, duration: 300.ms, delay: 400.ms),
-          const SizedBox(height: 10),
+              .fadeIn(
+                duration: AppMotion.standard,
+                delay: AppMotion.staggerInterval * 4,
+                curve: AppMotion.curve,
+              )
+              .slideX(
+                begin: -0.06,
+                end: 0,
+                duration: AppMotion.standard,
+                delay: AppMotion.staggerInterval * 4,
+                curve: AppMotion.curve,
+              ),
+          SizedBox(height: HomeLayoutSpacing.s12),
           SettingsTile(
             icon: Icons.key_rounded,
-            iconColor: Colors.orange,
+            iconColor: cs.tertiary,
             title: tr('gemini_api_key'),
             subtitle: ref.watch(geminiApiKeyProvider) != null 
                 ? tr('gemini_api_key_set') 
@@ -100,7 +119,7 @@ class SettingsPage extends ConsumerWidget {
           ),
           SettingsTile(
             icon: Icons.currency_exchange_rounded,
-            iconColor: Colors.amber,
+            iconColor: cs.secondary,
             title: tr('exchange_rate_api_key'),
             subtitle: ref.watch(exchangeRateApiKeyProvider) != null 
                 ? tr('exchange_rate_api_key_set') 
@@ -110,7 +129,7 @@ class SettingsPage extends ConsumerWidget {
           ),
           SettingsTile(
             icon: Icons.smart_toy_rounded,
-            iconColor: Colors.teal,
+            iconColor: cs.tertiary,
             title: tr('gemini_model'),
             subtitle: ref.watch(geminiModelProvider),
             onTap: () => _showGeminiModelDialog(context, ref),
@@ -118,7 +137,7 @@ class SettingsPage extends ConsumerWidget {
           ),
           SettingsTile(
             icon: Icons.cloud_upload_rounded,
-            iconColor: Colors.cyan,
+            iconColor: cs.primary,
             title: tr('backup.title'),
             subtitle: tr('backup.subtitle'),
             onTap: () => context.push('/backup'),
@@ -126,28 +145,37 @@ class SettingsPage extends ConsumerWidget {
           ),
           SettingsTile(
             icon: Icons.delete_forever_rounded,
-            iconColor: Colors.red,
+            iconColor: cs.error,
             title: tr('delete_all_expenses'),
             subtitle: tr('delete_all_expenses_subtitle'),
             onTap: () => _showDeleteAllDialog(context, ref),
             animationIndex: 8,
           ),
-          const SizedBox(height: 24),
-          // Безопасность
+          SizedBox(height: HomeLayoutSpacing.s24),
           Text(
-            "Безопасность",
-            style: GoogleFonts.manrope(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+            tr('settings_section_security'),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
           )
               .animate()
-              .fadeIn(duration: 300.ms, delay: 600.ms)
-              .slideX(begin: -0.1, end: 0, duration: 300.ms, delay: 600.ms),
-          const SizedBox(height: 10),
+              .fadeIn(
+                duration: AppMotion.standard,
+                delay: AppMotion.staggerInterval * 8,
+                curve: AppMotion.curve,
+              )
+              .slideX(
+                begin: -0.06,
+                end: 0,
+                duration: AppMotion.standard,
+                delay: AppMotion.staggerInterval * 8,
+                curve: AppMotion.curve,
+              ),
+          SizedBox(height: HomeLayoutSpacing.s12),
           // Биометрия
           Consumer(
             builder: (context, ref, child) {
+              final tileCs = Theme.of(context).colorScheme;
               final biometricEnabled = ref.watch(biometricEnabledProvider);
               final biometricAvailable = ref.watch(biometricAvailableProvider);
               final biometricTypeName = ref.watch(biometricTypeNameProvider);
@@ -174,30 +202,28 @@ class SettingsPage extends ConsumerWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  tileColor: Theme.of(context).cardColor,
+                  tileColor: tileCs.surfaceContainerHigh,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   leading: Container(
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.15),
+                      color: tileCs.error.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(Icons.fingerprint_rounded, color: Colors.red, size: 22),
+                    child: Icon(Icons.fingerprint_rounded, color: tileCs.error, size: 22),
                   ),
                   title: Text(
                     tr('biometric.title'),
-                    style: GoogleFonts.manrope(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                   subtitle: Text(
                     subtitle,
-                    style: GoogleFonts.manrope(
-                      color: Colors.grey,
-                      fontSize: 14,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: tileCs.onSurfaceVariant,
+                        ),
                   ),
                   trailing: Switch(
                     value: biometricEnabled && isAvailable,
@@ -225,7 +251,7 @@ class SettingsPage extends ConsumerWidget {
             },
           ),
           // Дополнительный отступ снизу для навигационной панели
-          SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+          SizedBox(height: MediaQuery.of(context).padding.bottom + HomeLayoutSpacing.s16),
         ],
       ),
       ),
@@ -387,19 +413,9 @@ class SettingsPage extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: AppThemeType.values.map((type) {
                   final name = _getAppThemeTypeLabel(type, locale);
-                  Color color;
-                  switch (type) {
-                    case AppThemeType.purple:
-                      color = const Color(0xFF6B4CFF); // Neo-bank фиолетовый
-                      break;
-                    case AppThemeType.green:
-                      color = const Color(0xFF4CAF50); // Money зеленый
-                      break;
-                    case AppThemeType.orange:
-                      color = const Color(0xFFFF9800); // Теплый оранжевый
-                      break;
-                  }
-                  
+                  final color = AppTheme.brandSeedColor(type);
+                  final dialogCs = Theme.of(context).colorScheme;
+
                   return RadioListTile<AppThemeType>(
                     contentPadding: EdgeInsets.zero,
                     title: Row(
@@ -411,8 +427,8 @@ class SettingsPage extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: color,
                             shape: BoxShape.circle,
-                            border: selected == type 
-                                ? Border.all(color: Colors.white, width: 2)
+                            border: selected == type
+                                ? Border.all(color: dialogCs.primary, width: 2)
                                 : null,
                           ),
                         ),
@@ -664,7 +680,7 @@ class SettingsPage extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
             child: Text(tr('delete')),
           ),
         ],
@@ -675,21 +691,31 @@ class SettingsPage extends ConsumerWidget {
       try {
         final repo = ref.read(expensesRepositoryProvider);
         await repo.deleteAllExpenses();
-        
+
         if (context.mounted) {
+          final snackCs = Theme.of(context).colorScheme;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(tr('delete_all_expenses_success')),
-              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: snackCs.primaryContainer,
+              content: Text(
+                tr('delete_all_expenses_success'),
+                style: TextStyle(color: snackCs.onPrimaryContainer),
+              ),
             ),
           );
         }
       } catch (e) {
         if (context.mounted) {
+          final snackCs = Theme.of(context).colorScheme;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(tr('delete_all_expenses_error', args: [e.toString()])),
-              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: snackCs.errorContainer,
+              content: Text(
+                tr('delete_all_expenses_error', args: [e.toString()]),
+                style: TextStyle(color: snackCs.onErrorContainer),
+              ),
             ),
           );
         }

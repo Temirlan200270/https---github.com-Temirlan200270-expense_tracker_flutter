@@ -74,7 +74,8 @@ Insight must not change faster than human perception of change
 ### 2.3 Связь с кодом (ориентиры для ревью)
 
 - Окна стабильности и раскрытия инсайта на Home — в виджете hero и связанных провайдерах.
-- Движок решений / tier / narrative — выравнивать с гистерезисом и сглаживанием по мере развития; новые пороги — с отсылкой к §2.
+- **Гистерезис velocity → tier:** `VelocityThresholds` + `nextVelocityTierFromHysteresis` в `packages/features_analytics/lib/src/domain/velocity_tier_hysteresis.dart`; память предыдущего tier — `homePublishedFinancialTierProvider` в `home_decision_engine_provider.dart`.
+- Дальше: гистерезис для прочих сигналов (доля расхода/прогноз) — по необходимости; новые пороги — с отсылкой к §2.
 
 ---
 

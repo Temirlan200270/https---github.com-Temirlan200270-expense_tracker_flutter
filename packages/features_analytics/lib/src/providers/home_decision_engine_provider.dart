@@ -5,8 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../behavior_engine/behavior_engine.dart';
 import '../domain/behavior_engine.dart';
+import '../domain/home_financial_state_tier.dart';
+import '../domain/velocity_tier_hysteresis.dart';
 import '../utils/home_insight_keys.dart';
 import 'analytics_models.dart';
+
+export '../domain/home_financial_state_tier.dart';
 import 'smart_insights.dart';
 
 enum HomeInsightVariant {
@@ -33,12 +37,6 @@ class HomeBehaviorInsight {
 
   /// Главный «виновник» лишних трат сегодня (вклад к норме).
   final CategoryContribution? topContributor;
-}
-
-enum HomeFinancialStateTier {
-  stable,
-  caution,
-  danger,
 }
 
 class HomeDecisionSnapshot {
@@ -73,11 +71,14 @@ class FinancialSnapshot {
 }
 
 /// Статус: баланс + прогноз + скорость трат (предиктивно) + тренд относительно нормы.
+///
+/// [previousPublishedTier] — последний опубликованный tier (память для гистерезиса velocity).
 HomeFinancialStateTier resolveHomeFinancialState({
   required AnalyticsStats stats,
   required Forecast? forecast,
   required double? overallVelocityRatio,
   TrendDirection spendingTrend = TrendDirection.stable,
+  HomeFinancialStateTier? previousPublishedTier,
 }) {
   if (stats.balance < 0) {
     return HomeFinancialStateTier.danger;
@@ -86,25 +87,22 @@ HomeFinancialStateTier resolveHomeFinancialState({
     return HomeFinancialStateTier.danger;
   }
 
-  var tier = HomeFinancialStateTier.stable;
+  var tier = nextVelocityTierFromHysteresis(
+    velocityRatio: overallVelocityRatio,
+    previousTier: previousPublishedTier,
+  );
+
+  if (overallVelocityRatio != null &&
+      overallVelocityRatio > VelocityThresholds.cautionToDanger &&
+      forecast != null &&
+      forecast.projectedExpenses > forecast.projectedIncome) {
+    tier = _maxHomeTier(tier, HomeFinancialStateTier.danger);
+  }
 
   if (stats.totalIncome > 0) {
     final spendRatio = stats.totalExpenses / stats.totalIncome;
     if (spendRatio > 0.88) {
-      tier = HomeFinancialStateTier.caution;
-    }
-  }
-
-  if (overallVelocityRatio != null) {
-    if (overallVelocityRatio > 1.3) {
-      tier = HomeFinancialStateTier.caution;
-      if (forecast != null &&
-          forecast.projectedExpenses > forecast.projectedIncome) {
-        tier = HomeFinancialStateTier.danger;
-      }
-    } else if (overallVelocityRatio > 1.1 &&
-        tier == HomeFinancialStateTier.stable) {
-      tier = HomeFinancialStateTier.caution;
+      tier = _maxHomeTier(tier, HomeFinancialStateTier.caution);
     }
   }
 
@@ -133,6 +131,15 @@ HomeFinancialStateTier resolveHomeFinancialState({
 
   return tier;
 }
+
+int _homeTierRank(HomeFinancialStateTier t) => switch (t) {
+      HomeFinancialStateTier.stable => 0,
+      HomeFinancialStateTier.caution => 1,
+      HomeFinancialStateTier.danger => 2,
+    };
+
+HomeFinancialStateTier _maxHomeTier(HomeFinancialStateTier a, HomeFinancialStateTier b) =>
+    _homeTierRank(a) >= _homeTierRank(b) ? a : b;
 
 int? _monthRunwayDays({
   required double monthBalance,
@@ -209,11 +216,14 @@ Future<HomeDecisionSnapshot> _computeHomeDecisionSnapshot(Ref ref) async {
         )
       : const SpendingDeviationResult.none();
 
+  final previousPublished = ref.read(homePublishedFinancialTierProvider);
+
   final stateTier = resolveHomeFinancialState(
     stats: monthStats,
     forecast: forecast,
     overallVelocityRatio: overallRatio,
     spendingTrend: spendingTrend,
+    previousPublishedTier: previousPublished,
   );
 
   final topContributor =
@@ -324,6 +334,8 @@ Future<HomeDecisionSnapshot> _computeHomeDecisionSnapshot(Ref ref) async {
           ? await _demoteInsightConfidenceByFeedback(ref, insight, stateTier)
           : null;
 
+  ref.read(homePublishedFinancialTierProvider.notifier).publish(stateTier);
+
   return HomeDecisionSnapshot(
     stateTier: stateTier,
     monthStats: monthStats,
@@ -367,6 +379,22 @@ Future<HomeBehaviorInsight> _demoteInsightConfidenceByFeedback(
     return insight;
   }
 }
+
+/// Память опубликованного tier между пересчётами [financialSnapshotProvider] (гистерезис velocity).
+class HomePublishedFinancialTier extends Notifier<HomeFinancialStateTier?> {
+  @override
+  HomeFinancialStateTier? build() => null;
+
+  /// Фиксирует tier после успешного расчёта снимка (гистерезис на следующий цикл).
+  void publish(HomeFinancialStateTier tier) {
+    state = tier;
+  }
+}
+
+final homePublishedFinancialTierProvider =
+    NotifierProvider<HomePublishedFinancialTier, HomeFinancialStateTier?>(
+  HomePublishedFinancialTier.new,
+);
 
 /// Единый источник: месячная статистика + Decision Engine.
 final financialSnapshotProvider =

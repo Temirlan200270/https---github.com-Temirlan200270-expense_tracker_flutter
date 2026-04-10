@@ -4,8 +4,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:ui_components/ui_components.dart';
 
 import '../../providers/analytics_models.dart';
+import '../layout/analytics_layout_spacing.dart';
+import 'analytics_surface_card.dart';
 
-/// График по времени
+/// График доходов и расходов по времени.
 class AnalyticsTimeChart extends StatelessWidget {
   const AnalyticsTimeChart({super.key, required this.stats});
 
@@ -13,10 +15,19 @@ class AnalyticsTimeChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
+          fontSize: 10,
+          color: cs.onSurfaceVariant,
+        );
+
     if (stats.isEmpty) {
-      return Card(
+      return AnalyticsSurfaceCard(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          padding: const EdgeInsets.symmetric(
+            vertical: AnalyticsLayoutSpacing.s16,
+            horizontal: AnalyticsLayoutSpacing.s8,
+          ),
           child: EmptyState(
             icon: Icons.show_chart_outlined,
             title: tr('analytics.empty_charts_title'),
@@ -32,22 +43,35 @@ class AnalyticsTimeChart extends StatelessWidget {
           max > stat.income + stat.expenses ? max : stat.income + stat.expenses,
     );
 
-    return Card(
+    final incomeColor = cs.primary;
+    final expenseColor = cs.error;
+
+    return AnalyticsSurfaceCard(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AnalyticsLayoutSpacing.s16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               tr('analytics.by_time'),
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AnalyticsLayoutSpacing.s16),
             SizedBox(
               height: 200,
               child: LineChart(
                 LineChartData(
-                  gridData: const FlGridData(show: true),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: maxValue > 0 ? maxValue / 4 : 1,
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color: cs.outlineVariant.withValues(alpha: 0.35),
+                      strokeWidth: 1,
+                    ),
+                  ),
                   titlesData: FlTitlesData(
                     show: true,
                     bottomTitles: AxisTitles(
@@ -55,15 +79,12 @@ class AnalyticsTimeChart extends StatelessWidget {
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
                           if (value.toInt() >= stats.length) {
-                            return const Text('');
+                            return const SizedBox.shrink();
                           }
                           final stat = stats[value.toInt()];
                           return Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              stat.label,
-                              style: const TextStyle(fontSize: 10),
-                            ),
+                            padding: const EdgeInsets.only(top: AnalyticsLayoutSpacing.s8),
+                            child: Text(stat.label, style: labelStyle),
                           );
                         },
                       ),
@@ -75,7 +96,7 @@ class AnalyticsTimeChart extends StatelessWidget {
                         getTitlesWidget: (value, meta) {
                           return Text(
                             value.toInt().toString(),
-                            style: const TextStyle(fontSize: 10),
+                            style: labelStyle,
                           );
                         },
                       ),
@@ -87,33 +108,40 @@ class AnalyticsTimeChart extends StatelessWidget {
                       sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
-                  borderData: FlBorderData(show: true),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border.all(
+                      color: cs.outlineVariant.withValues(alpha: 0.4),
+                    ),
+                  ),
                   lineBarsData: [
                     LineChartBarData(
                       spots: stats.asMap().entries.map((entry) {
                         return FlSpot(entry.key.toDouble(), entry.value.income);
                       }).toList(),
                       isCurved: true,
-                      color: Colors.green,
+                      color: incomeColor,
                       barWidth: 3,
                       dotData: const FlDotData(show: false),
                       belowBarData: BarAreaData(
                         show: true,
-                        color: Colors.green.withOpacity(0.1),
+                        color: incomeColor.withValues(alpha: 0.12),
                       ),
                     ),
                     LineChartBarData(
                       spots: stats.asMap().entries.map((entry) {
                         return FlSpot(
-                            entry.key.toDouble(), entry.value.expenses);
+                          entry.key.toDouble(),
+                          entry.value.expenses,
+                        );
                       }).toList(),
                       isCurved: true,
-                      color: Colors.red,
+                      color: expenseColor,
                       barWidth: 3,
                       dotData: const FlDotData(show: false),
                       belowBarData: BarAreaData(
                         show: true,
-                        color: Colors.red.withOpacity(0.1),
+                        color: expenseColor.withValues(alpha: 0.12),
                       ),
                     ),
                   ],
@@ -121,21 +149,21 @@ class AnalyticsTimeChart extends StatelessWidget {
                   maxY: maxValue * 1.2,
                   lineTouchData: LineTouchData(
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (spot) => Colors.blueGrey.shade800,
+                      getTooltipColor: (_) => cs.inverseSurface,
                     ),
                   ),
                 ),
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
+                duration: AppMotion.screen,
+                curve: AppMotion.curve,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AnalyticsLayoutSpacing.s16),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _LegendItem(color: Colors.green, label: tr('analytics.income')),
-                const SizedBox(width: 16),
-                _LegendItem(color: Colors.red, label: tr('analytics.expenses')),
+                _LegendItem(color: incomeColor, label: tr('analytics.income')),
+                const SizedBox(width: AnalyticsLayoutSpacing.s16),
+                _LegendItem(color: expenseColor, label: tr('analytics.expenses')),
               ],
             ),
           ],
@@ -160,14 +188,15 @@ class _LegendItem extends StatelessWidget {
           height: 16,
           decoration: BoxDecoration(
             color: color,
-            shape: BoxShape.rectangle,
-            borderRadius: BorderRadius.circular(2),
+            borderRadius: BorderRadius.circular(4),
           ),
         ),
-        const SizedBox(width: 8),
-        Text(label),
+        const SizedBox(width: AnalyticsLayoutSpacing.s8),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
       ],
     );
   }
 }
-

@@ -113,7 +113,7 @@ class ExpensesListPage extends ConsumerWidget {
         IconButton(
           icon: Stack(
             children: [
-              const Icon(Icons.filter_list),
+              const Icon(Icons.filter_list_rounded),
               if (hasActiveFilters)
                 Positioned(
                   right: 0,
@@ -121,8 +121,8 @@ class ExpensesListPage extends ConsumerWidget {
                   child: Container(
                     width: 8,
                     height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.error,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -301,7 +301,12 @@ class _GroupedExpensesList extends ConsumerWidget {
       );
     }
 
-    final groups = _groupExpenses(expenses, grouping, categoryMap);
+    final groups = _groupExpenses(
+      expenses,
+      grouping,
+      categoryMap,
+      Theme.of(context).colorScheme,
+    );
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -335,20 +340,24 @@ class _GroupedExpensesList extends ConsumerWidget {
     List<Expense> expenses,
     ExpenseGrouping grouping,
     Map<String, Category> categoryMap,
+    ColorScheme colorScheme,
   ) {
     switch (grouping) {
       case ExpenseGrouping.byDate:
-        return _groupByDate(expenses);
+        return _groupByDate(expenses, colorScheme);
       case ExpenseGrouping.byCategory:
-        return _groupByCategory(expenses, categoryMap);
+        return _groupByCategory(expenses, categoryMap, colorScheme);
       case ExpenseGrouping.byType:
-        return _groupByType(expenses);
+        return _groupByType(expenses, colorScheme);
       case ExpenseGrouping.none:
         return [];
     }
   }
 
-  List<_ExpenseGroupData> _groupByDate(List<Expense> expenses) {
+  List<_ExpenseGroupData> _groupByDate(
+    List<Expense> expenses,
+    ColorScheme colorScheme,
+  ) {
     final Map<String, List<Expense>> grouped = {};
 
     for (final expense in expenses) {
@@ -383,13 +392,16 @@ class _GroupedExpensesList extends ConsumerWidget {
         title: title,
         subtitle: formatter.format(total),
         expenses: grouped[key]!,
-        color: total >= 0 ? Colors.green : Colors.red,
+        color: total >= 0 ? colorScheme.primary : colorScheme.error,
       );
     }).toList();
   }
 
   List<_ExpenseGroupData> _groupByCategory(
-      List<Expense> expenses, Map<String, Category> categoryMap) {
+    List<Expense> expenses,
+    Map<String, Category> categoryMap,
+    ColorScheme colorScheme,
+  ) {
     final Map<String?, List<Expense>> grouped = {};
 
     for (final expense in expenses) {
@@ -413,12 +425,17 @@ class _GroupedExpensesList extends ConsumerWidget {
         title: category?.name ?? tr('expenses.grouping.no_category'),
         subtitle: formatter.format(total),
         expenses: grouped[key]!,
-        color: category != null ? Color(category.colorValue) : Colors.grey,
+        color: category != null
+            ? Color(category.colorValue)
+            : colorScheme.onSurfaceVariant,
       );
     }).toList();
   }
 
-  List<_ExpenseGroupData> _groupByType(List<Expense> expenses) {
+  List<_ExpenseGroupData> _groupByType(
+    List<Expense> expenses,
+    ColorScheme colorScheme,
+  ) {
     final incomes = expenses.where((e) => e.type.isIncome).toList();
     final expensesList = expenses.where((e) => e.type.isExpense).toList();
 
@@ -430,7 +447,7 @@ class _GroupedExpensesList extends ConsumerWidget {
         title: tr('expenses.form.income'),
         subtitle: formatter.format(total),
         expenses: incomes,
-        color: Colors.green,
+        color: colorScheme.primary,
       ));
     }
 
@@ -441,7 +458,7 @@ class _GroupedExpensesList extends ConsumerWidget {
         title: tr('expenses.form.expense'),
         subtitle: formatter.format(total),
         expenses: expensesList,
-        color: Colors.red,
+        color: colorScheme.error,
       ));
     }
 
@@ -588,6 +605,7 @@ class _DismissibleExpenseTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
     return Dismissible(
       key: Key(expense.id),
       direction: DismissDirection.endToStart,
@@ -595,10 +613,10 @@ class _DismissibleExpenseTile extends ConsumerWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
-          color: Colors.red,
+          color: cs.error,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: Icon(Icons.delete_rounded, color: cs.onError),
       ),
       confirmDismiss: (direction) => _confirmDelete(context),
       onDismissed: (direction) => _deleteExpense(context, ref),
@@ -625,7 +643,9 @@ class _DismissibleExpenseTile extends ConsumerWidget {
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                ),
                 child: Text(tr('delete')),
               ),
             ],
@@ -664,7 +684,8 @@ class _DismissibleExpenseTile extends ConsumerWidget {
   }
 
   void _showContextMenu(BuildContext context, WidgetRef ref) {
-    final color = expense.type.isIncome ? Colors.green : Colors.red;
+    final rootCs = Theme.of(context).colorScheme;
+    final accent = expense.type.isIncome ? rootCs.primary : rootCs.error;
 
     showModalBottomSheet(
       context: context,
@@ -677,23 +698,26 @@ class _DismissibleExpenseTile extends ConsumerWidget {
               height: 4,
               margin: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: Theme.of(context).colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             ListTile(
               leading: CircleAvatar(
-                backgroundColor: color.withOpacity(0.2),
+                backgroundColor: accent.withValues(alpha: 0.2),
                 child: Icon(
                   expense.type.isIncome
-                      ? Icons.trending_up
-                      : Icons.trending_down,
-                  color: color,
+                      ? Icons.trending_up_rounded
+                      : Icons.trending_down_rounded,
+                  color: accent,
                 ),
               ),
               title: Text(
                 formatter.format(expense.amount.amount),
-                style: TextStyle(fontWeight: FontWeight.bold, color: color),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: accent,
+                    ),
               ),
               subtitle: Text(
                 DateFormat.yMMMMd().format(expense.occurredAt),
@@ -731,10 +755,13 @@ class _DismissibleExpenseTile extends ConsumerWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
+              leading: Icon(
+                Icons.delete_outline_rounded,
+                color: Theme.of(context).colorScheme.error,
+              ),
               title: Text(
                 tr('delete'),
-                style: const TextStyle(color: Colors.red),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -766,15 +793,18 @@ class _ExpenseTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = expense.type.isIncome ? Colors.green : Colors.red;
+    final cs = Theme.of(context).colorScheme;
+    final fallbackAccent = expense.type.isIncome ? cs.primary : cs.error;
     final dateLabel = DateFormat.Hm().format(expense.occurredAt);
 
     final categoryColor = category != null ? Color(category!.colorValue) : null;
 
     return EnhancedExpenseCard(
       gradient: categoryColor != null
-          ? CategoryGradient(categoryColor)
-          : (expense.type.isIncome ? IncomeGradient() : ExpenseGradient()),
+          ? CategoryGradient(categoryColor, cs.surface)
+          : (expense.type.isIncome
+              ? IncomeGradient.fromScheme(cs)
+              : ExpenseGradient.fromScheme(cs)),
       margin: const EdgeInsets.only(bottom: 8),
       onLongPress: onLongPress,
       child: Padding(
@@ -784,11 +814,13 @@ class _ExpenseTile extends StatelessWidget {
             const SizedBox(width: 12),
             CircleAvatar(
               backgroundColor: category != null
-                  ? Color(category!.colorValue).withOpacity(0.2)
-                  : color.withOpacity(0.2),
+                  ? Color(category!.colorValue).withValues(alpha: 0.2)
+                  : fallbackAccent.withValues(alpha: 0.2),
               child: Icon(
-                expense.type.isIncome ? Icons.trending_up : Icons.trending_down,
-                color: category != null ? Color(category!.colorValue) : color,
+                expense.type.isIncome
+                    ? Icons.trending_up_rounded
+                    : Icons.trending_down_rounded,
+                color: category != null ? Color(category!.colorValue) : fallbackAccent,
               ),
             ),
             const SizedBox(width: 12),
@@ -798,11 +830,10 @@ class _ExpenseTile extends StatelessWidget {
                 children: [
                   Text(
                     amountLabel,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                      fontSize: 16,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: fallbackAccent,
+                        ),
                   ),
                   const SizedBox(height: 2),
                   Row(
@@ -817,7 +848,7 @@ class _ExpenseTile extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Color(category!.colorValue).withOpacity(0.1),
+                            color: Color(category!.colorValue).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -837,7 +868,7 @@ class _ExpenseTile extends StatelessWidget {
                       child: Text(
                         expense.note!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey,
+                              color: cs.onSurfaceVariant,
                             ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -849,8 +880,8 @@ class _ExpenseTile extends StatelessWidget {
             // Кнопка удаления
             IconButton(
               icon: Icon(
-                Icons.delete_outline,
-                color: Colors.grey.shade400,
+                Icons.delete_outline_rounded,
+                color: cs.onSurfaceVariant,
                 size: 20,
               ),
               onPressed: onDelete,

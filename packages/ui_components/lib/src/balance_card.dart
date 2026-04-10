@@ -34,7 +34,7 @@ class BalanceCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: gradient.colors.first.withOpacity(0.4),
+            color: gradient.colors.first.withValues(alpha: 0.4),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -46,7 +46,7 @@ class BalanceCard extends StatelessWidget {
           Text(
             "Общий баланс",
             style: GoogleFonts.manrope(
-              color: Colors.white.withOpacity(0.7),
+              color: const Color(0xFFFFFFFF).withValues(alpha: 0.7),
               fontSize: 14,
             ),
           ),
@@ -54,7 +54,7 @@ class BalanceCard extends StatelessWidget {
           Text(
             formatter.format(balance),
             style: GoogleFonts.manrope(
-              color: Colors.white,
+              color: const Color(0xFFFFFFFF),
               fontSize: 32,
               fontWeight: FontWeight.w800,
             ),
@@ -102,10 +102,10 @@ class BalanceCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: const Color(0xFFFFFFFF).withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: Colors.white, size: 16),
+          child: Icon(icon, color: const Color(0xFFFFFFFF), size: 16),
         ),
         const SizedBox(width: 10),
         Column(
@@ -114,14 +114,14 @@ class BalanceCard extends StatelessWidget {
             Text(
               label,
               style: GoogleFonts.manrope(
-                color: Colors.white.withOpacity(0.7),
+                color: const Color(0xFFFFFFFF).withValues(alpha: 0.7),
                 fontSize: 12,
               ),
             ),
             Text(
               amount,
               style: GoogleFonts.manrope(
-                color: Colors.white,
+                color: const Color(0xFFFFFFFF),
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),

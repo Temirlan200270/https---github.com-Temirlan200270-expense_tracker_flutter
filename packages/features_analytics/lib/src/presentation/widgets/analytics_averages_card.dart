@@ -2,11 +2,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:expense_tracker_app/expense_tracker_app.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../providers/smart_insights.dart' show AverageStats;
+import '../layout/analytics_layout_spacing.dart';
+import 'analytics_surface_card.dart';
 
-/// Карточка средних показателей
+/// Средние показатели за период.
 class AnalyticsAveragesCard extends ConsumerWidget {
   const AnalyticsAveragesCard({super.key, required this.averages});
 
@@ -14,6 +15,7 @@ class AnalyticsAveragesCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
     final currencyCode = ref.watch(defaultCurrencyProvider);
     final formatter = NumberFormat.currency(
       locale: context.locale.toLanguageTag(),
@@ -21,26 +23,25 @@ class AnalyticsAveragesCard extends ConsumerWidget {
       decimalDigits: 0,
     );
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+    return AnalyticsSurfaceCard(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AnalyticsLayoutSpacing.s16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.calculate, size: 20),
-                const SizedBox(width: 8),
+                Icon(Icons.calculate_rounded, size: 22, color: cs.primary),
+                const SizedBox(width: AnalyticsLayoutSpacing.s8),
                 Text(
-                  'Средние показатели',
+                  tr('analytics.averages_title'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
                       ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AnalyticsLayoutSpacing.s16),
             Row(
               children: [
                 Expanded(
@@ -86,25 +87,34 @@ class _AverageItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-        const SizedBox(height: 4),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AnalyticsLayoutSpacing.s8),
         Text(
           expense,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
+                color: cs.error,
+                fontWeight: FontWeight.w700,
               ),
+          textAlign: TextAlign.center,
         ),
         Text(
           income,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.green,
+                color: cs.primary,
+                fontWeight: FontWeight.w600,
               ),
+          textAlign: TextAlign.center,
         ),
       ],
     );
   }
 }
-

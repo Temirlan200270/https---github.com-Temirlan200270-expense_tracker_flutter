@@ -25,7 +25,8 @@ class EnhancedExpenseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cardColor = color ?? theme.cardColor;
-    
+    final shadow = theme.colorScheme.shadow;
+
     return Container(
       margin: margin ?? const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -34,13 +35,13 @@ class EnhancedExpenseCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: shadow.withValues(alpha: 0.08),
             blurRadius: 8 * elevation,
             offset: Offset(0, 2 * elevation),
             spreadRadius: 0,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: shadow.withValues(alpha: 0.04),
             blurRadius: 4 * elevation,
             offset: Offset(0, 1 * elevation),
             spreadRadius: 0,
@@ -61,45 +62,46 @@ class EnhancedExpenseCard extends StatelessWidget {
   }
 }
 
-/// Градиент для карточек доходов
-class IncomeGradient extends LinearGradient {
-  IncomeGradient()
-      : super(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.green.shade50,
-            Colors.green.shade100.withOpacity(0.3),
-            Colors.white,
-          ],
-        );
+/// Градиент карточки дохода из [ColorScheme] (без произвольных Material shades).
+abstract final class IncomeGradient {
+  IncomeGradient._();
+
+  static LinearGradient fromScheme(ColorScheme cs) => LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          cs.primaryContainer.withValues(alpha: 0.55),
+          cs.primaryContainer.withValues(alpha: 0.92),
+          cs.surface,
+        ],
+      );
 }
 
-/// Градиент для карточек расходов
-class ExpenseGradient extends LinearGradient {
-  ExpenseGradient()
-      : super(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.red.shade50,
-            Colors.red.shade100.withOpacity(0.3),
-            Colors.white,
-          ],
-        );
+/// Градиент карточки расхода из [ColorScheme].
+abstract final class ExpenseGradient {
+  ExpenseGradient._();
+
+  static LinearGradient fromScheme(ColorScheme cs) => LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          cs.errorContainer.withValues(alpha: 0.45),
+          cs.errorContainer.withValues(alpha: 0.88),
+          cs.surface,
+        ],
+      );
 }
 
-/// Градиент для категорий
+/// Градиент по цвету категории; [surface] — целевой «белый» край (обычно [ColorScheme.surface]).
 class CategoryGradient extends LinearGradient {
-  CategoryGradient(Color color)
+  CategoryGradient(Color color, Color surface)
       : super(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            color.withOpacity(0.1),
-            color.withOpacity(0.05),
-            Colors.white,
+            color.withValues(alpha: 0.1),
+            color.withValues(alpha: 0.05),
+            surface,
           ],
         );
 }
-

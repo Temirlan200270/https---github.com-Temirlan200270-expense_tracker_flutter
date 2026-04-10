@@ -196,11 +196,14 @@ class _RecurringExpenseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = recurring.type.isIncome ? Colors.green : Colors.red;
+    final cs = Theme.of(context).colorScheme;
+    final accent = recurring.type.isIncome ? cs.primary : cs.error;
     final dateFormat = DateFormat.yMMMMd(context.locale.toLanguageTag());
 
     return EnhancedExpenseCard(
-      gradient: recurring.type.isIncome ? IncomeGradient() : ExpenseGradient(),
+      gradient: recurring.type.isIncome
+          ? IncomeGradient.fromScheme(cs)
+          : ExpenseGradient.fromScheme(cs),
       margin: const EdgeInsets.only(bottom: 12),
       onTap: onTap,
       child: Padding(
@@ -223,11 +226,10 @@ class _RecurringExpenseCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         formatter.format(recurring.amount.amount),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: color,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: accent,
+                            ),
                       ),
                     ],
                   ),
@@ -242,9 +244,9 @@ class _RecurringExpenseCard extends StatelessWidget {
             Row(
               children: [
                 Icon(
-                  Icons.repeat,
+                  Icons.repeat_rounded,
                   size: 16,
-                  color: Colors.grey,
+                  color: cs.onSurfaceVariant,
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -255,9 +257,9 @@ class _RecurringExpenseCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 16),
                 Icon(
-                  Icons.calendar_today,
+                  Icons.calendar_today_rounded,
                   size: 16,
-                  color: Colors.grey,
+                  color: cs.onSurfaceVariant,
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -271,9 +273,9 @@ class _RecurringExpenseCard extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    Icons.schedule,
+                    Icons.schedule_rounded,
                     size: 16,
-                    color: Colors.grey,
+                    color: cs.onSurfaceVariant,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -289,13 +291,13 @@ class _RecurringExpenseCard extends StatelessWidget {
               children: [
                 TextButton.icon(
                   onPressed: onGenerate,
-                  icon: const Icon(Icons.play_arrow, size: 18),
+                  icon: const Icon(Icons.play_arrow_rounded, size: 18),
                   label: Text(tr('recurring.generate_now')),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(Icons.delete_outline_rounded),
                   onPressed: onDelete,
-                  color: Colors.red,
+                  color: cs.error,
                 ),
               ],
             ),

@@ -3,12 +3,13 @@ import 'package:expense_tracker_app/expense_tracker_app.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
 import 'package:ui_components/ui_components.dart';
 
 import '../../providers/analytics_models.dart';
+import '../layout/analytics_layout_spacing.dart';
+import 'analytics_surface_card.dart';
 
-/// График по категориям
+/// Круговая диаграмма и легенда по категориям.
 class AnalyticsCategoryChart extends ConsumerWidget {
   const AnalyticsCategoryChart({super.key, required this.stats});
 
@@ -16,10 +17,15 @@ class AnalyticsCategoryChart extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+
     if (stats.isEmpty) {
-      return Card(
+      return AnalyticsSurfaceCard(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          padding: const EdgeInsets.symmetric(
+            vertical: AnalyticsLayoutSpacing.s16,
+            horizontal: AnalyticsLayoutSpacing.s8,
+          ),
           child: EmptyState(
             icon: Icons.pie_chart_outline_outlined,
             title: tr('analytics.empty_charts_title'),
@@ -32,19 +38,23 @@ class AnalyticsCategoryChart extends ConsumerWidget {
     final total = stats.fold<double>(0, (sum, stat) => sum + stat.amount);
     final currencyCode = ref.watch(defaultCurrencyProvider);
     final formatter = NumberFormat.currency(
-        locale: context.locale.toLanguageTag(), symbol: currencyCode);
+      locale: context.locale.toLanguageTag(),
+      symbol: currencyCode,
+    );
 
-    return Card(
+    return AnalyticsSurfaceCard(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AnalyticsLayoutSpacing.s16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               tr('analytics.top_categories'),
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AnalyticsLayoutSpacing.s16),
             SizedBox(
               height: 200,
               child: PieChart(
@@ -66,17 +76,17 @@ class AnalyticsCategoryChart extends ConsumerWidget {
                   sectionsSpace: 2,
                   centerSpaceRadius: 40,
                 ),
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
+                duration: AppMotion.screen,
+                curve: AppMotion.curve,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AnalyticsLayoutSpacing.s16),
             ...stats.take(6).toList().asMap().entries.map((entry) {
               final stat = entry.value;
               final percentage = (stat.amount / total * 100);
               return AnimatedListItem(
                 index: entry.key,
-                delay: const Duration(milliseconds: 80),
+                delay: AppMotion.staggerInterval * 2,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
@@ -89,7 +99,7 @@ class AnalyticsCategoryChart extends ConsumerWidget {
                           shape: BoxShape.circle,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AnalyticsLayoutSpacing.s8),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,7 +111,7 @@ class AnalyticsCategoryChart extends ConsumerWidget {
                                   .textTheme
                                   .bodySmall
                                   ?.copyWith(
-                                    color: Colors.grey,
+                                    color: cs.onSurfaceVariant,
                                   ),
                             ),
                           ],
@@ -116,15 +126,17 @@ class AnalyticsCategoryChart extends ConsumerWidget {
                                 .textTheme
                                 .bodyMedium
                                 ?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w700,
                                 ),
                           ),
                           Text(
                             '${percentage.toStringAsFixed(1)}%',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.grey,
-                                    ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: cs.onSurfaceVariant,
+                                ),
                           ),
                         ],
                       ),
@@ -151,4 +163,3 @@ class AnalyticsCategoryChart extends ConsumerWidget {
     return many;
   }
 }
-

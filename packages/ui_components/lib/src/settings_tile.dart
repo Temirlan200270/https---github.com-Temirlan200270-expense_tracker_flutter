@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'animations/app_animations.dart';
 
@@ -40,28 +39,30 @@ class SettingsTile extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.15),
+            color: iconColor.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Icon(icon, color: iconColor, size: 22),
         ),
         title: Text(
           title,
-          style: GoogleFonts.manrope(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
         ),
         subtitle: subtitle != null
             ? Text(
                 subtitle!,
-                style: GoogleFonts.manrope(
-                  color: Colors.grey,
-                  fontSize: 14,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               )
             : null,
-        trailing: trailing ?? const Icon(Icons.chevron_right, color: Colors.grey),
+        trailing: trailing ??
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
       ),
     )
         .animate(effects: AppAnimations.settingsTile(animationIndex));

@@ -7,6 +7,7 @@ import 'package:ui_components/ui_components.dart';
 import '../../providers/analytics_providers.dart';
 import '../../providers/analytics_period_provider.dart';
 import '../../providers/home_decision_engine_provider.dart';
+import '../layout/analytics_layout_spacing.dart';
 import '../widgets/analytics_common.dart';
 import '../widgets/analytics_period_selector.dart'
     show AnalyticsPeriodSelector, AnalyticsPeriodSelectorSheet;
@@ -20,9 +21,12 @@ import '../widgets/analytics_time_chart.dart';
 import '../widgets/analytics_category_chart.dart';
 import '../widgets/analytics_financial_snapshot_section.dart';
 
-/// Главная страница аналитики
+/// Экран аналитики (Analysis Mode, DESIGN_SYSTEM §2.3 + SSS_UI_SYSTEM_V2).
 class AnalyticsPage extends ConsumerWidget {
   const AnalyticsPage({super.key});
+
+  static Widget _sectionSpacing() =>
+      const SizedBox(height: AnalyticsLayoutSpacing.sectionGap);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -39,12 +43,14 @@ class AnalyticsPage extends ConsumerWidget {
     return PrimaryScaffold(
       title: tr('analytics.title'),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.filter_list),
+        OutlinedCircleIconButton(
+          icon: Icons.filter_list_rounded,
+          tooltip: tr('analytics.period'),
           onPressed: () => _showPeriodSelector(context, ref),
         ),
       ],
       child: RefreshIndicator(
+        color: Theme.of(context).colorScheme.primary,
         onRefresh: () async {
           await Future.wait([
             ref.refresh(financialSnapshotProvider.future),
@@ -60,7 +66,8 @@ class AnalyticsPage extends ConsumerWidget {
           ]);
         },
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: AnalyticsLayoutSpacing.screenPadding,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -68,16 +75,12 @@ class AnalyticsPage extends ConsumerWidget {
                 index: 0,
                 child: const AnalyticsFinancialSnapshotSection(),
               ),
-              const SizedBox(height: 16),
-
-              // Селектор периода
+              _sectionSpacing(),
               AnimatedAnalyticsSection(
                 index: 1,
                 child: AnalyticsPeriodSelector(periodState: periodState),
               ),
-              const SizedBox(height: 16),
-
-              // Статистика
+              _sectionSpacing(),
               AnimatedAnalyticsSection(
                 index: 2,
                 child: statsAsync.when(
@@ -87,9 +90,7 @@ class AnalyticsPage extends ConsumerWidget {
                       AnalyticsErrorCard(message: error.toString()),
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Умные инсайты
+              _sectionSpacing(),
               AnimatedAnalyticsSection(
                 index: 3,
                 child: insightsAsync.when(
@@ -100,8 +101,7 @@ class AnalyticsPage extends ConsumerWidget {
                   error: (_, __) => const SizedBox.shrink(),
                 ),
               ),
-
-              // Прогноз
+              _sectionSpacing(),
               AnimatedAnalyticsSection(
                 index: 4,
                 child: forecastAsync.when(
@@ -112,8 +112,7 @@ class AnalyticsPage extends ConsumerWidget {
                   error: (_, __) => const SizedBox.shrink(),
                 ),
               ),
-
-              // Сравнение с предыдущим периодом
+              _sectionSpacing(),
               AnimatedAnalyticsSection(
                 index: 5,
                 child: comparisonAsync.when(
@@ -127,10 +126,7 @@ class AnalyticsPage extends ConsumerWidget {
                   error: (_, __) => const SizedBox.shrink(),
                 ),
               ),
-              if (comparisonAsync.valueOrNull != null)
-                const SizedBox(height: 16),
-
-              // Средние показатели
+              _sectionSpacing(),
               AnimatedAnalyticsSection(
                 index: 6,
                 child: averagesAsync.when(
@@ -141,8 +137,7 @@ class AnalyticsPage extends ConsumerWidget {
                   error: (_, __) => const SizedBox.shrink(),
                 ),
               ),
-
-              // Паттерны трат
+              _sectionSpacing(),
               AnimatedAnalyticsSection(
                 index: 7,
                 child: patternsAsync.when(
@@ -153,8 +148,7 @@ class AnalyticsPage extends ConsumerWidget {
                   error: (_, __) => const SizedBox.shrink(),
                 ),
               ),
-
-              // График по времени
+              _sectionSpacing(),
               AnimatedAnalyticsSection(
                 index: 8,
                 child: timeStatsAsync.when(
@@ -164,9 +158,7 @@ class AnalyticsPage extends ConsumerWidget {
                       AnalyticsErrorCard(message: error.toString()),
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // График по категориям
+              _sectionSpacing(),
               AnimatedAnalyticsSection(
                 index: 9,
                 child: categoryStatsAsync.when(
@@ -184,8 +176,10 @@ class AnalyticsPage extends ConsumerWidget {
   }
 
   void _showPeriodSelector(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
+      showDragHandle: true,
+      useSafeArea: true,
       builder: (context) => const AnalyticsPeriodSelectorSheet(),
     );
   }

@@ -62,7 +62,7 @@ class _AppLifecycleObserverState extends ConsumerState<AppLifecycleObserver>
     showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black87,
+      barrierColor: Theme.of(context).colorScheme.scrim,
       builder: (context) => const LockScreen(),
     ).then((success) {
       if (success == true) {

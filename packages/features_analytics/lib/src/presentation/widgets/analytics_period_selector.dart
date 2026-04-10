@@ -1,10 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ui_components/ui_components.dart';
 
 import '../../providers/analytics_period_provider.dart';
+import '../layout/analytics_layout_spacing.dart';
+import 'analytics_surface_card.dart';
 
-/// Селектор периода для аналитики
+/// Селектор периода для аналитики (Surface 1 + tap).
 class AnalyticsPeriodSelector extends ConsumerWidget {
   const AnalyticsPeriodSelector({
     super.key,
@@ -15,6 +18,7 @@ class AnalyticsPeriodSelector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
     String periodLabel;
     switch (periodState.period) {
       case AnalyticsPeriod.today:
@@ -37,31 +41,46 @@ class AnalyticsPeriodSelector extends ConsumerWidget {
         final to = periodState.customTo;
         if (from != null && to != null) {
           periodLabel =
-              '${DateFormat.yMd().format(from)} - ${DateFormat.yMd().format(to)}';
+              '${DateFormat.yMd(context.locale.toLanguageTag()).format(from)} — ${DateFormat.yMd(context.locale.toLanguageTag()).format(to)}';
         } else {
           periodLabel = tr('analytics.period.custom');
         }
         break;
     }
 
-    return Card(
-      child: InkWell(
-        onTap: () => _showPeriodSelector(context, ref),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              const Icon(Icons.calendar_today, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  periodLabel,
-                  style: Theme.of(context).textTheme.titleMedium,
+    return AnalyticsSurfaceCard(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticUtils.selection();
+            _showPeriodSelector(context, ref);
+          },
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AnalyticsLayoutSpacing.s16,
+              vertical: AnalyticsLayoutSpacing.s12,
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_today_rounded, size: 20, color: cs.primary),
+                const SizedBox(width: AnalyticsLayoutSpacing.s12),
+                Expanded(
+                  child: Text(
+                    periodLabel,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
                 ),
-              ),
-              const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
-            ],
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 22,
+                  color: cs.onSurfaceVariant,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -69,14 +88,16 @@ class AnalyticsPeriodSelector extends ConsumerWidget {
   }
 
   void _showPeriodSelector(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
+      showDragHandle: true,
+      useSafeArea: true,
       builder: (context) => const AnalyticsPeriodSelectorSheet(),
     );
   }
 }
 
-/// Bottom sheet для выбора периода
+/// Bottom sheet выбора периода.
 class AnalyticsPeriodSelectorSheet extends ConsumerWidget {
   const AnalyticsPeriodSelectorSheet({super.key});
 
@@ -88,17 +109,24 @@ class AnalyticsPeriodSelectorSheet extends ConsumerWidget {
       child: StatefulBuilder(
         builder: (context, setState) {
           AnalyticsPeriod? selected = currentPeriod.period;
-          return Container(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AnalyticsLayoutSpacing.s16,
+              0,
+              AnalyticsLayoutSpacing.s16,
+              AnalyticsLayoutSpacing.s24,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  tr('analytics.period.custom'),
-                  style: Theme.of(context).textTheme.titleLarge,
+                  tr('analytics.period_sheet_title'),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AnalyticsLayoutSpacing.s12),
                 ...AnalyticsPeriod.values.map((period) {
                   if (period == AnalyticsPeriod.custom) {
                     return RadioListTile<AnalyticsPeriod>(
@@ -107,7 +135,9 @@ class AnalyticsPeriodSelectorSheet extends ConsumerWidget {
                       groupValue: selected,
                       dense: true,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 0),
+                        horizontal: AnalyticsLayoutSpacing.s8,
+                        vertical: 0,
+                      ),
                       onChanged: (value) async {
                         setState(() => selected = value);
                         final navigatorContext = context;
@@ -136,25 +166,26 @@ class AnalyticsPeriodSelectorSheet extends ConsumerWidget {
                         }
                       },
                     );
-                  } else {
-                    return RadioListTile<AnalyticsPeriod>(
-                      title: Text(_getPeriodLabel(period)),
-                      value: period,
-                      groupValue: selected,
-                      dense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 0),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() => selected = value);
-                          ref
-                              .read(analyticsPeriodProvider.notifier)
-                              .setPeriod(value);
-                          Navigator.pop(context);
-                        }
-                      },
-                    );
                   }
+                  return RadioListTile<AnalyticsPeriod>(
+                    title: Text(_getPeriodLabel(period)),
+                    value: period,
+                    groupValue: selected,
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AnalyticsLayoutSpacing.s8,
+                      vertical: 0,
+                    ),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => selected = value);
+                        ref
+                            .read(analyticsPeriodProvider.notifier)
+                            .setPeriod(value);
+                        Navigator.pop(context);
+                      }
+                    },
+                  );
                 }),
               ],
             ),
@@ -181,4 +212,3 @@ class AnalyticsPeriodSelectorSheet extends ConsumerWidget {
     }
   }
 }
-

@@ -3,11 +3,13 @@ import 'package:expense_tracker_app/expense_tracker_app.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import 'package:ui_components/ui_components.dart';
 
 import '../../providers/analytics_models.dart';
+import '../layout/analytics_layout_spacing.dart';
+import 'analytics_surface_card.dart';
 
-/// Карточки статистики (доходы, расходы, баланс)
+/// Карточки статистики: доходы, расходы, баланс (Analysis Mode, семантика §5 DESIGN_SYSTEM).
 class AnalyticsStatsCards extends ConsumerWidget {
   const AnalyticsStatsCards({super.key, required this.stats});
 
@@ -15,9 +17,12 @@ class AnalyticsStatsCards extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
     final currencyCode = ref.watch(defaultCurrencyProvider);
     final formatter = NumberFormat.currency(
-        locale: context.locale.toLanguageTag(), symbol: currencyCode);
+      locale: context.locale.toLanguageTag(),
+      symbol: currencyCode,
+    );
 
     return Column(
       children: [
@@ -31,11 +36,11 @@ class AnalyticsStatsCards extends ConsumerWidget {
                 subtitle: stats.incomeCount > 0
                     ? '${stats.incomeCount} ${_pluralize(stats.incomeCount, 'запись', 'записи', 'записей')}'
                     : null,
-                color: Colors.green,
-                icon: Icons.trending_up,
+                accentColor: cs.primary,
+                icon: Icons.trending_up_rounded,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AnalyticsLayoutSpacing.s12),
             Expanded(
               child: _AnimatedStatCard(
                 title: tr('analytics.expenses'),
@@ -44,19 +49,22 @@ class AnalyticsStatsCards extends ConsumerWidget {
                 subtitle: stats.expenseCount > 0
                     ? '${stats.expenseCount} ${_pluralize(stats.expenseCount, 'запись', 'записи', 'записей')}'
                     : null,
-                color: Colors.red,
-                icon: Icons.trending_down,
+                accentColor: cs.error,
+                icon: Icons.trending_down_rounded,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AnalyticsLayoutSpacing.s12),
         _AnimatedStatCard(
           title: tr('analytics.balance'),
           value: stats.balance,
           formatter: formatter,
-          color: stats.balance >= 0 ? Colors.green : Colors.red,
-          icon: stats.balance >= 0 ? Icons.check_circle : Icons.warning,
+          accentColor:
+              stats.balance >= 0 ? cs.primary : cs.error,
+          icon: stats.balance >= 0
+              ? Icons.check_circle_outline_rounded
+              : Icons.warning_amber_rounded,
         ),
       ],
     );
@@ -80,7 +88,7 @@ class _AnimatedStatCard extends StatelessWidget {
     required this.title,
     required this.value,
     required this.formatter,
-    required this.color,
+    required this.accentColor,
     required this.icon,
     this.subtitle,
   });
@@ -88,70 +96,81 @@ class _AnimatedStatCard extends StatelessWidget {
   final String title;
   final double value;
   final NumberFormat formatter;
-  final Color color;
+  final Color accentColor;
   final IconData icon;
   final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    final cs = Theme.of(context).colorScheme;
+    final metaStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: cs.onSurfaceVariant,
+        );
+
+    return AnalyticsSurfaceCard(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AnalyticsLayoutSpacing.s16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(icon, color: color, size: 20)
+                Icon(icon, color: accentColor, size: 20)
                     .animate()
                     .scale(
-                        delay: 60.ms,
-                        duration: 200.ms,
-                        curve: Curves.easeOutCubic,
-                        begin: const Offset(0.5, 0.5),
-                        end: const Offset(1, 1))
+                      delay: AppMotion.fast,
+                      duration: AppMotion.standard,
+                      curve: AppMotion.curve,
+                      begin: const Offset(0.5, 0.5),
+                      end: const Offset(1, 1),
+                    )
                     .fadeIn(
-                        delay: 60.ms,
-                        duration: 180.ms,
-                        curve: Curves.easeOutCubic),
-                const SizedBox(width: 8),
+                      delay: AppMotion.fast,
+                      duration: AppMotion.standard,
+                      curve: AppMotion.curve,
+                    ),
+                const SizedBox(width: AnalyticsLayoutSpacing.s8),
                 Expanded(
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.bodyMedium,
-                  ).animate().fadeIn(
-                        delay: 40.ms,
-                        duration: 180.ms,
-                        curve: Curves.easeOutCubic),
+                  )
+                      .animate()
+                      .fadeIn(
+                        delay: AppMotion.fast,
+                        duration: AppMotion.standard,
+                        curve: AppMotion.curve,
+                      ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AnalyticsLayoutSpacing.s8),
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0, end: value),
-              duration: const Duration(milliseconds: 420),
-              curve: Curves.easeOutCubic,
+              duration: AppMotion.screen + AppMotion.standard,
+              curve: AppMotion.curve,
               builder: (context, animatedValue, _) {
                 return Text(
                   formatter.format(animatedValue),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: color,
+                        color: accentColor,
                         fontWeight: FontWeight.bold,
                       ),
                 );
               },
             ),
             if (subtitle != null) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: AnalyticsLayoutSpacing.s8),
               Text(
                 subtitle!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey,
-                    ),
-              ).animate().fadeIn(
-                    delay: 160.ms,
-                    duration: 180.ms,
-                    curve: Curves.easeOutCubic),
+                style: metaStyle,
+              )
+                  .animate()
+                  .fadeIn(
+                    delay: AppMotion.screen,
+                    duration: AppMotion.standard,
+                    curve: AppMotion.curve,
+                  ),
             ],
           ],
         ),
@@ -159,4 +178,3 @@ class _AnimatedStatCard extends StatelessWidget {
     );
   }
 }
-

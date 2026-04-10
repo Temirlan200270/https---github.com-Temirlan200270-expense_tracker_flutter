@@ -30,6 +30,10 @@
 | **Import** | Import, review queue, подтверждения bulk | Action Mode |
 | **Config** | Settings, бюджеты, категории, recurring, export/import | Навигация из меню Home |
 
+### 1.1.1 Опциональный AI-импорт выписки
+
+Пошаговые промпты и примеры кода для Gemini не хранятся в репозитории (шум и устаревание). При необходимости: [Google AI Studio](https://aistudio.google.com/), пакет `google_generative_ai`, ответ строго в JSON; ключи — только через env / secure storage, не в исходниках. Реализация — в слое импорта (`features_export` или отдельный сервис).
+
 ### 1.2 System & intelligence (целевое покрытие)
 
 | Область | Статус в продукте | Примечание |
@@ -235,4 +239,10 @@ dart tool/sss_ui_audit.dart --strict
 | Behavior Contract | [SSS_BEHAVIOR_CONTRACT_V1.md](SSS_BEHAVIOR_CONTRACT_V1.md) |
 | Архитектура | [ARCHITECTURE.md](../ARCHITECTURE.md) |
 | Home layout shell | `packages/app/lib/src/home/home_layout_shell.dart` |
+| Онбординг / Lock (shell) | `packages/app/lib/src/onboarding/onboarding_page.dart`, `packages/app/lib/src/presentation/lock_screen.dart` |
+| Analytics layout / сетка | `packages/features_analytics/lib/src/presentation/layout/analytics_layout_spacing.dart` |
+| Analytics Surface 1 | `packages/features_analytics/lib/src/presentation/widgets/analytics_surface_card.dart` |
+| Import layout / сетка | `packages/features_export/lib/src/presentation/layout/import_layout_spacing.dart` |
+| Import Surface 1 | `packages/features_export/lib/src/presentation/widgets/import_surface_card.dart` |
+| Export / Backup / Import review (экраны) | `packages/features_export/lib/src/presentation/pages/` |
 | Motion tokens | `packages/ui_components/lib/src/theme/motion_tokens.dart` |

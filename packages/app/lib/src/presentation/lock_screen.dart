@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../home/home_layout_shell.dart';
 import '../settings/biometric_providers.dart';
 
 /// Экран блокировки с биометрией
@@ -67,6 +68,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     final biometricTypeName = ref.watch(biometricTypeNameProvider);
 
     return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -81,24 +83,24 @@ class _LockScreenState extends ConsumerState<LockScreen> {
         child: SafeArea(
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.all(32.0),
+              padding: const EdgeInsets.all(HomeLayoutSpacing.s32),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Иконка блокировки
                   Container(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(HomeLayoutSpacing.s24),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surface.withOpacity(0.9),
+                      color: theme.colorScheme.surface.withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      Icons.lock_outline,
+                      Icons.lock_outline_rounded,
                       size: 64,
                       color: theme.colorScheme.primary,
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  SizedBox(height: HomeLayoutSpacing.s32),
 
                   // Заголовок
                   Text(
@@ -107,7 +109,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: HomeLayoutSpacing.s8),
 
                   // Описание
                   Text(
@@ -121,25 +123,25 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 32),
+                  SizedBox(height: HomeLayoutSpacing.s32),
 
                   // Сообщение об ошибке
                   if (_errorMessage != null) ...[
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(HomeLayoutSpacing.s12),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.errorContainer,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.error_outline,
+                            Icons.error_outline_rounded,
                             color: theme.colorScheme.onErrorContainer,
                             size: 20,
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: HomeLayoutSpacing.s8),
                           Text(
                             _errorMessage!,
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -149,7 +151,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: HomeLayoutSpacing.s24),
                   ],
 
                   // Кнопка повторной попытки
@@ -161,7 +163,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.fingerprint),
+                        : const Icon(Icons.fingerprint_rounded),
                     label: Text(_isAuthenticating
                         ? tr('biometric.authenticating')
                         : tr('biometric.try_again')),

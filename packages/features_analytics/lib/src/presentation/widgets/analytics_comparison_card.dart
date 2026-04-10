@@ -2,11 +2,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:expense_tracker_app/expense_tracker_app.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../providers/analytics_models.dart';
+import '../layout/analytics_layout_spacing.dart';
+import 'analytics_surface_card.dart';
 
-/// Карточка сравнения с предыдущим периодом
+/// Сравнение с предыдущим периодом.
 class AnalyticsComparisonCard extends ConsumerWidget {
   const AnalyticsComparisonCard({super.key, required this.comparison});
 
@@ -14,43 +15,48 @@ class AnalyticsComparisonCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
     final currencyCode = ref.watch(defaultCurrencyProvider);
     final formatter = NumberFormat.currency(
-        locale: context.locale.toLanguageTag(), symbol: currencyCode);
+      locale: context.locale.toLanguageTag(),
+      symbol: currencyCode,
+    );
 
-    return Card(
+    return AnalyticsSurfaceCard(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AnalyticsLayoutSpacing.s16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               tr('analytics.comparison.title'),
-              style: Theme.of(context).textTheme.titleMedium,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AnalyticsLayoutSpacing.s12),
             _ComparisonItem(
               label: tr('analytics.income'),
               change: comparison.incomeChange,
               changePercent: comparison.incomeChangePercent,
               formatter: formatter,
-              color: Colors.green,
+              accentColor: cs.primary,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AnalyticsLayoutSpacing.s8),
             _ComparisonItem(
               label: tr('analytics.expenses'),
               change: comparison.expensesChange,
               changePercent: comparison.expensesChangePercent,
               formatter: formatter,
-              color: Colors.red,
+              accentColor: cs.error,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AnalyticsLayoutSpacing.s8),
             _ComparisonItem(
               label: tr('analytics.balance'),
               change: comparison.balanceChange,
               changePercent: comparison.balanceChangePercent,
               formatter: formatter,
-              color: comparison.balanceChange >= 0 ? Colors.green : Colors.red,
+              accentColor: comparison.balanceChange >= 0 ? cs.primary : cs.error,
             ),
           ],
         ),
@@ -65,14 +71,14 @@ class _ComparisonItem extends StatelessWidget {
     required this.change,
     required this.changePercent,
     required this.formatter,
-    required this.color,
+    required this.accentColor,
   });
 
   final String label;
   final double change;
   final double changePercent;
   final NumberFormat formatter;
-  final Color color;
+  final Color accentColor;
 
   @override
   Widget build(BuildContext context) {
@@ -86,24 +92,26 @@ class _ComparisonItem extends StatelessWidget {
             Text(
               '${isPositive ? '+' : ''}${formatter.format(change)}',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.bold,
+                    color: accentColor,
+                    fontWeight: FontWeight.w700,
                   ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AnalyticsLayoutSpacing.s8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AnalyticsLayoutSpacing.s8,
+                vertical: 4,
+              ),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(4),
+                color: accentColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 '${isPositive ? '+' : ''}${changePercent.toStringAsFixed(1)}%',
-                style: TextStyle(
-                  color: color,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: accentColor,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
             ),
           ],
@@ -112,4 +120,3 @@ class _ComparisonItem extends StatelessWidget {
     );
   }
 }
-

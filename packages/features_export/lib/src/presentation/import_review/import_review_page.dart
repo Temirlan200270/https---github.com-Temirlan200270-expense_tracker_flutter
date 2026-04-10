@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_models/shared_models.dart';
 import 'package:ui_components/ui_components.dart';
 
+import '../layout/import_layout_spacing.dart';
 import 'import_review_controller.dart';
 
 /// Кластер строк «внимания» по санитизированному названию.
@@ -79,10 +80,11 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
 
     if (items.isEmpty) {
       return Scaffold(
+        backgroundColor: theme.colorScheme.surface,
         appBar: AppBar(title: Text(tr('import.review.title'))),
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(ImportLayoutSpacing.s24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -91,7 +93,7 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
                   style: theme.textTheme.titleMedium,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: ImportLayoutSpacing.s16),
                 PrimaryActionButton(
                   height: 48,
                   onPressed: () => Navigator.of(context).maybePop(),
@@ -128,6 +130,7 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
     final attentionClusters = _buildAttentionClusters(attention);
 
     return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: Text(tr('import.review.title')),
         actions: [
@@ -145,10 +148,15 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            padding: const EdgeInsets.fromLTRB(
+              ImportLayoutSpacing.s20,
+              ImportLayoutSpacing.s8,
+              ImportLayoutSpacing.s20,
+              ImportLayoutSpacing.s8,
+            ),
             child: EnhancedExpenseCard(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(ImportLayoutSpacing.s16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -162,7 +170,7 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
                       ),
                       style: theme.textTheme.titleSmall,
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: ImportLayoutSpacing.s12),
                     FilledButton(
                       onPressed: confidentCount == 0 || _saving
                           ? null
@@ -185,7 +193,12 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
                 if (attentionClusters.isNotEmpty) ...[
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      padding: const EdgeInsets.fromLTRB(
+                        ImportLayoutSpacing.s20,
+                        ImportLayoutSpacing.s8,
+                        ImportLayoutSpacing.s20,
+                        ImportLayoutSpacing.s4,
+                      ),
                       child: Text(
                         tr('import.review.section_attention'),
                         style: theme.textTheme.titleSmall?.copyWith(
@@ -237,7 +250,12 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
                 if (ready.isNotEmpty) ...[
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                      padding: const EdgeInsets.fromLTRB(
+                        ImportLayoutSpacing.s20,
+                        ImportLayoutSpacing.s16,
+                        ImportLayoutSpacing.s20,
+                        ImportLayoutSpacing.s4,
+                      ),
                       child: Text(
                         tr('import.review.section_ready'),
                         style: theme.textTheme.titleSmall?.copyWith(
@@ -263,7 +281,9 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
                     ),
                   ),
                 ],
-                const SliverToBoxAdapter(child: SizedBox(height: 88)),
+                SliverToBoxAdapter(
+                  child: SizedBox(height: ImportLayoutSpacing.s32 + 56),
+                ),
               ],
             ),
           ),
@@ -271,7 +291,12 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(
+            ImportLayoutSpacing.s20,
+            ImportLayoutSpacing.s8,
+            ImportLayoutSpacing.s20,
+            ImportLayoutSpacing.s16,
+          ),
           child: PrimaryActionButton(
             height: 52,
             hapticOnPress: !_saving && selected > 0,
@@ -392,7 +417,12 @@ class _AttentionClusterBar extends ConsumerWidget {
     final categoriesAsync = ref.watch(categoriesStreamProvider);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
+      padding: const EdgeInsets.fromLTRB(
+        ImportLayoutSpacing.s20,
+        ImportLayoutSpacing.s4,
+        ImportLayoutSpacing.s20,
+        ImportLayoutSpacing.s4,
+      ),
       child: Material(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(12),
@@ -518,7 +548,10 @@ class _ReviewTile extends ConsumerWidget {
         : null;
 
     final tile = Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: compact ? 3 : 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: ImportLayoutSpacing.s20,
+        vertical: compact ? 3 : 6,
+      ),
       child: EnhancedExpenseCard(
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
@@ -550,20 +583,24 @@ class _ReviewTile extends ConsumerWidget {
                       }
                     }
                     final avR = compact ? 14.0 : 18.0;
+                    final Color avatarBg = cat != null
+                        ? Color(cat.colorValue).withValues(alpha: 0.85)
+                        : theme.colorScheme.surfaceContainerHighest;
+                    final Color avatarIconColor = cat != null
+                        ? (ThemeData.estimateBrightnessForColor(avatarBg) ==
+                                Brightness.dark
+                            ? theme.colorScheme.surface
+                            : theme.colorScheme.onSurface)
+                        : theme.colorScheme.onSurfaceVariant;
                     return Column(
                       children: [
                         CircleAvatar(
                           radius: avR,
-                          backgroundColor: cat != null
-                              ? Color(cat.colorValue)
-                                  .withValues(alpha: 0.85)
-                              : theme.colorScheme.surfaceContainerHighest,
+                          backgroundColor: avatarBg,
                           child: Icon(
                             cat != null ? Icons.label : Icons.label_outline,
                             size: compact ? 16 : 20,
-                            color: cat != null
-                                ? Colors.white
-                                : theme.colorScheme.onSurfaceVariant,
+                            color: avatarIconColor,
                           ),
                         ),
                         if (!compact) ...[
@@ -614,7 +651,7 @@ class _ReviewTile extends ConsumerWidget {
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 24),
+        padding: const EdgeInsets.only(right: ImportLayoutSpacing.s24),
         color: theme.colorScheme.errorContainer,
         child: Icon(
           Icons.remove_circle_outline,

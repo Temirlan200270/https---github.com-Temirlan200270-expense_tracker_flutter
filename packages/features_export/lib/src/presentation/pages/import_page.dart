@@ -3,12 +3,16 @@ import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_models/shared_models.dart';
+import 'package:ui_components/ui_components.dart';
 
 import '../../services/import_service.dart';
 import '../import_review/import_review_controller.dart';
+import '../layout/import_layout_spacing.dart';
+import '../widgets/import_surface_card.dart';
 import 'package:features_expenses/features_expenses.dart';
 import 'package:expense_tracker_app/expense_tracker_app.dart';
 
@@ -25,46 +29,67 @@ class _ImportPageState extends ConsumerState<ImportPage> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
+      backgroundColor: cs.surface,
       appBar: AppBar(
         title: Text(tr('import.title')),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            tr('import.select_file'),
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 16),
-          _ImportOption(
-            icon: Icons.table_chart,
-            title: tr('import.csv'),
-            subtitle: tr('import.csv_description'),
-            onTap: () => _importCsv(context),
-            enabled: !_isImporting,
-          ),
-          const SizedBox(height: 12),
-          _ImportOption(
-            icon: Icons.code,
-            title: tr('import.json'),
-            subtitle: tr('import.json_description'),
-            onTap: () => _importJson(context),
-            enabled: !_isImporting,
-          ),
-          const SizedBox(height: 12),
-          _ImportOption(
-            icon: Icons.picture_as_pdf,
-            title: tr('import.pdf'),
-            subtitle: tr('import.pdf_description'),
-            onTap: () => _importPdf(context),
-            enabled: !_isImporting,
-          ),
-          if (_isImporting) ...[
-            const SizedBox(height: 24),
-            const Center(child: CircularProgressIndicator()),
+      body: SafeArea(
+        bottom: true,
+        child: ListView(
+          padding: ImportLayoutSpacing.screenPadding,
+          children: [
+            Text(
+              tr('import.select_file'),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            )
+                .animate()
+                .fadeIn(duration: AppMotion.standard, curve: AppMotion.curve)
+                .slideY(
+                  begin: 0.06,
+                  duration: AppMotion.standard,
+                  curve: AppMotion.curve,
+                ),
+            SizedBox(height: ImportLayoutSpacing.s16),
+            _ImportOption(
+              icon: Icons.table_chart_rounded,
+              iconColor: cs.primary,
+              title: tr('import.csv'),
+              subtitle: tr('import.csv_description'),
+              onTap: () => _importCsv(context),
+              enabled: !_isImporting,
+              animationIndex: 0,
+            ),
+            SizedBox(height: ImportLayoutSpacing.s12),
+            _ImportOption(
+              icon: Icons.code_rounded,
+              iconColor: cs.secondary,
+              title: tr('import.json'),
+              subtitle: tr('import.json_description'),
+              onTap: () => _importJson(context),
+              enabled: !_isImporting,
+              animationIndex: 1,
+            ),
+            SizedBox(height: ImportLayoutSpacing.s12),
+            _ImportOption(
+              icon: Icons.picture_as_pdf_rounded,
+              iconColor: cs.tertiary,
+              title: tr('import.pdf'),
+              subtitle: tr('import.pdf_description'),
+              onTap: () => _importPdf(context),
+              enabled: !_isImporting,
+              animationIndex: 2,
+            ),
+            if (_isImporting) ...[
+              SizedBox(height: ImportLayoutSpacing.s24),
+              const Center(child: CircularProgressIndicator()),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -186,10 +211,13 @@ class _ImportPageState extends ConsumerState<ImportPage> {
         // Получаем API ключ и модель из провайдеров
         final geminiApiKey = ref.read(geminiApiKeyProvider);
         final geminiModel = ref.read(geminiModelProvider);
-        print('📋 Импорт PDF: API ключ = ${geminiApiKey != null && geminiApiKey.isNotEmpty ? '${geminiApiKey.substring(0, 4)}...' : 'НЕ УСТАНОВЛЕН'}, модель = $geminiModel');
-        final expenses = await _importService.importFromPdf(file, geminiApiKey: geminiApiKey, geminiModel: geminiModel, ref: ref);
-        
-        // Отладочная информация
+        final expenses = await _importService.importFromPdf(
+          file,
+          geminiApiKey: geminiApiKey,
+          geminiModel: geminiModel,
+          ref: ref,
+        );
+
         if (expenses.isEmpty) {
           if (context.mounted) {
             showDialog(
@@ -282,30 +310,70 @@ class _ImportPageState extends ConsumerState<ImportPage> {
 class _ImportOption extends StatelessWidget {
   const _ImportOption({
     required this.icon,
+    required this.iconColor,
     required this.title,
     required this.subtitle,
     required this.onTap,
     required this.enabled,
+    required this.animationIndex,
   });
 
   final IconData icon;
+  final Color iconColor;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
   final bool enabled;
+  final int animationIndex;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    final cs = Theme.of(context).colorScheme;
+
+    return ImportSurfaceCard(
       child: ListTile(
-        leading: Icon(icon, size: 32),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: ImportLayoutSpacing.s20,
+          vertical: ImportLayoutSpacing.s12,
+        ),
+        leading: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(icon, color: iconColor, size: 24),
+        ),
+        title: Text(
+          title,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+        ),
+        trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
         onTap: enabled ? onTap : null,
         enabled: enabled,
       ),
-    );
+    )
+        .animate()
+        .fadeIn(
+          duration: AppMotion.standard,
+          delay: AppMotion.staggerInterval * animationIndex,
+          curve: AppMotion.curve,
+        )
+        .slideY(
+          begin: 0.08,
+          duration: AppMotion.standard,
+          delay: AppMotion.staggerInterval * animationIndex,
+          curve: AppMotion.curve,
+        );
   }
 }
 

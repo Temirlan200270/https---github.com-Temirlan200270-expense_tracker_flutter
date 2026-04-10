@@ -12,6 +12,43 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../layout/import_layout_spacing.dart';
+import '../widgets/import_surface_card.dart';
+
+void _backupSnackError(BuildContext context, String message) {
+  if (!context.mounted) return;
+  final cs = Theme.of(context).colorScheme;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: cs.errorContainer,
+      content: Text(message, style: TextStyle(color: cs.onErrorContainer)),
+    ),
+  );
+}
+
+void _backupSnackSuccess(BuildContext context, String message) {
+  if (!context.mounted) return;
+  final cs = Theme.of(context).colorScheme;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: cs.primaryContainer,
+      content: Text(message, style: TextStyle(color: cs.onPrimaryContainer)),
+    ),
+  );
+}
+
+void _backupSnackNeutral(BuildContext context, String message) {
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      behavior: SnackBarBehavior.floating,
+      content: Text(message),
+    ),
+  );
+}
+
 /// Провайдер для BackupService
 final backupServiceProvider = Provider<BackupService>((ref) {
   final database = ref.watch(appDatabaseProvider);
@@ -62,42 +99,49 @@ class _BackupPageState extends ConsumerState<BackupPage> {
   @override
   Widget build(BuildContext context) {
     final backupService = ref.watch(backupServiceProvider);
+    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
+      backgroundColor: cs.surface,
       appBar: AppBar(
         title: Text(tr('backup.title')),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Создание бэкапа
-          Card(
+      body: SafeArea(
+        bottom: true,
+        child: ListView(
+          padding: ImportLayoutSpacing.screenPadding,
+          children: [
+          ImportSurfaceCard(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(ImportLayoutSpacing.s16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.backup, size: 24),
-                      const SizedBox(width: 12),
-                      Text(
-                        tr('backup.create'),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                      Icon(Icons.backup_rounded, size: 24, color: cs.primary),
+                      const SizedBox(width: ImportLayoutSpacing.s12),
+                      Expanded(
+                        child: Text(
+                          tr('backup.create'),
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: ImportLayoutSpacing.s16),
                   Text(
                     tr('backup.create_description'),
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: ImportLayoutSpacing.s16),
                   FilledButton.icon(
                     onPressed: () => _createBackup(context, backupService),
-                    icon: const Icon(Icons.save),
+                    icon: const Icon(Icons.save_rounded),
                     label: Text(tr('backup.create_now')),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size(double.infinity, 48),
@@ -107,36 +151,39 @@ class _BackupPageState extends ConsumerState<BackupPage> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: ImportLayoutSpacing.s16),
 
-          // Восстановление из бэкапа
-          Card(
+          ImportSurfaceCard(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(ImportLayoutSpacing.s16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.restore, size: 24),
-                      const SizedBox(width: 12),
-                      Text(
-                        tr('backup.restore'),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                      Icon(Icons.restore_rounded, size: 24, color: cs.secondary),
+                      const SizedBox(width: ImportLayoutSpacing.s12),
+                      Expanded(
+                        child: Text(
+                          tr('backup.restore'),
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: ImportLayoutSpacing.s16),
                   Text(
                     tr('backup.restore_description'),
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: ImportLayoutSpacing.s16),
                   OutlinedButton.icon(
                     onPressed: () => _restoreBackup(context, backupService),
-                    icon: const Icon(Icons.upload_file),
+                    icon: const Icon(Icons.upload_file_rounded),
                     label: Text(tr('backup.restore_from_file')),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 48),
@@ -146,16 +193,15 @@ class _BackupPageState extends ConsumerState<BackupPage> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: ImportLayoutSpacing.s16),
 
-          // Список существующих бэкапов
           Text(
             tr('backup.existing'),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
                 ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: ImportLayoutSpacing.s12),
           FutureBuilder<List<File>>(
             future: backupService.listBackups(),
             builder: (context, snapshot) {
@@ -164,13 +210,17 @@ class _BackupPageState extends ConsumerState<BackupPage> {
               }
 
               if (snapshot.hasError) {
-                return Card(
-                  color: Colors.red.shade50,
+                final ecs = Theme.of(context).colorScheme;
+                return ImportSurfaceCard(
+                  backgroundColor: ecs.errorContainer,
+                  borderColor: ecs.error.withValues(alpha: 0.35),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(ImportLayoutSpacing.s16),
                     child: Text(
                       tr('backup.error', args: [snapshot.error.toString()]),
-                      style: TextStyle(color: Colors.red.shade700),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: ecs.onErrorContainer,
+                          ),
                     ),
                   ),
                 );
@@ -179,14 +229,15 @@ class _BackupPageState extends ConsumerState<BackupPage> {
               final backups = snapshot.data ?? [];
 
               if (backups.isEmpty) {
-                return Card(
+                final ecs = Theme.of(context).colorScheme;
+                return ImportSurfaceCard(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(ImportLayoutSpacing.s24),
                     child: Center(
                       child: Text(
                         tr('backup.no_backups'),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey,
+                              color: ecs.onSurfaceVariant,
                             ),
                       ),
                     ),
@@ -207,6 +258,7 @@ class _BackupPageState extends ConsumerState<BackupPage> {
             },
           ),
         ],
+        ),
       ),
     );
   }
@@ -268,11 +320,9 @@ class _BackupPageState extends ConsumerState<BackupPage> {
       if (!mounted) return;
       final navigatorContext = context;
       Navigator.pop(navigatorContext); // Закрываем индикатор если открыт
-      ScaffoldMessenger.of(navigatorContext).showSnackBar(
-        SnackBar(
-          content: Text(tr('backup.error', args: [e.toString()])),
-          backgroundColor: Colors.red,
-        ),
+      _backupSnackError(
+        navigatorContext,
+        tr('backup.error', args: [e.toString()]),
       );
     }
   }
@@ -292,11 +342,9 @@ class _BackupPageState extends ConsumerState<BackupPage> {
     } catch (e) {
       if (!mounted) return;
       final navigatorContext = context;
-      ScaffoldMessenger.of(navigatorContext).showSnackBar(
-        SnackBar(
-          content: Text(tr('backup.error', args: [e.toString()])),
-          backgroundColor: Colors.red,
-        ),
+      _backupSnackError(
+        navigatorContext,
+        tr('backup.error', args: [e.toString()]),
       );
     }
   }
@@ -321,7 +369,10 @@ class _BackupPageState extends ConsumerState<BackupPage> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
             child: Text(tr('backup.restore_confirm')),
           ),
         ],
@@ -365,33 +416,26 @@ class _BackupPageState extends ConsumerState<BackupPage> {
           parts.add('${result.recurringExpensesCount} ${tr('backup.recurring_expenses')}');
         }
         
-        ScaffoldMessenger.of(navigatorContext).showSnackBar(
-          SnackBar(
-            content: Text(parts.isEmpty 
+        _backupSnackSuccess(
+          navigatorContext,
+          parts.isEmpty
               ? tr('backup.restored_empty')
-              : '${tr('backup.restored_prefix')}: ${parts.join(', ')}'),
-            backgroundColor: Colors.green,
-          ),
+              : '${tr('backup.restored_prefix')}: ${parts.join(', ')}',
         );
         // Обновляем список бэкапов
         setState(() {});
       } else {
-        ScaffoldMessenger.of(navigatorContext).showSnackBar(
-          SnackBar(
-            content: Text(
-                tr('backup.error', args: [result.error ?? 'Unknown error'])),
-            backgroundColor: Colors.red,
-          ),
+        _backupSnackError(
+          navigatorContext,
+          tr('backup.error', args: [result.error ?? 'Unknown error']),
         );
       }
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(navigatorContext); // Закрываем индикатор если открыт
-      ScaffoldMessenger.of(navigatorContext).showSnackBar(
-        SnackBar(
-          content: Text(tr('backup.error', args: [e.toString()])),
-          backgroundColor: Colors.red,
-        ),
+      _backupSnackError(
+        navigatorContext,
+        tr('backup.error', args: [e.toString()]),
       );
     }
   }
@@ -410,6 +454,8 @@ class _BackupItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return FutureBuilder<BackupInfo?>(
       future: backupService.getBackupInfo(backup),
       builder: (context, snapshot) {
@@ -417,10 +463,15 @@ class _BackupItem extends StatelessWidget {
         final dateFormat = DateFormat.yMMMMd(context.locale.toLanguageTag());
         final timeFormat = DateFormat.Hm(context.locale.toLanguageTag());
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            leading: const Icon(Icons.backup, size: 32),
+        return Padding(
+          padding: const EdgeInsets.only(bottom: ImportLayoutSpacing.s8),
+          child: ImportSurfaceCard(
+            child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: ImportLayoutSpacing.s12,
+              vertical: ImportLayoutSpacing.s8,
+            ),
+            leading: Icon(Icons.backup_rounded, size: 28, color: cs.primary),
             title: Text(
               info?.createdAt != null
                   ? '${dateFormat.format(info!.createdAt!)} ${timeFormat.format(info.createdAt!)}'
@@ -443,22 +494,23 @@ class _BackupItem extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.restore),
+                  icon: const Icon(Icons.restore_rounded),
                   onPressed: onRestore,
                   tooltip: tr('backup.restore'),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.share),
+                  icon: const Icon(Icons.share_rounded),
                   onPressed: () => _shareBackup(context),
                   tooltip: tr('backup.share'),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
+                  icon: Icon(Icons.delete_outline_rounded, color: cs.error),
                   onPressed: () => _deleteBackup(context),
                   tooltip: tr('delete'),
                 ),
               ],
             ),
+          ),
           ),
         );
       },
@@ -472,11 +524,7 @@ class _BackupItem extends StatelessWidget {
         text: tr('backup.share_message'),
       );
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tr('backup.error', args: [e.toString()]))),
-        );
-      }
+      _backupSnackError(context, tr('backup.error', args: [e.toString()]));
     }
   }
 
@@ -493,7 +541,9 @@ class _BackupItem extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: Text(tr('delete')),
           ),
         ],
@@ -503,11 +553,9 @@ class _BackupItem extends StatelessWidget {
     if (confirmed == true) {
       final deleted = await backupService.deleteBackup(backup);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                deleted ? tr('backup.deleted') : tr('backup.delete_error')),
-          ),
+        _backupSnackNeutral(
+          context,
+          deleted ? tr('backup.deleted') : tr('backup.delete_error'),
         );
       }
     }

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ui_components/ui_components.dart';
 
+import '../home/home_layout_shell.dart';
 import 'onboarding_providers.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
@@ -59,6 +61,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Column(
           children: [
@@ -79,7 +82,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               totalPages: _slides.length,
             ),
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(HomeLayoutSpacing.s24),
               child: _currentPage == _slides.length - 1
                   ? FilledButton(
                       onPressed: _completeOnboarding,
@@ -172,7 +175,7 @@ class _SlideContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(HomeLayoutSpacing.s32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -192,7 +195,7 @@ class _SlideContent extends StatelessWidget {
                   delay: 120.ms,
                   duration: 240.ms,
                   curve: Curves.easeOutCubic),
-          const SizedBox(height: 48),
+          SizedBox(height: HomeLayoutSpacing.s32 + HomeLayoutSpacing.s16),
           Text(
             tr(slide.title),
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -211,7 +214,7 @@ class _SlideContent extends StatelessWidget {
                   delay: 220.ms,
                   duration: 280.ms,
                   curve: Curves.easeOutCubic),
-          const SizedBox(height: 24),
+          SizedBox(height: HomeLayoutSpacing.s24),
           Text(
             tr(slide.description),
             style: Theme.of(context).textTheme.bodyLarge,
@@ -257,20 +260,23 @@ class _PageIndicator extends StatelessWidget {
             shape: BoxShape.circle,
             color: index == currentPage
                 ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                : Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.3),
           ),
         )
             .animate()
             .scale(
-                delay: (index * 32).ms,
-                duration: 200.ms,
-                curve: Curves.easeOutCubic,
+                delay: AppMotion.staggerInterval * index,
+                duration: AppMotion.standard,
+                curve: AppMotion.curve,
                 begin: const Offset(0, 0),
                 end: const Offset(1, 1))
             .fadeIn(
-                delay: (index * 32).ms,
-                duration: 200.ms,
-                curve: Curves.easeOutCubic),
+                delay: AppMotion.staggerInterval * index,
+                duration: AppMotion.standard,
+                curve: AppMotion.curve),
       ),
     );
   }

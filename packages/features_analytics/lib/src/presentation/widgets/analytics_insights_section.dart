@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:ui_components/ui_components.dart';
 
 import '../../providers/smart_insights.dart';
+import '../layout/analytics_layout_spacing.dart';
+import 'analytics_surface_card.dart';
 
-/// Секция умных инсайтов (Analysis Mode, примитивы DESIGN_SYSTEM §7.2).
+/// Секция умных инсайтов (Analysis Mode, DESIGN_SYSTEM §7.2).
 class AnalyticsInsightsSection extends StatelessWidget {
   const AnalyticsInsightsSection({super.key, required this.insights});
 
@@ -17,7 +19,7 @@ class AnalyticsInsightsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.only(bottom: AnalyticsLayoutSpacing.s8),
           child: Row(
             children: [
               Icon(
@@ -25,7 +27,7 @@ class AnalyticsInsightsSection extends StatelessWidget {
                 color: cs.primary,
                 size: 22,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AnalyticsLayoutSpacing.s8),
               Text(
                 tr('analytics.insights.title'),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -35,7 +37,16 @@ class AnalyticsInsightsSection extends StatelessWidget {
             ],
           ),
         ),
-        ...insights.take(3).map((insight) => _InsightCard(insight: insight)),
+        ...insights
+            .take(3)
+            .map(
+              (insight) => Padding(
+                padding: const EdgeInsets.only(
+                  bottom: AnalyticsLayoutSpacing.s12,
+                ),
+                child: _InsightCard(insight: insight),
+              ),
+            ),
       ],
     );
   }
@@ -60,13 +71,34 @@ class _InsightCard extends StatelessWidget {
 
   (IconData, InsightChipTone) _iconAndTone() {
     return switch (insight.type) {
-      InsightType.spending => (Icons.shopping_cart_outlined, InsightChipTone.informational),
-      InsightType.saving => (Icons.savings_outlined, InsightChipTone.positive),
-      InsightType.trend => (Icons.show_chart_rounded, InsightChipTone.informational),
-      InsightType.warning => (Icons.warning_amber_rounded, InsightChipTone.caution),
-      InsightType.achievement => (Icons.emoji_events_outlined, InsightChipTone.positive),
-      InsightType.pattern => (Icons.auto_graph_rounded, InsightChipTone.neutral),
-      InsightType.tip => (Icons.tips_and_updates_outlined, InsightChipTone.informational),
+      InsightType.spending => (
+          Icons.shopping_cart_outlined,
+          InsightChipTone.informational,
+        ),
+      InsightType.saving => (
+          Icons.savings_outlined,
+          InsightChipTone.positive,
+        ),
+      InsightType.trend => (
+          Icons.show_chart_rounded,
+          InsightChipTone.informational,
+        ),
+      InsightType.warning => (
+          Icons.warning_amber_rounded,
+          InsightChipTone.caution,
+        ),
+      InsightType.achievement => (
+          Icons.emoji_events_outlined,
+          InsightChipTone.positive,
+        ),
+      InsightType.pattern => (
+          Icons.auto_graph_rounded,
+          InsightChipTone.neutral,
+        ),
+      InsightType.tip => (
+          Icons.tips_and_updates_outlined,
+          InsightChipTone.informational,
+        ),
     };
   }
 
@@ -93,10 +125,9 @@ class _InsightCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final (typeIcon, tone) = _iconAndTone();
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+    return AnalyticsSurfaceCard(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AnalyticsLayoutSpacing.s12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -109,27 +140,29 @@ class _InsightCard extends StatelessWidget {
                     icon: typeIcon,
                     tone: tone,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AnalyticsLayoutSpacing.s8),
                   Text(
                     insight.title,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AnalyticsLayoutSpacing.s8),
                   Text(
                     insight.description,
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
                   ),
                 ],
               ),
             ),
             if (insight.trend != null) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: AnalyticsLayoutSpacing.s8),
               Icon(
                 _trendIcon(),
                 color: _trendColor(cs),
-                size: 18,
+                size: 20,
               ),
             ],
           ],

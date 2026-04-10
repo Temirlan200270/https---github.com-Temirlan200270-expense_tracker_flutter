@@ -6,6 +6,9 @@
   "app_title": "Expense Tracker",
   "transactions": "Transactions",
   "settings": "Settings",
+  "settings_section_appearance": "Appearance",
+  "settings_section_data": "Data",
+  "settings_section_security": "Security",
   "language": "Language",
   "theme": "Theme",
   "theme_light": "Light",
@@ -248,6 +251,22 @@
       "daily": "Per Day",
       "weekly": "Per Week",
       "monthly": "Per Month"
+    },
+    "period_sheet_title": "Period",
+    "forecast": {
+      "title": "End-of-period forecast",
+      "meta": "Accuracy: {pct}% · {days} days left"
+    },
+    "averages_title": "Averages",
+    "patterns": {
+      "title": "Spending patterns",
+      "most_spend": "You spend the most on",
+      "least_spend": "You spend the least on",
+      "weekend_more": "Weekends are higher",
+      "weekday_more": "Weekdays are higher",
+      "balanced": "Spending is even",
+      "avg_check": "Average transaction",
+      "ratio": "×{x}"
     },
     "top_categories": "Top Categories",
     "snapshot": {

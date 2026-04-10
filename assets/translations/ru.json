@@ -6,6 +6,9 @@
   "app_title": "Трекер расходов",
   "transactions": "Транзакции",
   "settings": "Настройки",
+  "settings_section_appearance": "Внешний вид",
+  "settings_section_data": "Данные",
+  "settings_section_security": "Безопасность",
   "language": "Язык",
   "theme": "Тема",
   "theme_light": "Светлая",
@@ -250,6 +253,22 @@
       "daily": "В день",
       "weekly": "В неделю",
       "monthly": "В месяц"
+    },
+    "period_sheet_title": "Период",
+    "forecast": {
+      "title": "Прогноз на конец периода",
+      "meta": "Точность: {pct}% · Осталось {days} дн."
+    },
+    "averages_title": "Средние показатели",
+    "patterns": {
+      "title": "Паттерны трат",
+      "most_spend": "Больше всего тратите в",
+      "least_spend": "Меньше всего тратите в",
+      "weekend_more": "В выходные тратите больше",
+      "weekday_more": "В будни тратите больше",
+      "balanced": "Траты равномерны",
+      "avg_check": "Средний чек",
+      "ratio": "×{x}"
     },
     "top_categories": "Топ категорий",
     "snapshot": {
