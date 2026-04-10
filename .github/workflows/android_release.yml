@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  # ≥3.32: Material RadioGroup + RadioListTile без groupValue на тайле; CI должен совпадать с API.
+  # Стабильная сборка; RadioListTile — groupValue/onChanged на тайле (RadioGroup в SDK позже 3.32.8).
   FLUTTER_VERSION: '3.32.8'
 
 jobs:

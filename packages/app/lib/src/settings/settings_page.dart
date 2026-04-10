@@ -286,23 +286,21 @@ class SettingsPage extends ConsumerWidget {
           return AlertDialog(
             title: Text(tr('theme')),
             content: SingleChildScrollView(
-              child: RadioGroup<ThemeMode>(
-                groupValue: selected,
-                onChanged: (ThemeMode? value) {
-                  if (value != null) {
-                    setState(() => selected = value);
-                    Navigator.of(dialogContext).pop(value);
-                  }
-                },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: ThemeMode.values.map<Widget>((mode) {
-                    return RadioListTile<ThemeMode>(
-                      value: mode,
-                      title: Text(_getThemeModeLabel(mode)),
-                    );
-                  }).toList(),
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: ThemeMode.values.map<Widget>((mode) {
+                  return RadioListTile<ThemeMode>(
+                    value: mode,
+                    groupValue: selected,
+                    onChanged: (ThemeMode? value) {
+                      if (value != null) {
+                        setState(() => selected = value);
+                        Navigator.of(dialogContext).pop(value);
+                      }
+                    },
+                    title: Text(_getThemeModeLabel(mode)),
+                  );
+                }).toList(),
               ),
             ),
           );
@@ -325,23 +323,21 @@ class SettingsPage extends ConsumerWidget {
           return AlertDialog(
             title: Text(tr('language')),
             content: SingleChildScrollView(
-              child: RadioGroup<Locale>(
-                groupValue: selected,
-                onChanged: (Locale? value) {
-                  if (value != null) {
-                    setState(() => selected = value);
-                    Navigator.of(dialogContext).pop(value);
-                  }
-                },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: supported.map<Widget>((locale) {
-                    return RadioListTile<Locale>(
-                      value: locale,
-                      title: Text(_getLocaleLabel(locale)),
-                    );
-                  }).toList(),
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: supported.map<Widget>((locale) {
+                  return RadioListTile<Locale>(
+                    value: locale,
+                    groupValue: selected,
+                    onChanged: (Locale? value) {
+                      if (value != null) {
+                        setState(() => selected = value);
+                        Navigator.of(dialogContext).pop(value);
+                      }
+                    },
+                    title: Text(_getLocaleLabel(locale)),
+                  );
+                }).toList(),
               ),
             ),
           );
@@ -366,23 +362,21 @@ class SettingsPage extends ConsumerWidget {
           return AlertDialog(
             title: Text(tr('default_currency')),
             content: SingleChildScrollView(
-              child: RadioGroup<String>(
-                groupValue: selected,
-                onChanged: (String? value) {
-                  if (value != null) {
-                    setState(() => selected = value);
-                    Navigator.of(dialogContext).pop(value);
-                  }
-                },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: currencies.map<Widget>((currency) {
-                    return RadioListTile<String>(
-                      value: currency,
-                      title: Text(currency),
-                    );
-                  }).toList(),
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: currencies.map<Widget>((currency) {
+                  return RadioListTile<String>(
+                    value: currency,
+                    groupValue: selected,
+                    onChanged: (String? value) {
+                      if (value != null) {
+                        setState(() => selected = value);
+                        Navigator.of(dialogContext).pop(value);
+                      }
+                    },
+                    title: Text(currency),
+                  );
+                }).toList(),
               ),
             ),
           );
@@ -406,50 +400,48 @@ class SettingsPage extends ConsumerWidget {
           return AlertDialog(
             title: Text(tr('color_scheme')),
             content: SingleChildScrollView(
-              child: RadioGroup<AppThemeType>(
-                groupValue: selected,
-                onChanged: (AppThemeType? value) {
-                  if (value != null) {
-                    setState(() => selected = value);
-                    Navigator.of(dialogContext).pop(value);
-                  }
-                },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: AppThemeType.values.map<Widget>((type) {
-                    final name = _getAppThemeTypeLabel(type, locale);
-                    final color = AppTheme.brandSeedColor(type);
-                    final dialogCs = Theme.of(context).colorScheme;
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: AppThemeType.values.map<Widget>((type) {
+                  final name = _getAppThemeTypeLabel(type, locale);
+                  final color = AppTheme.brandSeedColor(type);
+                  final dialogCs = Theme.of(context).colorScheme;
 
-                    return RadioListTile<AppThemeType>(
-                      value: type,
-                      contentPadding: EdgeInsets.zero,
-                      title: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: color,
-                              shape: BoxShape.circle,
-                              border: selected == type
-                                  ? Border.all(color: dialogCs.primary, width: 2)
-                                  : null,
-                            ),
+                  return RadioListTile<AppThemeType>(
+                    value: type,
+                    groupValue: selected,
+                    onChanged: (AppThemeType? value) {
+                      if (value != null) {
+                        setState(() => selected = value);
+                        Navigator.of(dialogContext).pop(value);
+                      }
+                    },
+                    contentPadding: EdgeInsets.zero,
+                    title: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: selected == type
+                                ? Border.all(color: dialogCs.primary, width: 2)
+                                : null,
                           ),
-                          const SizedBox(width: 12),
-                          Flexible(
-                            child: Text(
-                              name,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                        ),
+                        const SizedBox(width: 12),
+                        Flexible(
+                          child: Text(
+                            name,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
             ),
           );
