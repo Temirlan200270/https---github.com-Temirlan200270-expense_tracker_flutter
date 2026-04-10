@@ -125,6 +125,43 @@ final _rawArgbColor = RegExp(
 
 final _homeWalletHeroCard = RegExp(r'homeWalletHeroCard\s*\(');
 
+final _listTileCtor = RegExp(r'\bListTile\s*\(');
+
+/// Граница примитивов: только пакеты features_* (app/shell — отдельные контракты).
+void _auditFeatureBoundaryPrimitives({
+  required String codeOnly,
+  required String absolutePath,
+  required String rel,
+  required int lineNumber,
+  required List<_Finding> out,
+}) {
+  final norm = absolutePath.replaceAll(r'\', '/');
+  if (!norm.contains('/packages/features_')) return;
+  if (norm.contains('/ui_components/lib/')) return;
+
+  if (_listTileCtor.hasMatch(codeOnly)) {
+    out.add(_Finding(
+      _Severity.warning,
+      rel,
+      lineNumber,
+      'ListTile во фиче: используй SettingsTile / CompactRow / строку на InkWell (DESIGN_SYSTEM §7, SssScreenContract).',
+    ));
+  }
+
+  final hasScaffold = codeOnly.contains('Scaffold(');
+  final okScaffold = codeOnly.contains('PrimaryScaffold(') ||
+      codeOnly.contains('ScaffoldMessenger') ||
+      codeOnly.contains('Scaffold.of');
+  if (hasScaffold && !okScaffold) {
+    out.add(_Finding(
+      _Severity.warning,
+      rel,
+      lineNumber,
+      'Scaffold во фиче: предпочитай PrimaryScaffold (+ SssScreenContract).',
+    ));
+  }
+}
+
 void _auditFile(File file, Directory libRoot, List<_Finding> out) {
   final rel = _relativeToPackages(file.path, libRoot);
   final lines = file.readAsLinesSync();
@@ -171,6 +208,14 @@ void _auditFile(File file, Directory libRoot, List<_Finding> out) {
     }
 
     heroCardCount += _homeWalletHeroCard.allMatches(codeOnly).length;
+
+    _auditFeatureBoundaryPrimitives(
+      codeOnly: codeOnly,
+      absolutePath: file.path,
+      rel: rel,
+      lineNumber: lineNumber,
+      out: out,
+    );
   }
 
   // Допускаем 2 ветки в одном файле (например FTUE + loaded); 3+ — подозрительно.

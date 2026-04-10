@@ -296,10 +296,10 @@ class SettingsPage extends ConsumerWidget {
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: ThemeMode.values.map((mode) {
+                  children: ThemeMode.values.map<Widget>((mode) {
                     return RadioListTile<ThemeMode>(
-                      title: Text(_getThemeModeLabel(mode)),
                       value: mode,
+                      title: Text(_getThemeModeLabel(mode)),
                     );
                   }).toList(),
                 ),
@@ -335,10 +335,10 @@ class SettingsPage extends ConsumerWidget {
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: supported.map((locale) {
+                  children: supported.map<Widget>((locale) {
                     return RadioListTile<Locale>(
-                      title: Text(_getLocaleLabel(locale)),
                       value: locale,
+                      title: Text(_getLocaleLabel(locale)),
                     );
                   }).toList(),
                 ),
@@ -376,10 +376,10 @@ class SettingsPage extends ConsumerWidget {
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: currencies.map((currency) {
+                  children: currencies.map<Widget>((currency) {
                     return RadioListTile<String>(
-                      title: Text(currency),
                       value: currency,
+                      title: Text(currency),
                     );
                   }).toList(),
                 ),
@@ -416,12 +416,13 @@ class SettingsPage extends ConsumerWidget {
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: AppThemeType.values.map((type) {
+                  children: AppThemeType.values.map<Widget>((type) {
                     final name = _getAppThemeTypeLabel(type, locale);
                     final color = AppTheme.brandSeedColor(type);
                     final dialogCs = Theme.of(context).colorScheme;
 
                     return RadioListTile<AppThemeType>(
+                      value: type,
                       contentPadding: EdgeInsets.zero,
                       title: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -446,7 +447,6 @@ class SettingsPage extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      value: type,
                     );
                   }).toList(),
                 ),

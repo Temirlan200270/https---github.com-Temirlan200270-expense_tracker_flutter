@@ -1,0 +1,7 @@
+#!/bin/sh
+# Локальный gate: тот же вызов, что в CI (SSS_UI_SYSTEM_V2 §8).
+# Включение: git config core.hooksPath .githooks
+set -e
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+dart tool/sss_ui_audit.dart --strict

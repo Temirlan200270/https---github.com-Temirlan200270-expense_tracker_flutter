@@ -7,6 +7,7 @@ export 'src/home/ux_decision_mapper.dart';
 export 'src/home/wallet_hero_tone.dart';
 export 'src/app.dart';
 export 'src/providers.dart';
+export 'src/providers/ui_behavior_provider.dart' show uiBehaviorStateProvider;
 export 'src/providers/budget_hero_depriority_provider.dart';
 export 'src/providers/insight_feedback_providers.dart' show insightFeedbackRepositoryProvider;
 export 'src/providers/insight_reveal_sync_provider.dart';

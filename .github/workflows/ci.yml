@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  FLUTTER_VERSION: '3.24.0'
+  FLUTTER_VERSION: '3.32.8'
 
 jobs:
   # Анализ и тесты
@@ -31,6 +31,9 @@ jobs:
 
       - name: Analyze code
         run: flutter analyze --no-fatal-infos
+
+      - name: SSS UI audit (strict)
+        run: dart tool/sss_ui_audit.dart --strict
 
       - name: Run tests
         run: flutter test --coverage

@@ -17,18 +17,22 @@ class BudgetsListPage extends ConsumerWidget {
     final budgetsAsync = ref.watch(budgetsWithSpendingProvider);
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(tr('budget.title')),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () => _showInfoDialog(context),
-            tooltip: tr('budget.info'),
-          ),
-        ],
+    return PrimaryScaffold(
+      title: tr('budget.title'),
+      contract: SssScreenContract.configuration,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.info_outline),
+          onPressed: () => _showInfoDialog(context),
+          tooltip: tr('budget.info'),
+        ),
+      ],
+      fab: FloatingActionButton.extended(
+        onPressed: () => context.push('/budgets/new'),
+        icon: const Icon(Icons.add),
+        label: Text(tr('budget.add')),
       ),
-      body: budgetsAsync.when(
+      child: budgetsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
           child: Column(
@@ -79,11 +83,6 @@ class BudgetsListPage extends ConsumerWidget {
             ),
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/budgets/new'),
-        icon: const Icon(Icons.add),
-        label: Text(tr('budget.add')),
       ),
     );
   }

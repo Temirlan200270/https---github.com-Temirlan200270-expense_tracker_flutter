@@ -35,34 +35,34 @@ class _DebtsListPageState extends ConsumerState<DebtsListPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(tr('debts.title')),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(
-              icon: const Icon(Icons.arrow_downward, color: Colors.green),
-              text: tr('debts.they_owe'),
-            ),
-            Tab(
-              icon: const Icon(Icons.arrow_upward, color: Colors.red),
-              text: tr('debts.i_owe'),
-            ),
-          ],
-        ),
+    final cs = Theme.of(context).colorScheme;
+    return PrimaryScaffold(
+      title: tr('debts.title'),
+      contract: SssScreenContract.configuration,
+      appBarBottom: TabBar(
+        controller: _tabController,
+        tabs: [
+          Tab(
+            icon: Icon(Icons.arrow_downward_rounded, color: cs.primary),
+            text: tr('debts.they_owe'),
+          ),
+          Tab(
+            icon: Icon(Icons.arrow_upward_rounded, color: cs.error),
+            text: tr('debts.i_owe'),
+          ),
+        ],
       ),
-      body: TabBarView(
+      fab: FloatingActionButton.extended(
+        onPressed: () => context.push('/debts/new'),
+        icon: const Icon(Icons.add),
+        label: Text(tr('debts.add')),
+      ),
+      child: TabBarView(
         controller: _tabController,
         children: [
           _DebtsTab(type: DebtType.theyOwe),
           _DebtsTab(type: DebtType.iOwe),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/debts/new'),
-        icon: const Icon(Icons.add),
-        label: Text(tr('debts.add')),
       ),
     );
   }
