@@ -95,6 +95,7 @@ class HomeHeroInsightResult {
     this.insightContextLine,
     this.actionHint,
     this.budgetProgress,
+    this.budgetEntityId,
   });
 
   final String? insightLine;
@@ -106,6 +107,9 @@ class HomeHeroInsightResult {
   final String? actionHint;
 
   final double? budgetProgress;
+
+  /// Id бюджета для fingerprint (если инсайт с бюджета).
+  final String? budgetEntityId;
 }
 
 /// Инсайт для hero: приоритет бюджет; иначе [UxDecisionView] (один смысл + контекст).
@@ -113,10 +117,16 @@ HomeHeroInsightResult resolveHomeHeroInsight({
   required AsyncValue<List<BudgetWithSpending>> budgetsAsync,
   required UxDecisionView ux,
   required NumberFormat formatter,
+  Set<String> softDeprioritizeBudgetIds = const {},
+  Set<String> rateLimitedBudgetIds = const {},
 }) {
   final fromBudgets = budgetsAsync.maybeWhen(
     data: (list) {
-      final b = pickBudgetForHeroInsight(list);
+      final b = pickBudgetForHeroInsight(
+        list,
+        softDeprioritizeBudgetIds: softDeprioritizeBudgetIds,
+        rateLimitedBudgetIds: rateLimitedBudgetIds,
+      );
       if (b != null) {
         return HomeHeroInsightResult(
           insightLine: formatHeroBudgetInsight(
@@ -126,6 +136,7 @@ HomeHeroInsightResult resolveHomeHeroInsight({
           insightContextLine: null,
           actionHint: null,
           budgetProgress: b.progress,
+          budgetEntityId: b.budget.id,
         );
       }
       return null;
@@ -166,20 +177,60 @@ String? formatHeroBudgetInsight({
   );
 }
 
+/// Штраф к «весу» прогресса при негативном feedback по бюджетному инсайту.
+const double kHeroBudgetFeedbackPenalty = 0.12;
+
+double _heroBudgetAdjustedProgress(
+  BudgetWithSpending b,
+  Set<String> softDeprioritizeBudgetIds,
+) {
+  var p = b.progress;
+  if (softDeprioritizeBudgetIds.contains(b.budget.id)) {
+    p = (p - kHeroBudgetFeedbackPenalty).clamp(0.0, 1.0);
+  }
+  return p;
+}
+
+/// Убираем rate-limited id, только если остаётся хотя бы один кандидат.
+List<BudgetWithSpending> _withoutRateLimitedIfPossible(
+  List<BudgetWithSpending> list,
+  Set<String> rateLimitedBudgetIds,
+) {
+  if (rateLimitedBudgetIds.isEmpty) return list;
+  final filtered = list
+      .where((b) => !rateLimitedBudgetIds.contains(b.budget.id))
+      .toList();
+  return filtered.isNotEmpty ? filtered : list;
+}
+
 /// Выбор бюджета для показа в hero: сначала с предупреждением / перерасходом.
-BudgetWithSpending? pickBudgetForHeroInsight(List<BudgetWithSpending> list) {
+BudgetWithSpending? pickBudgetForHeroInsight(
+  List<BudgetWithSpending> list, {
+  Set<String> softDeprioritizeBudgetIds = const {},
+  Set<String> rateLimitedBudgetIds = const {},
+}) {
   if (list.isEmpty) return null;
-  final stressed =
+  var stressed =
       list.where((b) => b.isWarning || b.isOverBudget).toList();
+  stressed =
+      _withoutRateLimitedIfPossible(stressed, rateLimitedBudgetIds);
   if (stressed.isNotEmpty) {
     return stressed.reduce(
-      (a, b) => a.progress >= b.progress ? a : b,
+      (a, b) => _heroBudgetAdjustedProgress(a, softDeprioritizeBudgetIds) >=
+              _heroBudgetAdjustedProgress(b, softDeprioritizeBudgetIds)
+          ? a
+          : b,
     );
   }
-  final meaningful =
+  var meaningful =
       list.where((b) => b.progress >= 0.15).toList();
+  meaningful =
+      _withoutRateLimitedIfPossible(meaningful, rateLimitedBudgetIds);
   if (meaningful.isEmpty) return null;
   return meaningful.reduce(
-    (a, b) => a.progress >= b.progress ? a : b,
+    (a, b) => _heroBudgetAdjustedProgress(a, softDeprioritizeBudgetIds) >=
+            _heroBudgetAdjustedProgress(b, softDeprioritizeBudgetIds)
+        ? a
+        : b,
   );
 }

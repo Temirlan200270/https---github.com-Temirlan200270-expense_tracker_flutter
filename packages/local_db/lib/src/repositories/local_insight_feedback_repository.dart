@@ -15,11 +15,54 @@ class LocalInsightFeedbackRepository implements InsightFeedbackRepository {
     await _db.into(_db.insightFeedbackTable).insert(
           InsightFeedbackTableCompanion.insert(
             id: feedback.id,
-            insightId: feedback.insightId,
-            feedbackType: feedback.feedbackType == FeedbackType.helpful ? 0 : 1,
+            fingerprint: feedback.fingerprint,
+            useful: feedback.useful,
             createdAt: feedback.timestamp,
           ),
           mode: InsertMode.insertOrReplace,
         );
+  }
+
+  @override
+  Future<InsightFeedbackStats> statsForInsightClass(
+    String classKey, {
+    int withinDays = 14,
+  }) async {
+    final from = DateTime.now().subtract(Duration(days: withinDays));
+    final rows = await (_db.select(_db.insightFeedbackTable)
+          ..where((t) => t.fingerprint.equals(classKey))
+          ..where((t) => t.createdAt.isBiggerOrEqualValue(from)))
+        .get();
+    if (rows.isEmpty) {
+      return const InsightFeedbackStats(total: 0, notUsefulCount: 0);
+    }
+    var notUseful = 0;
+    for (final r in rows) {
+      if (!r.useful) notUseful++;
+    }
+    return InsightFeedbackStats(total: rows.length, notUsefulCount: notUseful);
+  }
+
+  @override
+  Future<InsightFeedbackStats> statsForInsightFingerprintPrefix(
+    String prefix, {
+    int withinDays = 14,
+  }) async {
+    final from = DateTime.now().subtract(Duration(days: withinDays));
+    final rows = await (_db.select(_db.insightFeedbackTable)
+          ..where((t) => t.createdAt.isBiggerOrEqualValue(from)))
+        .get();
+    final matched = rows.where((r) => r.fingerprint.startsWith(prefix)).toList();
+    if (matched.isEmpty) {
+      return const InsightFeedbackStats(total: 0, notUsefulCount: 0);
+    }
+    var notUseful = 0;
+    for (final r in matched) {
+      if (!r.useful) notUseful++;
+    }
+    return InsightFeedbackStats(
+      total: matched.length,
+      notUsefulCount: notUseful,
+    );
   }
 }

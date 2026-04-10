@@ -24,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration {
@@ -140,6 +140,33 @@ class AppDatabase extends _$AppDatabase {
           ''');
           await customStatement(
             'CREATE INDEX IF NOT EXISTS idx_insight_feedback_insight_id ON insight_feedback(insight_id)',
+          );
+        }
+        if (from < 8) {
+          await customStatement('''
+            CREATE TABLE IF NOT EXISTS insight_feedback_v8 (
+              id TEXT NOT NULL PRIMARY KEY,
+              fingerprint TEXT NOT NULL,
+              useful INTEGER NOT NULL,
+              created_at INTEGER NOT NULL
+            )
+          ''');
+          await customStatement('''
+            INSERT INTO insight_feedback_v8 (id, fingerprint, useful, created_at)
+            SELECT id, insight_id,
+              CASE feedback_type WHEN 0 THEN 1 ELSE 0 END,
+              created_at
+            FROM insight_feedback
+          ''');
+          await customStatement('DROP TABLE insight_feedback');
+          await customStatement(
+            'ALTER TABLE insight_feedback_v8 RENAME TO insight_feedback',
+          );
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_insight_feedback_fingerprint ON insight_feedback(fingerprint)',
+          );
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_insight_feedback_created_at ON insight_feedback(created_at)',
           );
         }
       },

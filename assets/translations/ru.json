@@ -1,4 +1,8 @@
 {
+  "insight": {
+    "source_budget": "Основано на бюджете",
+    "source_behavior": "Основано на твоих привычках"
+  },
   "app_title": "Трекер расходов",
   "transactions": "Транзакции",
   "settings": "Настройки",
@@ -59,9 +63,10 @@
         "tone_safe_short": "Сейчас всё спокойно",
         "tone_watch_short": "Стоит присмотреться к темпу трат",
         "tone_risk_short": "Запас по балансу тонкий",
-        "feedback_prompt": "Полезно?",
+        "feedback_prompt": "Это было полезно?",
         "feedback_yes": "Да",
-        "feedback_no": "Не очень"
+        "feedback_no": "Не очень",
+        "situation_improved": "Ситуация улучшилась"
       }
     },
     "feed": {
@@ -250,6 +255,11 @@
     "snapshot": {
       "title": "Финансовый снимок",
       "subtitle": "Текущий месяц — та же логика, что на главной",
+      "moment_label": "Состояние на сейчас",
+      "updating_live": "Обновляется…",
+      "updated_just_now": "Обновлено только что",
+      "updated_minutes_ago": "Обновлено {n} мин назад",
+      "updated_at": "На момент {time}",
       "loading": "Считаем снимок…"
     },
     "insights": {

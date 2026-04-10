@@ -4,17 +4,28 @@ enum FeedbackType {
   notHelpful,
 }
 
-/// Запись в хранилище.
+/// Статистика по классу инсайта (префикс [InsightFeedback.fingerprint]).
+class InsightFeedbackStats {
+  const InsightFeedbackStats({required this.total, required this.notUsefulCount});
+
+  final int total;
+  final int notUsefulCount;
+
+  double get notUsefulRatio => total == 0 ? 0 : notUsefulCount / total;
+}
+
+/// Запись в хранилище: [fingerprint] — класс инсайта (v2_…), [useful] — замыкание в движок.
 class InsightFeedback {
   const InsightFeedback({
     required this.id,
-    required this.insightId,
+    required this.fingerprint,
+    required this.useful,
     required this.timestamp,
-    required this.feedbackType,
   });
 
   final String id;
-  final String insightId;
+  /// Версионированный ключ: тип + область + severity (без «голого» текста).
+  final String fingerprint;
+  final bool useful;
   final DateTime timestamp;
-  final FeedbackType feedbackType;
 }

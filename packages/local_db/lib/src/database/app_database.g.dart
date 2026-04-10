@@ -3682,18 +3682,20 @@ class $InsightFeedbackTableTable extends InsightFeedbackTable
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
       'id', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _insightIdMeta =
-      const VerificationMeta('insightId');
+  static const VerificationMeta _fingerprintMeta =
+      const VerificationMeta('fingerprint');
   @override
-  late final GeneratedColumn<String> insightId = GeneratedColumn<String>(
-      'insight_id', aliasedName, false,
+  late final GeneratedColumn<String> fingerprint = GeneratedColumn<String>(
+      'fingerprint', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _feedbackTypeMeta =
-      const VerificationMeta('feedbackType');
+  static const VerificationMeta _usefulMeta = const VerificationMeta('useful');
   @override
-  late final GeneratedColumn<int> feedbackType = GeneratedColumn<int>(
-      'feedback_type', aliasedName, false,
-      type: DriftSqlType.int, requiredDuringInsert: true);
+  late final GeneratedColumn<bool> useful = GeneratedColumn<bool>(
+      'useful', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("useful" IN (0, 1))'));
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -3701,8 +3703,7 @@ class $InsightFeedbackTableTable extends InsightFeedbackTable
       'created_at', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, insightId, feedbackType, createdAt];
+  List<GeneratedColumn> get $columns => [id, fingerprint, useful, createdAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3718,19 +3719,19 @@ class $InsightFeedbackTableTable extends InsightFeedbackTable
     } else if (isInserting) {
       context.missing(_idMeta);
     }
-    if (data.containsKey('insight_id')) {
-      context.handle(_insightIdMeta,
-          insightId.isAcceptableOrUnknown(data['insight_id']!, _insightIdMeta));
-    } else if (isInserting) {
-      context.missing(_insightIdMeta);
-    }
-    if (data.containsKey('feedback_type')) {
+    if (data.containsKey('fingerprint')) {
       context.handle(
-          _feedbackTypeMeta,
-          feedbackType.isAcceptableOrUnknown(
-              data['feedback_type']!, _feedbackTypeMeta));
+          _fingerprintMeta,
+          fingerprint.isAcceptableOrUnknown(
+              data['fingerprint']!, _fingerprintMeta));
     } else if (isInserting) {
-      context.missing(_feedbackTypeMeta);
+      context.missing(_fingerprintMeta);
+    }
+    if (data.containsKey('useful')) {
+      context.handle(_usefulMeta,
+          useful.isAcceptableOrUnknown(data['useful']!, _usefulMeta));
+    } else if (isInserting) {
+      context.missing(_usefulMeta);
     }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
@@ -3749,10 +3750,10 @@ class $InsightFeedbackTableTable extends InsightFeedbackTable
     return InsightFeedbackRow(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      insightId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}insight_id'])!,
-      feedbackType: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}feedback_type'])!,
+      fingerprint: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}fingerprint'])!,
+      useful: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}useful'])!,
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
     );
@@ -3767,20 +3768,20 @@ class $InsightFeedbackTableTable extends InsightFeedbackTable
 class InsightFeedbackRow extends DataClass
     implements Insertable<InsightFeedbackRow> {
   final String id;
-  final String insightId;
-  final int feedbackType;
+  final String fingerprint;
+  final bool useful;
   final DateTime createdAt;
   const InsightFeedbackRow(
       {required this.id,
-      required this.insightId,
-      required this.feedbackType,
+      required this.fingerprint,
+      required this.useful,
       required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
-    map['insight_id'] = Variable<String>(insightId);
-    map['feedback_type'] = Variable<int>(feedbackType);
+    map['fingerprint'] = Variable<String>(fingerprint);
+    map['useful'] = Variable<bool>(useful);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -3788,8 +3789,8 @@ class InsightFeedbackRow extends DataClass
   InsightFeedbackTableCompanion toCompanion(bool nullToAbsent) {
     return InsightFeedbackTableCompanion(
       id: Value(id),
-      insightId: Value(insightId),
-      feedbackType: Value(feedbackType),
+      fingerprint: Value(fingerprint),
+      useful: Value(useful),
       createdAt: Value(createdAt),
     );
   }
@@ -3799,8 +3800,8 @@ class InsightFeedbackRow extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return InsightFeedbackRow(
       id: serializer.fromJson<String>(json['id']),
-      insightId: serializer.fromJson<String>(json['insightId']),
-      feedbackType: serializer.fromJson<int>(json['feedbackType']),
+      fingerprint: serializer.fromJson<String>(json['fingerprint']),
+      useful: serializer.fromJson<bool>(json['useful']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -3809,30 +3810,29 @@ class InsightFeedbackRow extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
-      'insightId': serializer.toJson<String>(insightId),
-      'feedbackType': serializer.toJson<int>(feedbackType),
+      'fingerprint': serializer.toJson<String>(fingerprint),
+      'useful': serializer.toJson<bool>(useful),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
   InsightFeedbackRow copyWith(
           {String? id,
-          String? insightId,
-          int? feedbackType,
+          String? fingerprint,
+          bool? useful,
           DateTime? createdAt}) =>
       InsightFeedbackRow(
         id: id ?? this.id,
-        insightId: insightId ?? this.insightId,
-        feedbackType: feedbackType ?? this.feedbackType,
+        fingerprint: fingerprint ?? this.fingerprint,
+        useful: useful ?? this.useful,
         createdAt: createdAt ?? this.createdAt,
       );
   InsightFeedbackRow copyWithCompanion(InsightFeedbackTableCompanion data) {
     return InsightFeedbackRow(
       id: data.id.present ? data.id.value : this.id,
-      insightId: data.insightId.present ? data.insightId.value : this.insightId,
-      feedbackType: data.feedbackType.present
-          ? data.feedbackType.value
-          : this.feedbackType,
+      fingerprint:
+          data.fingerprint.present ? data.fingerprint.value : this.fingerprint,
+      useful: data.useful.present ? data.useful.value : this.useful,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -3841,60 +3841,60 @@ class InsightFeedbackRow extends DataClass
   String toString() {
     return (StringBuffer('InsightFeedbackRow(')
           ..write('id: $id, ')
-          ..write('insightId: $insightId, ')
-          ..write('feedbackType: $feedbackType, ')
+          ..write('fingerprint: $fingerprint, ')
+          ..write('useful: $useful, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, insightId, feedbackType, createdAt);
+  int get hashCode => Object.hash(id, fingerprint, useful, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is InsightFeedbackRow &&
           other.id == this.id &&
-          other.insightId == this.insightId &&
-          other.feedbackType == this.feedbackType &&
+          other.fingerprint == this.fingerprint &&
+          other.useful == this.useful &&
           other.createdAt == this.createdAt);
 }
 
 class InsightFeedbackTableCompanion
     extends UpdateCompanion<InsightFeedbackRow> {
   final Value<String> id;
-  final Value<String> insightId;
-  final Value<int> feedbackType;
+  final Value<String> fingerprint;
+  final Value<bool> useful;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const InsightFeedbackTableCompanion({
     this.id = const Value.absent(),
-    this.insightId = const Value.absent(),
-    this.feedbackType = const Value.absent(),
+    this.fingerprint = const Value.absent(),
+    this.useful = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   InsightFeedbackTableCompanion.insert({
     required String id,
-    required String insightId,
-    required int feedbackType,
+    required String fingerprint,
+    required bool useful,
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   })  : id = Value(id),
-        insightId = Value(insightId),
-        feedbackType = Value(feedbackType),
+        fingerprint = Value(fingerprint),
+        useful = Value(useful),
         createdAt = Value(createdAt);
   static Insertable<InsightFeedbackRow> custom({
     Expression<String>? id,
-    Expression<String>? insightId,
-    Expression<int>? feedbackType,
+    Expression<String>? fingerprint,
+    Expression<bool>? useful,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (insightId != null) 'insight_id': insightId,
-      if (feedbackType != null) 'feedback_type': feedbackType,
+      if (fingerprint != null) 'fingerprint': fingerprint,
+      if (useful != null) 'useful': useful,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -3902,14 +3902,14 @@ class InsightFeedbackTableCompanion
 
   InsightFeedbackTableCompanion copyWith(
       {Value<String>? id,
-      Value<String>? insightId,
-      Value<int>? feedbackType,
+      Value<String>? fingerprint,
+      Value<bool>? useful,
       Value<DateTime>? createdAt,
       Value<int>? rowid}) {
     return InsightFeedbackTableCompanion(
       id: id ?? this.id,
-      insightId: insightId ?? this.insightId,
-      feedbackType: feedbackType ?? this.feedbackType,
+      fingerprint: fingerprint ?? this.fingerprint,
+      useful: useful ?? this.useful,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -3921,11 +3921,11 @@ class InsightFeedbackTableCompanion
     if (id.present) {
       map['id'] = Variable<String>(id.value);
     }
-    if (insightId.present) {
-      map['insight_id'] = Variable<String>(insightId.value);
+    if (fingerprint.present) {
+      map['fingerprint'] = Variable<String>(fingerprint.value);
     }
-    if (feedbackType.present) {
-      map['feedback_type'] = Variable<int>(feedbackType.value);
+    if (useful.present) {
+      map['useful'] = Variable<bool>(useful.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -3940,8 +3940,8 @@ class InsightFeedbackTableCompanion
   String toString() {
     return (StringBuffer('InsightFeedbackTableCompanion(')
           ..write('id: $id, ')
-          ..write('insightId: $insightId, ')
-          ..write('feedbackType: $feedbackType, ')
+          ..write('fingerprint: $fingerprint, ')
+          ..write('useful: $useful, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -5666,16 +5666,16 @@ typedef $$DebtsTableTableProcessedTableManager = ProcessedTableManager<
 typedef $$InsightFeedbackTableTableCreateCompanionBuilder
     = InsightFeedbackTableCompanion Function({
   required String id,
-  required String insightId,
-  required int feedbackType,
+  required String fingerprint,
+  required bool useful,
   required DateTime createdAt,
   Value<int> rowid,
 });
 typedef $$InsightFeedbackTableTableUpdateCompanionBuilder
     = InsightFeedbackTableCompanion Function({
   Value<String> id,
-  Value<String> insightId,
-  Value<int> feedbackType,
+  Value<String> fingerprint,
+  Value<bool> useful,
   Value<DateTime> createdAt,
   Value<int> rowid,
 });
@@ -5692,11 +5692,11 @@ class $$InsightFeedbackTableTableFilterComposer
   ColumnFilters<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get insightId => $composableBuilder(
-      column: $table.insightId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get fingerprint => $composableBuilder(
+      column: $table.fingerprint, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<int> get feedbackType => $composableBuilder(
-      column: $table.feedbackType, builder: (column) => ColumnFilters(column));
+  ColumnFilters<bool> get useful => $composableBuilder(
+      column: $table.useful, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -5714,12 +5714,11 @@ class $$InsightFeedbackTableTableOrderingComposer
   ColumnOrderings<String> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get insightId => $composableBuilder(
-      column: $table.insightId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get fingerprint => $composableBuilder(
+      column: $table.fingerprint, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<int> get feedbackType => $composableBuilder(
-      column: $table.feedbackType,
-      builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<bool> get useful => $composableBuilder(
+      column: $table.useful, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
@@ -5737,11 +5736,11 @@ class $$InsightFeedbackTableTableAnnotationComposer
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get insightId =>
-      $composableBuilder(column: $table.insightId, builder: (column) => column);
+  GeneratedColumn<String> get fingerprint => $composableBuilder(
+      column: $table.fingerprint, builder: (column) => column);
 
-  GeneratedColumn<int> get feedbackType => $composableBuilder(
-      column: $table.feedbackType, builder: (column) => column);
+  GeneratedColumn<bool> get useful =>
+      $composableBuilder(column: $table.useful, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -5778,29 +5777,29 @@ class $$InsightFeedbackTableTableTableManager extends RootTableManager<
                   $db: db, $table: table),
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
-            Value<String> insightId = const Value.absent(),
-            Value<int> feedbackType = const Value.absent(),
+            Value<String> fingerprint = const Value.absent(),
+            Value<bool> useful = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               InsightFeedbackTableCompanion(
             id: id,
-            insightId: insightId,
-            feedbackType: feedbackType,
+            fingerprint: fingerprint,
+            useful: useful,
             createdAt: createdAt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
             required String id,
-            required String insightId,
-            required int feedbackType,
+            required String fingerprint,
+            required bool useful,
             required DateTime createdAt,
             Value<int> rowid = const Value.absent(),
           }) =>
               InsightFeedbackTableCompanion.insert(
             id: id,
-            insightId: insightId,
-            feedbackType: feedbackType,
+            fingerprint: fingerprint,
+            useful: useful,
             createdAt: createdAt,
             rowid: rowid,
           ),

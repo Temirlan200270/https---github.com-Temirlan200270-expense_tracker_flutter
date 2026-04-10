@@ -1,4 +1,8 @@
 {
+  "insight": {
+    "source_budget": "Based on your budget",
+    "source_behavior": "Based on your spending patterns"
+  },
   "app_title": "Expense Tracker",
   "transactions": "Transactions",
   "settings": "Settings",
@@ -58,9 +62,10 @@
         "tone_safe_short": "Things look calm right now",
         "tone_watch_short": "Worth watching your spending pace",
         "tone_risk_short": "Your balance buffer is thin",
-        "feedback_prompt": "Was this helpful?",
+        "feedback_prompt": "Was that useful?",
         "feedback_yes": "Yes",
-        "feedback_no": "Not really"
+        "feedback_no": "Not really",
+        "situation_improved": "Things are looking better"
       }
     },
     "feed": {
@@ -248,6 +253,11 @@
     "snapshot": {
       "title": "Financial snapshot",
       "subtitle": "Current month — same logic as Home",
+      "moment_label": "State as of now",
+      "updating_live": "Updating…",
+      "updated_just_now": "Updated just now",
+      "updated_minutes_ago": "Updated {n} min ago",
+      "updated_at": "As of {time}",
       "loading": "Computing snapshot…"
     },
     "insights": {

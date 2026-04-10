@@ -152,8 +152,8 @@ class InsightFeedbackTable extends Table {
   String get tableName => 'insight_feedback';
 
   TextColumn get id => text()();
-  TextColumn get insightId => text().named('insight_id')();
-  IntColumn get feedbackType => integer().named('feedback_type')();
+  TextColumn get fingerprint => text()();
+  BoolColumn get useful => boolean()();
   DateTimeColumn get createdAt => dateTime().named('created_at')();
 
   @override

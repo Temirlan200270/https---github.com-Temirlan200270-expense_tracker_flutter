@@ -12,47 +12,9 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_models/shared_models.dart';
 import 'package:ui_components/ui_components.dart';
 
+import 'home_layout_shell.dart';
 import 'home_ux_insight_logic.dart';
 import 'home_wallet_shell.dart';
-
-// Провайдер для статистики на главной странице (за месяц)
-final _homeStatsProvider =
-    FutureProvider.autoDispose<AnalyticsStats>((ref) async {
-  final expenses = await ref.watch(expensesStreamProvider.future);
-  final now = DateTime.now();
-  final from = DateTime(now.year, now.month, 1);
-  final lastDay = DateTime(now.year, now.month + 1, 0);
-  final to = DateTime(lastDay.year, lastDay.month, lastDay.day, 23, 59, 59);
-
-  final filtered = expenses.where((expense) {
-    if (expense.occurredAt.isBefore(from)) return false;
-    if (expense.occurredAt.isAfter(to)) return false;
-    return true;
-  }).toList();
-
-  double totalIncome = 0;
-  double totalExpenses = 0;
-  int incomeCount = 0;
-  int expenseCount = 0;
-
-  for (final expense in filtered) {
-    if (expense.type.isIncome) {
-      totalIncome += expense.amount.amount;
-      incomeCount++;
-    } else {
-      totalExpenses += expense.amount.amount;
-      expenseCount++;
-    }
-  }
-
-  return AnalyticsStats(
-    totalIncome: totalIncome,
-    totalExpenses: totalExpenses,
-    balance: totalIncome - totalExpenses,
-    incomeCount: incomeCount,
-    expenseCount: expenseCount,
-  );
-});
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -68,7 +30,7 @@ class HomePage extends ConsumerWidget {
           onPressed: () => context.push('/analytics'),
         ),
         Padding(
-          padding: const EdgeInsets.only(left: 8),
+          padding: const EdgeInsets.only(left: HomeLayoutSpacing.s8),
           child: Material(
             color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
             shape: const CircleBorder(),
@@ -166,7 +128,6 @@ class HomePage extends ConsumerWidget {
       symbol: currencyCode,
     );
 
-    final statsAsync = ref.watch(_homeStatsProvider);
     final financialAsync = ref.watch(financialSnapshotProvider);
     final recentExpensesAsync = ref.watch(expensesStreamProvider);
     final budgetsAsync = ref.watch(budgetsWithSpendingProvider);
@@ -176,7 +137,6 @@ class HomePage extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
-            ref.refresh(_homeStatsProvider.future),
             ref.refresh(financialSnapshotProvider.future),
             ref.refresh(expensesStreamProvider.future),
             ref.refresh(budgetsWithSpendingProvider.future),
@@ -187,148 +147,111 @@ class HomePage extends ConsumerWidget {
             final globalEmpty = allExpenses.isEmpty;
             final recentForHome = allExpenses.take(5).toList();
 
-            return CustomScrollView(
+            return HomeLayoutShell(
               physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverToBoxAdapter(
-                  child: HomeWalletHeader(
-                    topActions: _headerActions(context),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: globalEmpty
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              homeWalletHeroCard(
-                                insightLine: tr('home.hero.ftue_micro'),
-                                balanceAmountFormatted:
-                                    formatter.format(0),
-                                expensesFormatted:
-                                    formatter.format(0),
-                                incomeFormatted: formatter.format(0),
-                                forecastFormatted:
-                                    tr('home.hero.forecast_na'),
-                                isCompactFtue: true,
-                              )
-                                  .animate()
-                                  .fadeIn(
-                                    duration: AppMotion.standard,
-                                    curve: AppMotion.curve,
-                                  )
-                                  .slideY(
-                                    begin: 0.04,
-                                    end: 0,
-                                    duration: AppMotion.screen,
-                                    curve: AppMotion.curve,
-                                  ),
-                              const SizedBox(height: 16),
-                              PrimaryActionButton(
-                                onPressed: () =>
-                                    context.push('/expenses/new'),
-                                child: Text(
-                                  tr('home.hero.new_operation'),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
+              header: HomeWalletHeader(
+                topActions: _headerActions(context),
+              ),
+              hero: globalEmpty
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        homeWalletHeroCard(
+                          insightLine: tr('home.hero.ftue_micro'),
+                          balanceAmountFormatted: formatter.format(0),
+                          expensesFormatted: formatter.format(0),
+                          incomeFormatted: formatter.format(0),
+                          forecastFormatted: tr('home.hero.forecast_na'),
+                          isCompactFtue: true,
+                        )
+                            .animate()
+                            .fadeIn(
+                              duration: AppMotion.standard,
+                              curve: AppMotion.curve,
+                            )
+                            .slideY(
+                              begin: 0.04,
+                              end: 0,
+                              duration: AppMotion.screen,
+                              curve: AppMotion.curve,
+                            ),
+                        SizedBox(height: HomeLayoutSpacing.s16),
+                        PrimaryActionButton(
+                          onPressed: () => context.push('/expenses/new'),
+                          child: Text(
+                            tr('home.hero.new_operation'),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              Center(
-                                child: TextButton.icon(
-                                  onPressed: () {
-                                    HapticUtils.selection();
-                                    context.push('/import');
-                                  },
-                                  icon: const Icon(
-                                    Icons.upload_file,
-                                    size: 20,
-                                  ),
-                                  label: Text(tr('home.ftue.import_cta')),
-                                ),
-                              ),
-                            ],
-                          )
-                        : financialAsync.when(
-                            data: (fin) {
-                              final forecastStr = fin.decision.forecast !=
-                                      null
-                                  ? formatter.format(fin
-                                      .decision.forecast!.projectedExpenses)
-                                  : tr('home.hero.forecast_na');
-                              return _HomeLoadedHeroBlock(
-                                formatter: formatter,
-                                snapshot: fin.decision,
-                                stats: fin.decision.monthStats,
-                                budgetsAsync: budgetsAsync,
-                                forecastStr: forecastStr,
-                              );
-                            },
-                            loading: () => const _WalletHeroLoadingCard(),
-                            error: (_, __) {
-                              return statsAsync.when(
-                                data: (stats) => Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    homeWalletHeroCard(
-                                      insightLine: tr(
-                                        'home.decision.micro_action_stable',
-                                      ),
-                                      balanceAmountFormatted:
-                                          formatter.format(stats.balance),
-                                      expensesFormatted: formatter.format(
-                                        stats.totalExpenses,
-                                      ),
-                                      incomeFormatted: formatter
-                                          .format(stats.totalIncome),
-                                      forecastFormatted:
-                                          tr('home.hero.forecast_na'),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    PrimaryActionButton(
-                                      onPressed: () =>
-                                          context.push('/expenses/new'),
-                                      child: Text(
-                                        tr('home.hero.new_operation'),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                loading: () => const _WalletHeroLoadingCard(),
-                                error: (e, _) => Padding(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Text(
-                                    tr('home.stats_error'),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .error,
-                                        ),
-                                  ),
-                                ),
-                              );
-                            },
                           ),
-                  ),
-                ),
-                if (!globalEmpty)
-                  SliverToBoxAdapter(
-                    child: SectionHeader(
+                        ),
+                        SizedBox(height: HomeLayoutSpacing.s8),
+                        Center(
+                          child: TextButton.icon(
+                            onPressed: () {
+                              HapticUtils.selection();
+                              context.push('/import');
+                            },
+                            icon: const Icon(
+                              Icons.upload_file,
+                              size: 20,
+                            ),
+                            label: Text(tr('home.ftue.import_cta')),
+                          ),
+                        ),
+                      ],
+                    )
+                  : financialAsync.when(
+                      data: (fin) {
+                        final forecastStr = fin.decision.forecast != null
+                            ? formatter
+                                .format(fin.decision.forecast!.projectedExpenses)
+                            : tr('home.hero.forecast_na');
+                        return _HomeLoadedHeroBlock(
+                          formatter: formatter,
+                          snapshot: fin.decision,
+                          stats: fin.decision.monthStats,
+                          budgetsAsync: budgetsAsync,
+                          forecastStr: forecastStr,
+                        );
+                      },
+                      loading: () => const _WalletHeroLoadingCard(),
+                      error: (_, __) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            tr('home.stats_error'),
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.error,
+                                ),
+                          ),
+                          SizedBox(height: HomeLayoutSpacing.s16),
+                          PrimaryActionButton(
+                            onPressed: () => context.push('/expenses/new'),
+                            child: Text(
+                              tr('home.hero.new_operation'),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+              feedHeader: globalEmpty
+                  ? null
+                  : SectionHeader(
                       variant: SectionHeaderVariant.mutedLabel,
                       title: tr('home.feed.recent_upper'),
                       trailing: TextButton(
@@ -342,79 +265,74 @@ class HomePage extends ConsumerWidget {
                         ),
                       ),
                     ),
-                  ),
-                if (!globalEmpty)
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final expense = recentForHome[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: _HomeFeedCard(
-                              expense: expense,
-                              formatter: formatter,
-                              showDayHeader: _shouldShowDayHeader(
-                                recentForHome,
-                                index,
-                              ),
-                              dayHeaderText: _dayHeaderText(
-                                context,
-                                expense.occurredAt,
-                              ),
-                            )
-                                .animate()
-                                .fadeIn(
-                                  duration: AppMotion.standard,
-                                  delay: (AppMotion.staggerInterval *
-                                      index),
-                                  curve: AppMotion.curve,
-                                )
-                                .slideY(
-                                  begin: 0.06,
-                                  end: 0,
-                                  duration: AppMotion.standard,
-                                  delay: (AppMotion.staggerInterval *
-                                      index),
-                                  curve: AppMotion.curve,
+              feedSlivers: globalEmpty
+                  ? const <Widget>[]
+                  : [
+                      SliverPadding(
+                        padding: HomeLayoutSpacing.feedOuter,
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final expense = recentForHome[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: HomeLayoutSpacing.s12,
                                 ),
-                          );
-                        },
-                        childCount: recentForHome.length,
+                                child: _HomeFeedCard(
+                                  expense: expense,
+                                  formatter: formatter,
+                                  showDayHeader: _shouldShowDayHeader(
+                                    recentForHome,
+                                    index,
+                                  ),
+                                  dayHeaderText: _dayHeaderText(
+                                    context,
+                                    expense.occurredAt,
+                                  ),
+                                )
+                                    .animate()
+                                    .fadeIn(
+                                      duration: AppMotion.standard,
+                                      delay: (AppMotion.staggerInterval *
+                                          index),
+                                      curve: AppMotion.curve,
+                                    )
+                                    .slideY(
+                                      begin: 0.06,
+                                      end: 0,
+                                      duration: AppMotion.standard,
+                                      delay: (AppMotion.staggerInterval *
+                                          index),
+                                      curve: AppMotion.curve,
+                                    ),
+                              );
+                            },
+                            childCount: recentForHome.length,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                if (globalEmpty)
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-              ],
+                    ],
+              bottomSpacerHeight:
+                  globalEmpty ? HomeLayoutSpacing.s24 : null,
             );
           },
-          loading: () => CustomScrollView(
+          loading: () => HomeLayoutShell(
             physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(
-                child: HomeWalletHeader(
-                  topActions: _headerActions(context),
-                ),
-              ),
-              const SliverToBoxAdapter(child: _WalletHeroLoadingCard()),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 16),
-                      const SkeletonList(itemCount: 4),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            header: HomeWalletHeader(
+              topActions: _headerActions(context),
+            ),
+            hero: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const _WalletHeroLoadingCard(),
+                SizedBox(height: HomeLayoutSpacing.s16),
+                const SkeletonList(itemCount: 4),
+              ],
+            ),
           ),
           error: (error, _) => Center(
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(HomeLayoutSpacing.s24),
               child: Text(
                 tr('home.transactions_error'),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -480,6 +398,8 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
 
   Timer? _revealTimer;
   Timer? _persistResyncTimer;
+  Timer? _improvedBannerTimer;
+  bool _showSituationImproved = false;
   bool _insightRevealed = false;
   String? _stableLine;
   String? _stableContext;
@@ -490,11 +410,41 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
   /// Когда пользователь увидел текущий (раскрытый) инсайт — для окна стабильности.
   DateTime? _insightVisibleSince;
 
+  /// Tier на момент последнего закреплённого инсайта (для persistence + severity bypass).
+  HomeFinancialStateTier? _lastVisibleTier;
+
+  /// Feedback по бюджету → мягкий штраф при выборе строки hero (см. [pickBudgetForHeroInsight]).
+  Set<String> _budgetSoftDepIds = {};
+
+  /// Исчерпан лимит показов бюджета в hero за окно.
+  Set<String> _budgetRateLimitedIds = {};
+
   @override
   void dispose() {
     _revealTimer?.cancel();
     _persistResyncTimer?.cancel();
+    _improvedBannerTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _HomeLoadedHeroBlock oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final ot = oldWidget.snapshot.stateTier;
+    final nt = widget.snapshot.stateTier;
+    if (ot == HomeFinancialStateTier.danger &&
+        (nt == HomeFinancialStateTier.caution ||
+            nt == HomeFinancialStateTier.stable)) {
+      _improvedBannerTimer?.cancel();
+      setState(() => _showSituationImproved = true);
+      _improvedBannerTimer = Timer(const Duration(seconds: 6), () {
+        if (mounted) setState(() => _showSituationImproved = false);
+      });
+    }
+    if (nt == HomeFinancialStateTier.danger) {
+      _improvedBannerTimer?.cancel();
+      setState(() => _showSituationImproved = false);
+    }
   }
 
   void _schedulePersistResync() {
@@ -511,7 +461,16 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
     });
   }
 
+  void _publishRevealState(String fp, HomeHeroInsightResult raw) {
+    final line = raw.insightLine?.trim();
+    if (line == null || line.isEmpty) return;
+    ref.read(insightRevealSyncProvider.notifier).state =
+        InsightRevealSyncState(fingerprint: fp, revealed: true);
+  }
+
   int _contentHash() {
+    final depSorted = _budgetSoftDepIds.toList()..sort();
+    final rateSorted = _budgetRateLimitedIds.toList()..sort();
     return Object.hash(
       widget.snapshot.stateTier,
       widget.stats.balance,
@@ -519,7 +478,18 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
       widget.snapshot.behaviorInsight?.variant,
       widget.snapshot.spendingTrend,
       widget.budgetsAsync.valueOrNull?.length,
+      Object.hashAll(depSorted),
+      Object.hashAll(rateSorted),
     );
+  }
+
+  Future<void> _persistBudgetHeroShow(String budgetId) async {
+    final recorded = await ref
+        .read(budgetHeroRateLimitStoreProvider)
+        .recordShowIfGapped(budgetId);
+    if (recorded && mounted) {
+      ref.invalidate(budgetHeroRateLimitedIdsProvider);
+    }
   }
 
   void _syncInsightDisplay() {
@@ -537,6 +507,12 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
       budgetsAsync: widget.budgetsAsync,
       ux: ux,
       formatter: widget.formatter,
+      softDeprioritizeBudgetIds: _budgetSoftDepIds,
+      rateLimitedBudgetIds: _budgetRateLimitedIds,
+    );
+    final revealFp = homeHeroRevealFingerprintForSync(
+      snapshot: widget.snapshot,
+      raw: raw,
     );
 
     final fromBudget = raw.budgetProgress != null;
@@ -551,6 +527,11 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
       immediateReveal = true;
       _feedbackSent = false;
       bumpInsightVisibleSince = true;
+      final bid = raw.budgetEntityId;
+      final line = raw.insightLine;
+      if (bid != null && line != null && line.trim().isNotEmpty) {
+        unawaited(_persistBudgetHeroShow(bid));
+      }
     } else if (raw.insightLine == null || raw.insightLine!.trim().isEmpty) {
       _stableLine = raw.insightLine;
       _stableContext = raw.insightContextLine;
@@ -564,12 +545,17 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
       immediateReveal = true;
     } else {
       final candidate = raw.insightLine!;
+      final severityUp = homeFinancialSeverityIncreased(
+        _lastVisibleTier,
+        widget.snapshot.stateTier,
+      );
       if (_insightRevealed &&
           _stableLine != null &&
           !uxCoreRoughlySame(_stableLine!, candidate) &&
           _insightVisibleSince != null &&
           DateTime.now().difference(_insightVisibleSince!) <
-              _kMinInsightDisplay) {
+              _kMinInsightDisplay &&
+          !severityUp) {
         _schedulePersistResync();
         return;
       }
@@ -585,8 +571,16 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
         _revealTimer?.cancel();
         bumpInsightVisibleSince = true;
       } else {
-        startTimer = true;
-        immediateReveal = false;
+        final sync = ref.read(insightRevealSyncProvider);
+        if (sync.revealed && sync.fingerprint == revealFp) {
+          immediateReveal = true;
+          startTimer = false;
+          _revealTimer?.cancel();
+          bumpInsightVisibleSince = true;
+        } else {
+          startTimer = true;
+          immediateReveal = false;
+        }
       }
     }
 
@@ -596,16 +590,21 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
         _insightRevealed = true;
       } else if (startTimer) {
         _insightRevealed = false;
+        final fpCaptured = revealFp;
         _revealTimer = Timer(_kInsightRevealDelay, () {
           if (mounted) {
             setState(() => _insightRevealed = true);
             _insightVisibleSince = DateTime.now();
+            _lastVisibleTier = widget.snapshot.stateTier;
+            _publishRevealState(fpCaptured, raw);
           }
         });
       }
     });
     if (bumpInsightVisibleSince) {
       _insightVisibleSince = DateTime.now();
+      _lastVisibleTier = widget.snapshot.stateTier;
+      _publishRevealState(revealFp, raw);
     }
   }
 
@@ -620,20 +619,29 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
       narrative: narrative,
       tier: widget.snapshot.stateTier,
     );
-    final id = homeInsightFeedbackId(
+    final raw = resolveHomeHeroInsight(
+      budgetsAsync: widget.budgetsAsync,
       ux: ux,
-      tierName: widget.snapshot.stateTier.name,
+      formatter: widget.formatter,
+      softDeprioritizeBudgetIds: _budgetSoftDepIds,
+      rateLimitedBudgetIds: _budgetRateLimitedIds,
+    );
+    final classKey = homeInsightClassKeyForHero(
+      snapshot: widget.snapshot,
+      raw: raw,
     );
     try {
       await ref.read(insightFeedbackRepositoryProvider).record(
             InsightFeedback(
               id:
-                  '${DateTime.now().microsecondsSinceEpoch}_${id.hashCode.abs()}',
-              insightId: id,
+                  '${DateTime.now().microsecondsSinceEpoch}_${classKey.hashCode.abs()}',
+              fingerprint: classKey,
+              useful: type == FeedbackType.helpful,
               timestamp: DateTime.now(),
-              feedbackType: type,
             ),
           );
+      ref.invalidate(financialSnapshotProvider);
+      ref.invalidate(budgetHeroSoftDeprioritizeIdsProvider);
       if (mounted) {
         setState(() => _feedbackSent = true);
         HapticUtils.selection();
@@ -643,6 +651,9 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
 
   @override
   Widget build(BuildContext context) {
+    _budgetSoftDepIds =
+        ref.watch(budgetHeroSoftDeprioritizeIdsProvider).valueOrNull ?? {};
+    _budgetRateLimitedIds = ref.watch(budgetHeroRateLimitedIdsProvider);
     final h = _contentHash();
     if (h != _lastSyncHash) {
       _lastSyncHash = h;
@@ -663,6 +674,8 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
       budgetsAsync: widget.budgetsAsync,
       ux: ux,
       formatter: widget.formatter,
+      softDeprioritizeBudgetIds: _budgetSoftDepIds,
+      rateLimitedBudgetIds: _budgetRateLimitedIds,
     );
     final fromBudget = raw.budgetProgress != null;
     final toneShort = switch (ux.tone) {
@@ -683,6 +696,27 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
     );
 
     final hint = _stableHint ?? raw.actionHint;
+
+    final hasInsightLine =
+        displayLine != null && displayLine.trim().isNotEmpty;
+    final String? sourceLabel = fromBudget
+        ? (hasInsightLine ? tr('insight.source_budget') : null)
+        : (hasInsightLine ? tr('insight.source_behavior') : null);
+
+    final cs = Theme.of(context).colorScheme;
+    final subtleStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: cs.onSurface.withValues(alpha: 0.42),
+          height: 1.2,
+        );
+    final btnSmall = TextButton.styleFrom(
+      padding: const EdgeInsets.symmetric(
+        horizontal: HomeLayoutSpacing.s8,
+        vertical: HomeLayoutSpacing.s8,
+      ),
+      minimumSize: Size.zero,
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.compact,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -708,7 +742,68 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
               duration: AppMotion.screen,
               curve: AppMotion.curve,
             ),
-        const SizedBox(height: 16),
+        if (_showSituationImproved)
+          Padding(
+            padding: const EdgeInsets.only(top: HomeLayoutSpacing.s12),
+            child: Text(
+              tr('home.hero.ux.situation_improved'),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: cs.primary,
+                    fontWeight: FontWeight.w600,
+                    height: 1.25,
+                  ),
+            ),
+          ),
+        if (sourceLabel != null)
+          Padding(
+            padding: const EdgeInsets.only(top: HomeLayoutSpacing.s8),
+            child: Text(
+              sourceLabel,
+              textAlign: TextAlign.center,
+              style: subtleStyle,
+            ),
+          ),
+        if (hasInsightLine && !_feedbackSent)
+          Padding(
+            padding: const EdgeInsets.only(top: HomeLayoutSpacing.s12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  tr('home.hero.ux.feedback_prompt'),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: cs.onSurface.withValues(alpha: 0.48),
+                        height: 1.25,
+                      ),
+                ),
+                SizedBox(height: HomeLayoutSpacing.s8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      style: btnSmall,
+                      onPressed: () => _sendFeedback(FeedbackType.helpful),
+                      child: Text(
+                        tr('home.hero.ux.feedback_yes'),
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                    ),
+                    TextButton(
+                      style: btnSmall,
+                      onPressed: () => _sendFeedback(FeedbackType.notHelpful),
+                      child: Text(
+                        tr('home.hero.ux.feedback_no'),
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        SizedBox(height: HomeLayoutSpacing.s20),
         PrimaryActionButton(
           onPressed: () => context.push('/expenses/new'),
           child: Text(
@@ -720,45 +815,23 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
         ),
         if (hint != null && hint.trim().isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(top: 10),
+            padding: const EdgeInsets.only(top: HomeLayoutSpacing.s12),
             child: Text(
               hint.trim(),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.55),
+                    color: cs.onSurface.withValues(
+                      alpha: switch (ux.tone) {
+                        UxFinancialTone.risk => 0.72,
+                        UxFinancialTone.watch => 0.55,
+                        UxFinancialTone.safe => 0.38,
+                      },
+                    ),
+                    fontWeight: ux.tone == UxFinancialTone.risk
+                        ? FontWeight.w500
+                        : FontWeight.w400,
                     height: 1.35,
                   ),
-            ),
-          ),
-        if (displayLine != null &&
-            displayLine.trim().isNotEmpty &&
-            !_feedbackSent)
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  tr('home.hero.ux.feedback_prompt'),
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.5),
-                      ),
-                ),
-                TextButton(
-                  onPressed: () => _sendFeedback(FeedbackType.helpful),
-                  child: Text(tr('home.hero.ux.feedback_yes')),
-                ),
-                TextButton(
-                  onPressed: () => _sendFeedback(FeedbackType.notHelpful),
-                  child: Text(tr('home.hero.ux.feedback_no')),
-                ),
-              ],
             ),
           ),
       ],
@@ -772,19 +845,16 @@ class _WalletHeroLoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: Container(
-          height: 220,
-          color: Theme.of(context)
-              .colorScheme
-              .primaryContainer
-              .withValues(alpha: 0.4),
-          child: const Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: Container(
+        height: 220,
+        color: Theme.of(context)
+            .colorScheme
+            .primaryContainer
+            .withValues(alpha: 0.4),
+        child: const Center(
+          child: CircularProgressIndicator(strokeWidth: 2),
         ),
       ),
     );
@@ -837,7 +907,7 @@ class _HomeFeedCard extends ConsumerWidget {
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
+        padding: const EdgeInsets.only(right: HomeLayoutSpacing.s20),
         decoration: BoxDecoration(
           color: cs.error,
           borderRadius: BorderRadius.circular(16),
@@ -857,7 +927,10 @@ class _HomeFeedCard extends ConsumerWidget {
           onTap: () => context.push('/expenses'),
           onLongPress: () => _showContextMenu(context, ref),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(
+              horizontal: HomeLayoutSpacing.s16,
+              vertical: HomeLayoutSpacing.s16,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -870,7 +943,7 @@ class _HomeFeedCard extends ConsumerWidget {
                           letterSpacing: 0.35,
                         ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: HomeLayoutSpacing.s12),
                 ],
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -890,7 +963,7 @@ class _HomeFeedCard extends ConsumerWidget {
                         size: 22,
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    SizedBox(width: HomeLayoutSpacing.s12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -905,7 +978,7 @@ class _HomeFeedCard extends ConsumerWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                           if (categoryName != null) ...[
-                            const SizedBox(height: 2),
+                            SizedBox(height: HomeLayoutSpacing.s8),
                             Text(
                               categoryName,
                               style: Theme.of(context)
@@ -919,7 +992,7 @@ class _HomeFeedCard extends ConsumerWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
-                          const SizedBox(height: 2),
+                          SizedBox(height: HomeLayoutSpacing.s8),
                           Text(
                             timeLabel,
                             style: Theme.of(context)
@@ -1041,7 +1114,9 @@ class _HomeFeedCard extends ConsumerWidget {
             Container(
               width: 40,
               height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 12),
+              margin: const EdgeInsets.symmetric(
+                vertical: HomeLayoutSpacing.s12,
+              ),
               decoration: BoxDecoration(
                 color: cs.outline.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(2),
@@ -1114,7 +1189,7 @@ class _HomeFeedCard extends ConsumerWidget {
                 _showDeleteDialog(context, ref);
               },
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: HomeLayoutSpacing.s8),
           ],
         ),
       ),

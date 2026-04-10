@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../behavior_engine/behavior_engine.dart';
 import '../domain/behavior_engine.dart';
+import '../utils/home_insight_keys.dart';
 import 'analytics_models.dart';
 import 'smart_insights.dart';
 
@@ -318,14 +319,53 @@ Future<HomeDecisionSnapshot> _computeHomeDecisionSnapshot(Ref ref) async {
     dayOfMonth: now.day,
   );
 
+  final adjustedInsight =
+      insight != null
+          ? await _demoteInsightConfidenceByFeedback(ref, insight, stateTier)
+          : null;
+
   return HomeDecisionSnapshot(
     stateTier: stateTier,
     monthStats: monthStats,
-    behaviorInsight: insight,
+    behaviorInsight: adjustedInsight,
     forecast: forecast,
     runwayDays: runwayDays,
     spendingTrend: spendingTrend,
   );
+}
+
+/// Много «не полезно» по классу инсайта → понижаем confidence на шаг.
+Future<HomeBehaviorInsight> _demoteInsightConfidenceByFeedback(
+  Ref ref,
+  HomeBehaviorInsight insight,
+  HomeFinancialStateTier tier,
+) async {
+  try {
+    final repo = ref.read(insightFeedbackRepositoryProvider);
+    final classKey = homeInsightClassKeyV2(
+      fromBudget: false,
+      behaviorVariant: insight.variant,
+      categoryOrBudgetScopeId:
+          insight.variant == HomeInsightVariant.categoryFocus
+              ? insight.topContributor?.categoryId
+              : '_',
+      tier: tier,
+    );
+    final stats = await repo.statsForInsightClass(classKey, withinDays: 14);
+    if (stats.total < 5) return insight;
+    if (stats.notUsefulRatio < 0.45) return insight;
+    final next = InsightConfidenceScorer.demoteOneStep(insight.confidence);
+    if (next == insight.confidence) return insight;
+    return HomeBehaviorInsight(
+      variant: insight.variant,
+      baseline: insight.baseline,
+      deviation: insight.deviation,
+      confidence: next,
+      topContributor: insight.topContributor,
+    );
+  } catch (_) {
+    return insight;
+  }
 }
 
 /// Единый источник: месячная статистика + Decision Engine.

@@ -7,6 +7,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/home_decision_engine_provider.dart';
 import 'analytics_common.dart';
 
+String _snapshotFreshnessLabel(BuildContext context, DateTime computedAt) {
+  final d = DateTime.now().difference(computedAt);
+  if (d.inSeconds < 10) {
+    return tr('analytics.snapshot.updating_live');
+  }
+  if (d.inSeconds < 90) {
+    return tr('analytics.snapshot.updated_just_now');
+  }
+  if (d.inMinutes < 60) {
+    final n = d.inMinutes.clamp(1, 59).toString();
+    return tr(
+      'analytics.snapshot.updated_minutes_ago',
+      namedArgs: {'n': n},
+    );
+  }
+  final time =
+      DateFormat.Hm(context.locale.toLanguageTag()).format(computedAt);
+  return tr(
+    'analytics.snapshot.updated_at',
+    namedArgs: {'time': time},
+  );
+}
+
 /// Блок «единой правды»: [FinancialSnapshot] + те же строки инсайта, что на главной.
 class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
   const AnalyticsFinancialSnapshotSection({super.key});
@@ -33,10 +56,17 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
           narrative: narrative,
           tier: fin.decision.stateTier,
         );
+        final softDep = ref
+                .watch(budgetHeroSoftDeprioritizeIdsProvider)
+                .valueOrNull ??
+            {};
+        final rateLimited = ref.watch(budgetHeroRateLimitedIdsProvider);
         final lines = resolveHomeHeroInsight(
           budgetsAsync: budgetsAsync,
           ux: ux,
           formatter: formatter,
+          softDeprioritizeBudgetIds: softDep,
+          rateLimitedBudgetIds: rateLimited,
         );
         final gradient = walletHeroGradientForTone(cs, ux.tone);
         final accent =
@@ -46,6 +76,11 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
         final subLine = lines.insightContextLine;
         final hint = lines.actionHint;
         final balance = fin.decision.monthStats.balance;
+        final hasMain = mainLine != null && mainLine.trim().isNotEmpty;
+        final fromBudget = lines.budgetProgress != null;
+        final String? sourceLabel = fromBudget
+            ? (hasMain ? tr('insight.source_budget') : null)
+            : (hasMain ? tr('insight.source_behavior') : null);
 
         return Card(
           clipBehavior: Clip.antiAlias,
@@ -76,7 +111,26 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
                               .titleSmall
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
+                        const SizedBox(height: 6),
+                        Text(
+                          tr('analytics.snapshot.moment_label'),
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelLarge
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurface,
+                              ),
+                        ),
                         const SizedBox(height: 4),
+                        Text(
+                          _snapshotFreshnessLabel(context, fin.computedAt),
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(color: cs.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 6),
                         Text(
                           tr('analytics.snapshot.subtitle'),
                           style: Theme.of(context)
@@ -84,7 +138,19 @@ class AnalyticsFinancialSnapshotSection extends ConsumerWidget {
                               .bodySmall
                               ?.copyWith(color: cs.onSurfaceVariant),
                         ),
-                        if (mainLine != null && mainLine.trim().isNotEmpty) ...[
+                        if (sourceLabel != null) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            sourceLabel,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: cs.onSurface.withValues(alpha: 0.45),
+                                ),
+                          ),
+                        ],
+                        if (hasMain) ...[
                           const SizedBox(height: 12),
                           Text(
                             mainLine.trim(),

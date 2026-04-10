@@ -7,4 +7,5 @@ export 'src/providers/smart_insights.dart';
 export 'src/behavior_engine/behavior_engine.dart';
 export 'src/domain/behavior_engine.dart';
 export 'src/providers/home_decision_engine_provider.dart';
+export 'src/utils/home_insight_keys.dart';
 

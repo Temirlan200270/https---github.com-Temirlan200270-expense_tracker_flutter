@@ -106,6 +106,10 @@ class InsightConfidenceScorer {
       InsightConfidenceTier.low => InsightConfidenceTier.low,
     };
   }
+
+  /// На шаг вниз (для замыкания feedback и др. политик).
+  static InsightConfidenceTier demoteOneStep(InsightConfidenceTier t) =>
+      _demoteTier(t);
 }
 
 /// Вклад категории в «лишние» траты сегодня к текущему времени.
