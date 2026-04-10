@@ -1,0 +1,24 @@
+---
+description: Sds visual tokens — single source; no parallel alpha/spacing systems
+alwaysApply: true
+---
+
+# UI tokens (`Sds*`)
+
+When adding or changing Flutter UI in this repo:
+
+1. **Spacing / radius / elevation** — use `SdsSpacing`, `SdsRadius`, `SdsElevation` from `packages/ui_components/.../visual_tokens.dart` (exported via `ui_components.dart`). Do not introduce one-off `13.0`, `18.0`, or random radii in feature packages.
+
+2. **Alpha semantics** — extend `visual_tokens.dart` instead of new buckets:
+   - Text on **normal surface**: `SdsOnSurface` (e.g. `secondary`, `tertiary`).
+   - Text/lines on **gradient / white on hero**: `SdsOnGradient`.
+   - Borders/dividers: `SdsStroke` (`subtle`, `medium`, `hairline`).
+   - Soft fills (chips, header circles): `SdsFill` (`surfaceMuted`, `soft`, …).
+
+3. **Do not** add parallel helpers like `AppTextOpacity` or scattered `k*` alphas for the same roles — merge into `Sds*`.
+
+4. **Incomplete files**: if you touch a file that still has raw alphas, prefer migrating those lines to `Sds*` in the same PR, or leave `// TODO(token):` with a short reason.
+
+5. **Motion**: `AppMotion` for durations/curves.
+
+See `DESIGN_SYSTEM.md` §0.1.

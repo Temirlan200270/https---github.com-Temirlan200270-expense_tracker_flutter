@@ -37,7 +37,7 @@ class HomePage extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
     return PressableScale(
       child: Material(
-        color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
+        color: cs.surfaceContainerHighest.withValues(alpha: SdsFill.surfaceMuted),
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
         child: IconButton(
@@ -73,13 +73,13 @@ class HomePage extends ConsumerWidget {
       fit: StackFit.expand,
       children: [
         Scaffold(
-          backgroundColor:
-              Theme.of(context).colorScheme.surfaceContainerLowest,
+          backgroundColor: SdsSurface.surface0(Theme.of(context).colorScheme),
           body: RefreshIndicator(
             onRefresh: () async {
+              ref.invalidate(expensesStreamProvider);
+              ref.invalidate(categoriesStreamProvider);
               await Future.wait([
                 ref.refresh(financialSnapshotProvider.future),
-                ref.refresh(expensesStreamProvider.future),
                 ref.refresh(budgetsWithSpendingProvider.future),
               ]);
             },

@@ -18,6 +18,20 @@
 
 ---
 
+## 0.1 Токены и анти-drift (обязательно для нового UI)
+
+**Единый источник:** `packages/ui_components/lib/src/theme/visual_tokens.dart` — префикс **`Sds*`** (`SdsSpacing`, `SdsRadius`, `SdsElevation`, `SdsGlass`, `SdsOnGradient`, **`SdsOnSurface`**, **`SdsStroke`**, **`SdsFill`**, `SdsSurface`, `SdsLayout`).
+
+| Риск | Правило |
+|------|--------|
+| Token drift | Не вводить «временные» `0.72` / `13.0` / радиусы в фичах — добавить именованный токен в `visual_tokens.dart` и использовать его. |
+| Параллельные системы | Не заводить второй слой альф (`AppTextOpacity`, локальные `kAlpha*`), если смысл тот же — только **`SdsOnSurface`** (текст на surface), **`SdsOnGradient`** (белый/контент на градиенте), **`SdsStroke`**, **`SdsFill`**. |
+| Незавершённая миграция | Оставшиеся «сырые» числа — технический долг: при правке файла выравнивать на `Sds*` или явный `// TODO(token):` с ссылкой на issue. |
+
+Motion по-прежнему только **`AppMotion`**.
+
+---
+
 ## 1. UI Core Principle (закон системы)
 
 ```text
@@ -244,6 +258,8 @@ Chart / визуализация
 
 - [ ] Семантика цвета согласована с §5
 - [ ] Нет декоративных цветов вместо смысловых
+- [ ] Отступы / радиусы / тени из `SdsSpacing` / `SdsRadius` / `SdsElevation` (не «магические» числа для новых экранов)
+- [ ] Альфы: текст на surface — `SdsOnSurface`; на градиенте — `SdsOnGradient`; обводки — `SdsStroke`; мягкие заливки — `SdsFill` (см. §0.1)
 
 ### 10.5 Motion
 

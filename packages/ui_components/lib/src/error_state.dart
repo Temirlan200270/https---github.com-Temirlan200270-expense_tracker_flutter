@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'theme/visual_tokens.dart';
+
 /// Явный fallback для AsyncValue.error (без сырого Exception в интерфейсе).
 class ErrorState extends StatelessWidget {
   const ErrorState({
@@ -21,7 +23,7 @@ class ErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final iconSize = compact ? 40.0 : 56.0;
-    final outerPadding = compact ? 16.0 : 32.0;
+    final outerPadding = compact ? SdsSpacing.md : SdsSpacing.xxl;
 
     final content = Column(
       mainAxisSize: MainAxisSize.min,
@@ -32,16 +34,19 @@ class ErrorState extends StatelessWidget {
           size: iconSize,
           color: cs.error,
         ),
-        SizedBox(height: compact ? 12 : 20),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+        SizedBox(height: compact ? SdsSpacing.sm : SdsSpacing.lg),
+        Semantics(
+          header: true,
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
         ),
         if (message != null && message!.isNotEmpty) ...[
-          SizedBox(height: compact ? 6 : 8),
+          SizedBox(height: compact ? SdsSpacing.xxs : SdsSpacing.xs),
           Text(
             message!,
             textAlign: TextAlign.center,
@@ -51,7 +56,7 @@ class ErrorState extends StatelessWidget {
           ),
         ],
         if (action != null) ...[
-          SizedBox(height: compact ? 16 : 24),
+          SizedBox(height: compact ? SdsSpacing.md : SdsSpacing.xl),
           action!,
         ],
       ],
@@ -65,9 +70,13 @@ class ErrorState extends StatelessWidget {
     }
 
     return Center(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(outerPadding),
-        child: content,
+      child: ConstrainedBox(
+        constraints:
+            const BoxConstraints(maxWidth: SdsLayout.emptyStateMaxWidth),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(outerPadding),
+          child: content,
+        ),
       ),
     );
   }

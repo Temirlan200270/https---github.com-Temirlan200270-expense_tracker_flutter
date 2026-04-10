@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_models/shared_models.dart';
 
+/// Нижний стоп градиента hero (сине-фиолетовый акцент, согласован с продуктовым макетом).
+const Color _kWalletHeroGradientBlue = Color(0xFF4B66FF);
+
 /// Иконка в блоке инсайта (семантика тона, без хардкода цвета — рисуется поверх градиента).
 IconData walletHeroLeadingIconForTone(UxFinancialTone tone) {
   return switch (tone) {
@@ -11,12 +14,14 @@ IconData walletHeroLeadingIconForTone(UxFinancialTone tone) {
 }
 
 /// Градиент hero под ощущение SAFE / WATCH / RISK — насыщенный, не бледный.
+///
+/// SAFE: фиолет (primary) → сине-фиолетовый стоп → смесь с tertiary (как в макете карты).
 List<Color> walletHeroGradientForTone(ColorScheme cs, UxFinancialTone tone) {
   return switch (tone) {
     UxFinancialTone.safe => [
         cs.primary,
-        Color.lerp(cs.primary, cs.tertiary, 0.35)!,
-        Color.lerp(cs.primary, cs.primaryContainer, 0.3)!,
+        Color.lerp(cs.primary, _kWalletHeroGradientBlue, 0.48)!,
+        Color.lerp(_kWalletHeroGradientBlue, cs.tertiary, 0.38)!,
       ],
     UxFinancialTone.watch => [
         cs.tertiary,

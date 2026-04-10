@@ -35,6 +35,11 @@ class SettingsTile extends StatelessWidget {
         onTap: onTap,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant.withValues(
+                  alpha: 0.35,
+                ),
+          ),
         ),
         tileColor: Theme.of(context).colorScheme.surfaceContainerHigh,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

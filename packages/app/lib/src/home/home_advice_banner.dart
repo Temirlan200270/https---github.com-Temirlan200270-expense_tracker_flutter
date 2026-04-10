@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ui_components/ui_components.dart';
 
 import 'home_layout_shell.dart';
 
@@ -36,25 +37,26 @@ class HomeAdviceBanner extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      padding: const EdgeInsets.all(SdsSpacing.md),
       decoration: BoxDecoration(
-        color: cs.primaryContainer.withValues(alpha: 0.38),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: cs.primary.withValues(alpha: 0.22),
+        borderRadius: BorderRadius.circular(SdsRadius.lg),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            cs.primaryContainer.withValues(alpha: 0.42),
+            cs.tertiaryContainer.withValues(alpha: 0.28),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(
+          color: cs.primary.withValues(alpha: 0.18),
+        ),
+        boxShadow: SdsElevation.softCard(cs),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(leadingIcon, color: cs.primary, size: 26),
+          Icon(leadingIcon, color: cs.primary, size: 24),
           SizedBox(width: HomeLayoutSpacing.s12),
           Expanded(
             child: Column(
@@ -101,7 +103,7 @@ class HomeAdviceBanner extends StatelessWidget {
                 if (budgetProgress != null) ...[
                   SizedBox(height: HomeLayoutSpacing.s12),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(SdsSpacing.xs),
                     child: LinearProgressIndicator(
                       value: budgetProgress!.clamp(0.0, 1.0),
                       minHeight: 5,

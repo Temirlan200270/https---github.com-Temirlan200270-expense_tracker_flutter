@@ -65,8 +65,8 @@
     "cta_grid": {
       "expense": "Expense",
       "income": "Income",
-      "import": "Import",
-      "categories": "Categories"
+      "budget": "Budget",
+      "analytics": "Analysis"
     },
     "more_sheet": {
       "title": "Shortcuts",
@@ -82,7 +82,7 @@
       "step1_title": "Balance and summary",
       "step1_body": "Your period balance, expenses, income, and forecast — once you have data.",
       "step2_title": "Quick actions",
-      "step2_body": "Add an expense or income. Import and categories live here; budget and insights stay in the bottom bar — no duplicate shortcuts.",
+      "step2_body": "Add expense, income, open budget or analysis. Import and categories are in the top-right menu — same shortcuts, less clutter.",
       "step3_title": "Tips",
       "step3_body": "Once you add transactions, tips and spending rhythm will show up here.",
       "step4_title": "Bottom navigation",

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'theme/visual_tokens.dart';
+
 /// Вариант визуала заголовка секции (роли §4 DESIGN_SYSTEM).
 enum SectionHeaderVariant {
   /// Роль Title: основной якорь секции.
@@ -33,26 +35,35 @@ class SectionHeader extends StatelessWidget {
     final TextStyle? titleStyle = switch (variant) {
       SectionHeaderVariant.standard => theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            color: cs.onSurface.withValues(alpha: 0.72),
+            color: cs.onSurface.withValues(alpha: SdsOnSurface.secondary),
           ),
       SectionHeaderVariant.mutedLabel => theme.textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.w800,
             letterSpacing: 1.1,
-            color: cs.onSurface.withValues(alpha: 0.45),
+            color: cs.onSurface.withValues(alpha: SdsOnSurface.tertiary),
           ),
     };
 
     return Padding(
-      padding: padding ?? const EdgeInsets.fromLTRB(20, 28, 20, 8),
+      padding: padding ??
+          const EdgeInsets.fromLTRB(
+            SdsSpacing.lg,
+            SdsSpacing.xlPlus,
+            SdsSpacing.lg,
+            SdsSpacing.xs,
+          ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-            child: Text(
-              title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: titleStyle,
+            child: Semantics(
+              header: true,
+              child: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: titleStyle,
+              ),
             ),
           ),
           if (trailing != null) trailing!,

@@ -2,6 +2,7 @@ export 'src/app_scaffold.dart';
 export 'src/sss_screen_contract.dart';
 export 'src/async_value_view.dart';
 export 'src/theme/motion_tokens.dart';
+export 'src/theme/visual_tokens.dart';
 export 'src/animations/page_transitions.dart';
 export 'src/animations/staggered_animations.dart';
 export 'src/animations/app_animations.dart';

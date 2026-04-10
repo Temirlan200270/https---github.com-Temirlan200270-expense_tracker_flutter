@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'decision_gradient_shell.dart';
 import 'decision_insight_block.dart';
+import 'theme/visual_tokens.dart';
 
 /// Порядок блоков внутри [WalletHeroCard].
 enum WalletHeroContentOrder {
@@ -109,12 +110,12 @@ class WalletHeroCard extends StatelessWidget {
         Text(
           totalBalanceLabel,
           style: theme.textTheme.labelLarge?.copyWith(
-            color: Colors.white.withValues(alpha: 0.72),
+            color: Colors.white.withValues(alpha: SdsOnGradient.label),
             fontWeight: FontWeight.w700,
             letterSpacing: 1.3,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: SdsSpacing.xs),
         Text(
           balanceAmountFormatted,
           style: theme.textTheme.displayLarge?.copyWith(
@@ -125,13 +126,13 @@ class WalletHeroCard extends StatelessWidget {
           ),
         ),
         if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: SdsSpacing.sm),
           Text(
             subtitle!,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.72),
+              color: Colors.white.withValues(alpha: SdsOnGradient.label),
               height: 1.35,
             ),
           ),
@@ -148,7 +149,7 @@ class WalletHeroCard extends StatelessWidget {
         hintLine: insightHintLine,
         leadingIcon: insightLeadingIcon,
         budgetProgress: progress,
-        bottomSpacing: 20,
+        bottomSpacing: SdsSpacing.lg,
       );
     }
 
@@ -156,27 +157,36 @@ class WalletHeroCard extends StatelessWidget {
       children: [
         Divider(
           height: 1,
-          color: Colors.white.withValues(alpha: 0.22),
+          color: Colors.white.withValues(alpha: SdsOnGradient.divider),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: SdsSpacing.md),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: _WalletHeroStatColumn(
-                label: expensesLabel,
-                value: expensesFormatted,
+              child: _WalletHeroGlassStat(
+                child: _WalletHeroStatColumn(
+                  label: expensesLabel,
+                  value: expensesFormatted,
+                ),
               ),
             ),
+            const SizedBox(width: SdsSpacing.xs),
             Expanded(
-              child: _WalletHeroStatColumn(
-                label: incomeLabel,
-                value: incomeFormatted,
+              child: _WalletHeroGlassStat(
+                child: _WalletHeroStatColumn(
+                  label: incomeLabel,
+                  value: incomeFormatted,
+                ),
               ),
             ),
+            const SizedBox(width: SdsSpacing.xs),
             Expanded(
-              child: _WalletHeroStatColumn(
-                label: forecastLabel,
-                value: forecastFormatted,
+              child: _WalletHeroGlassStat(
+                child: _WalletHeroStatColumn(
+                  label: forecastLabel,
+                  value: forecastFormatted,
+                ),
               ),
             ),
           ],
@@ -189,26 +199,26 @@ class WalletHeroCard extends StatelessWidget {
       columnChildren = [
         balanceBlock,
         if (showMetrics) ...[
-          SizedBox(height: isCompactFtue ? 18 : 22),
+          SizedBox(height: isCompactFtue ? SdsSpacing.md : SdsSpacing.xl),
           metricsBlock,
         ],
         if (insightBlock != null) ...[
-          SizedBox(height: isCompactFtue ? 16 : 20),
+          SizedBox(height: isCompactFtue ? SdsSpacing.md : SdsSpacing.lg),
           insightBlock,
         ] else if (hasHint) ...[
-          SizedBox(height: isCompactFtue ? 16 : 20),
+          SizedBox(height: isCompactFtue ? SdsSpacing.md : SdsSpacing.lg),
           Text(
             hint,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.72),
+              color: Colors.white.withValues(alpha: SdsOnGradient.label),
               height: 1.35,
             ),
           ),
         ],
         if (footerCta != null) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: SdsSpacing.md),
           footerCta!,
         ],
       ];
@@ -216,27 +226,27 @@ class WalletHeroCard extends StatelessWidget {
       columnChildren = [
         balanceBlock,
         if (insightBlock != null) ...[
-          SizedBox(height: isCompactFtue ? 20 : 24),
+          SizedBox(height: isCompactFtue ? SdsSpacing.lg : SdsSpacing.xl),
           insightBlock,
         ] else if (hasHint) ...[
-          SizedBox(height: isCompactFtue ? 20 : 24),
+          SizedBox(height: isCompactFtue ? SdsSpacing.lg : SdsSpacing.xl),
           Text(
             hint,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.72),
+              color: Colors.white.withValues(alpha: SdsOnGradient.label),
               height: 1.35,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: SdsSpacing.lg),
         ],
         if (showMetrics) ...[
-          SizedBox(height: isCompactFtue ? 18 : 22),
+          SizedBox(height: isCompactFtue ? SdsSpacing.md : SdsSpacing.xl),
           metricsBlock,
         ],
         if (footerCta != null) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: SdsSpacing.md),
           footerCta!,
         ],
       ];
@@ -245,11 +255,11 @@ class WalletHeroCard extends StatelessWidget {
         if (insightBlock != null) insightBlock,
         balanceBlock,
         if (showMetrics) ...[
-          SizedBox(height: isCompactFtue ? 18 : 22),
+          SizedBox(height: isCompactFtue ? SdsSpacing.md : SdsSpacing.xl),
           metricsBlock,
         ],
         if (footerCta != null) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: SdsSpacing.md),
           footerCta!,
         ],
       ];
@@ -257,13 +267,38 @@ class WalletHeroCard extends StatelessWidget {
 
     return DecisionGradientShell(
       gradientColors: colors,
-      glassAlpha: isCompactFtue ? 0.04 : 0.08,
+      glassAlpha:
+          isCompactFtue ? SdsGlass.heroOverlayCompact : SdsGlass.heroOverlay,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+        padding: const EdgeInsets.all(SdsSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: columnChildren,
         ),
+      ),
+    );
+  }
+}
+
+/// Полупрозрачная «подкарточка» для метрик на градиенте (макет: мини-стекло).
+class _WalletHeroGlassStat extends StatelessWidget {
+  const _WalletHeroGlassStat({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: SdsGlass.statFill),
+        borderRadius: BorderRadius.circular(SdsRadius.sm),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: SdsGlass.statBorder),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(SdsSpacing.sm),
+        child: child,
       ),
     );
   }
@@ -289,12 +324,12 @@ class _WalletHeroStatColumn extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.labelSmall?.copyWith(
-            color: Colors.white.withValues(alpha: 0.65),
+            color: Colors.white.withValues(alpha: SdsOnGradient.muted),
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: SdsSpacing.xxs),
         Text(
           value,
           maxLines: 1,

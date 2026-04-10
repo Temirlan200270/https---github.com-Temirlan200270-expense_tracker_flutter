@@ -1,5 +1,7 @@
+import '../theme/visual_tokens.dart';
+
 /// Сетка форм ввода (Action Zone): единые отступы и радиусы полей.
-/// См. DESIGN_SYSTEM, SSS_UI_SYSTEM_V2 §1.1.
+/// См. DESIGN_SYSTEM, SSS_UI_SYSTEM_V2 §1.1 и [SdsSpacing] / [SdsRadius].
 abstract final class FormLayoutSpacing {
   FormLayoutSpacing._();
 
@@ -8,6 +10,6 @@ abstract final class FormLayoutSpacing {
   static const double s20 = 20;
   static const double s24 = 24;
 
-  /// Скругление полей ввода (12–16 по контракту).
-  static const double inputRadius = 16;
+  /// Скругление полей ввода — [SdsRadius.sm].
+  static const double inputRadius = SdsRadius.sm;
 }

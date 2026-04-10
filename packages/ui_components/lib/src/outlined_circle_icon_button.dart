@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'haptic_feedback.dart';
+import 'theme/visual_tokens.dart';
 import 'pressable_scale.dart';
 
 /// Круглая кнопка с лёгкой обводкой (шапка neo-bank / референс-макеты).
@@ -20,10 +21,10 @@ class OutlinedCircleIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(left: 12),
+      padding: const EdgeInsets.only(left: SdsSpacing.sm),
       child: PressableScale(
         child: Material(
-          color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
+          color: cs.surfaceContainerHighest.withValues(alpha: SdsFill.surfaceMuted),
           shape: const CircleBorder(),
           clipBehavior: Clip.antiAlias,
           child: IconButton(
@@ -36,7 +37,7 @@ class OutlinedCircleIconButton extends StatelessWidget {
             style: IconButton.styleFrom(
               foregroundColor: cs.onSurface,
               side: BorderSide(
-                color: cs.outline.withValues(alpha: 0.22),
+                color: cs.outline.withValues(alpha: SdsStroke.hairline),
               ),
             ),
           ),

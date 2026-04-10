@@ -5,33 +5,25 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ui_components/ui_components.dart';
 
-/// Компактная строка быстрых действий под hero — pill-кнопки с иконками.
+/// Быстрые действия под hero: четыре квадратные кнопки (сетка 4 / [SdsRadius] / одна тень).
 class HomeQuickActionGrid extends StatelessWidget {
   const HomeQuickActionGrid({super.key});
 
+  static const double _iconTileExtent = 48;
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final theme = Theme.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final TextTheme textTheme = Theme.of(context).textTheme;
 
-    Widget pill({
+    Widget tile({
       required IconData icon,
-      required Color accentColor,
+      required Color background,
+      required Color iconColor,
       required String label,
       required VoidCallback onTap,
-      int staggerIndex = 0,
-      bool filled = false,
+      required int staggerIndex,
     }) {
-      // Контраст: слабый tint + явная обводка (иначе «белое на белом» на светлой теме).
-      final bg = filled
-          ? Color.lerp(cs.surfaceContainerHighest, accentColor, 0.28)!
-          : cs.surfaceContainerHighest;
-      final border = BorderSide(
-        color: filled
-            ? accentColor.withValues(alpha: 0.42)
-            : cs.outlineVariant.withValues(alpha: 0.55),
-      );
-
       return Expanded(
         child: PressableScale(
           child: Material(
@@ -41,28 +33,36 @@ class HomeQuickActionGrid extends StatelessWidget {
                 HapticUtils.selection();
                 onTap();
               },
-              borderRadius: BorderRadius.circular(14),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: border.color, width: 1),
-                ),
+              borderRadius: BorderRadius.circular(SdsRadius.md),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: SdsSpacing.xxs),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(icon, color: accentColor, size: 22),
-                    const SizedBox(height: 4),
+                    Container(
+                      width: _iconTileExtent,
+                      height: _iconTileExtent,
+                      decoration: BoxDecoration(
+                        color: background,
+                        borderRadius: BorderRadius.circular(SdsRadius.sm),
+                        border: Border.all(
+                          color: cs.outlineVariant.withValues(alpha: 0.35),
+                        ),
+                        boxShadow: SdsElevation.softTile(cs),
+                      ),
+                      child: Icon(icon, color: iconColor, size: 24),
+                    ),
+                    const SizedBox(height: SdsSpacing.xs),
                     Text(
                       label,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
+                      style: textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
                         fontSize: 11,
-                        color: cs.onSurface.withValues(alpha: 0.92),
+                        letterSpacing: 0.15,
+                        color: cs.onSurface.withValues(alpha: 0.88),
                       ),
                       textAlign: TextAlign.center,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -75,53 +75,60 @@ class HomeQuickActionGrid extends StatelessWidget {
           .animate()
           .fadeIn(
             duration: AppMotion.standard,
-            delay: Duration(milliseconds: 40 * staggerIndex),
+            delay: AppMotion.staggerInterval * staggerIndex,
             curve: AppMotion.curve,
           )
           .slideY(
-            begin: 0.08,
+            begin: 0.06,
             end: 0,
             duration: AppMotion.standard,
-            delay: Duration(milliseconds: 40 * staggerIndex),
+            delay: AppMotion.staggerInterval * staggerIndex,
             curve: AppMotion.curve,
           );
     }
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        pill(
+        tile(
           icon: Icons.remove_rounded,
-          accentColor: cs.primary,
+          background: cs.primaryContainer.withValues(alpha: 0.72),
+          iconColor: cs.primary,
           label: tr('home.cta_grid.expense'),
           staggerIndex: 0,
-          filled: true,
           onTap: () => context.push(AppRoutes.expensesNew),
         ),
-        const SizedBox(width: 8),
-        pill(
+        const SizedBox(width: SdsSpacing.sm),
+        tile(
           icon: Icons.add_rounded,
-          accentColor: cs.tertiary,
+          background: cs.tertiaryContainer.withValues(alpha: 0.75),
+          iconColor: cs.tertiary,
           label: tr('home.cta_grid.income'),
           staggerIndex: 1,
-          filled: true,
           onTap: () =>
               context.push(AppRoutes.expensesNew, extra: {'type': 'income'}),
         ),
-        const SizedBox(width: 8),
-        pill(
-          icon: Icons.upload_file_rounded,
-          accentColor: cs.secondary,
-          label: tr('home.cta_grid.import'),
+        const SizedBox(width: SdsSpacing.sm),
+        tile(
+          icon: Icons.work_outline_rounded,
+          background: cs.secondaryContainer.withValues(alpha: 0.78),
+          iconColor: cs.secondary,
+          label: tr('home.cta_grid.budget'),
           staggerIndex: 2,
-          onTap: () => context.push(AppRoutes.import),
+          onTap: () => context.go(AppRoutes.budgets),
         ),
-        const SizedBox(width: 8),
-        pill(
-          icon: Icons.category_rounded,
-          accentColor: cs.onSurfaceVariant,
-          label: tr('home.cta_grid.categories'),
+        const SizedBox(width: SdsSpacing.sm),
+        tile(
+          icon: Icons.bar_chart_rounded,
+          background: Color.lerp(
+            cs.surfaceContainerHighest,
+            cs.primary,
+            0.22,
+          )!,
+          iconColor: cs.primary,
+          label: tr('home.cta_grid.analytics'),
           staggerIndex: 3,
-          onTap: () => context.push(AppRoutes.categories),
+          onTap: () => context.go(AppRoutes.analytics),
         ),
       ],
     );

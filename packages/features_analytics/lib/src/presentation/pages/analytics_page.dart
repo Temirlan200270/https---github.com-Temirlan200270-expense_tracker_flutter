@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:features_budgets/features_budgets.dart';
+import 'package:features_expenses/features_expenses.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ui_components/ui_components.dart';
@@ -52,6 +53,8 @@ class AnalyticsPage extends ConsumerWidget {
       child: RefreshIndicator(
         color: Theme.of(context).colorScheme.primary,
         onRefresh: () async {
+          ref.invalidate(expensesStreamProvider);
+          ref.invalidate(categoriesStreamProvider);
           await Future.wait([
             ref.refresh(financialSnapshotProvider.future),
             ref.refresh(budgetsWithSpendingProvider.future),
