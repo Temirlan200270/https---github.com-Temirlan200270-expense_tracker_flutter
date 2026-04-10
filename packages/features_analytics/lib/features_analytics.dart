@@ -1,5 +1,6 @@
 export 'src/presentation/pages/analytics_page.dart';
-export 'src/routes/analytics_routes.dart';
+export 'src/routes/analytics_routes.dart'
+    show analyticsShellBranchRoutes;
 export 'src/providers/analytics_providers.dart';
 export 'src/providers/analytics_models.dart';
 export 'src/providers/analytics_period_provider.dart';

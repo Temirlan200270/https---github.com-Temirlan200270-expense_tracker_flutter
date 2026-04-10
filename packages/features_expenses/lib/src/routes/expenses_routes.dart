@@ -52,6 +52,67 @@ CustomTransitionPage<T> _buildPageTransition<T>({
   );
 }
 
+/// Ветка [StatefulShellRoute]: список операций и форма новой операции.
+final List<RouteBase> expensesShellBranchRoutes = [
+  GoRoute(
+    path: '/expenses',
+    name: 'expensesList',
+    pageBuilder: (context, state) => _buildPageTransition(
+      key: state.pageKey,
+      child: const ExpensesListPage(),
+    ),
+    routes: [
+      GoRoute(
+        path: 'new',
+        name: 'newExpense',
+        pageBuilder: (context, state) {
+          ExpenseType? initialType;
+          Expense? expense;
+
+          if (state.extra is Expense) {
+            expense = state.extra as Expense;
+          } else if (state.extra is Map) {
+            final extra = state.extra as Map;
+            expense = extra['expense'] as Expense?;
+
+            final typeParam = extra['type'] as String?;
+            if (typeParam == 'expense') {
+              initialType = ExpenseType.expense;
+            } else if (typeParam == 'income') {
+              initialType = ExpenseType.income;
+            }
+          }
+
+          if (initialType == null && expense == null) {
+            final fullPath = state.fullPath;
+            if (fullPath != null && fullPath.contains('?')) {
+              try {
+                final uri = Uri.parse(fullPath);
+                final typeParam = uri.queryParameters['type'];
+                if (typeParam == 'expense') {
+                  initialType = ExpenseType.expense;
+                } else if (typeParam == 'income') {
+                  initialType = ExpenseType.income;
+                }
+              } catch (_) {}
+            }
+          }
+
+          return _buildPageTransition(
+            key: state.pageKey,
+            child: NewExpensePage(
+              initialType: initialType,
+              expense: expense,
+            ),
+            slideFromRight: true,
+          );
+        },
+      ),
+    ],
+  ),
+];
+
+/// Маршруты вне нижнего shell (категории, правила, повторяющиеся).
 List<GoRoute> expensesRoutes = [
   GoRoute(
     path: '/categories',
@@ -70,67 +131,6 @@ List<GoRoute> expensesRoutes = [
       child: const CategoryRulesPage(),
       slideFromRight: true,
     ),
-  ),
-  GoRoute(
-    path: '/expenses',
-    name: 'expensesList',
-    pageBuilder: (context, state) => _buildPageTransition(
-      key: state.pageKey,
-      child: const ExpensesListPage(),
-    ),
-    routes: [
-      GoRoute(
-        path: 'new',
-        name: 'newExpense',
-        pageBuilder: (context, state) {
-          ExpenseType? initialType;
-          Expense? expense;
-          
-          // Пробуем получить expense для редактирования
-          if (state.extra is Expense) {
-            expense = state.extra as Expense;
-          } else if (state.extra is Map) {
-            final extra = state.extra as Map;
-            expense = extra['expense'] as Expense?;
-            
-            // Или тип из extra параметров
-            final typeParam = extra['type'] as String?;
-            if (typeParam == 'expense') {
-              initialType = ExpenseType.expense;
-            } else if (typeParam == 'income') {
-              initialType = ExpenseType.income;
-            }
-          }
-          
-          // Если не нашли в extra, пробуем query параметры
-          if (initialType == null && expense == null) {
-            final fullPath = state.fullPath;
-            if (fullPath != null && fullPath.contains('?')) {
-              try {
-                final uri = Uri.parse(fullPath);
-                final typeParam = uri.queryParameters['type'];
-                if (typeParam == 'expense') {
-                  initialType = ExpenseType.expense;
-                } else if (typeParam == 'income') {
-                  initialType = ExpenseType.income;
-                }
-              } catch (e) {
-                // Если не удалось распарсить, используем значение по умолчанию
-              }
-            }
-          }
-          
-          return _buildPageTransition(
-            key: state.pageKey,
-            child: NewExpensePage(
-              initialType: initialType,
-              expense: expense,
-            ),
-            slideFromRight: true,
-          );
-        },
-      ),
-    ],
   ),
   GoRoute(
     path: '/recurring',

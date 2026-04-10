@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:expense_tracker_app/expense_tracker_app.dart';
 import 'package:features_analytics/features_analytics.dart';
@@ -13,8 +11,261 @@ import 'package:shared_models/shared_models.dart';
 import 'package:ui_components/ui_components.dart';
 
 import 'home_layout_shell.dart';
-import 'home_ux_insight_logic.dart';
 import 'home_wallet_shell.dart';
+
+/// Сетка 2×2 под hero: расход, доход, бюджет, анализ (макет neo-bank).
+class _HomeQuickActionGrid extends StatelessWidget {
+  const _HomeQuickActionGrid();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    Widget tile({
+      required Color background,
+      required IconData icon,
+      required Color iconColor,
+      required String label,
+      required VoidCallback onTap,
+      int staggerIndex = 0,
+    }) {
+      return Expanded(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: background,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: cs.shadow.withValues(alpha: 0.06),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Icon(icon, color: iconColor, size: 26),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    label,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      )
+          .animate()
+          .fadeIn(
+            duration: AppMotion.standard,
+            delay: Duration(
+              milliseconds: 40 * staggerIndex,
+            ),
+            curve: AppMotion.curve,
+          )
+          .scale(
+            begin: const Offset(0.94, 0.94),
+            duration: AppMotion.standard,
+            delay: Duration(
+              milliseconds: 40 * staggerIndex,
+            ),
+            curve: AppMotion.curve,
+          );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        tile(
+          background: cs.primaryContainer.withValues(alpha: 0.9),
+          icon: Icons.add_rounded,
+          iconColor: cs.primary,
+          label: tr('home.cta_grid.expense'),
+          staggerIndex: 0,
+          onTap: () {
+            HapticUtils.selection();
+            context.push(AppRoutes.expensesNew);
+          },
+        ),
+        tile(
+          background: cs.tertiaryContainer.withValues(alpha: 0.85),
+          icon: Icons.trending_up_rounded,
+          iconColor: cs.tertiary,
+          label: tr('home.cta_grid.income'),
+          staggerIndex: 1,
+          onTap: () {
+            HapticUtils.selection();
+            context.push(AppRoutes.expensesNew, extra: {'type': 'income'});
+          },
+        ),
+        tile(
+          background: cs.secondaryContainer.withValues(alpha: 0.75),
+          icon: Icons.work_outline_rounded,
+          iconColor: cs.secondary,
+          label: tr('home.cta_grid.budget'),
+          staggerIndex: 2,
+          onTap: () {
+            HapticUtils.selection();
+            context.go(AppRoutes.budgets);
+          },
+        ),
+        tile(
+          background: cs.surfaceContainerHighest.withValues(alpha: 0.95),
+          icon: Icons.stacked_bar_chart_rounded,
+          iconColor: cs.primary,
+          label: tr('home.cta_grid.analytics'),
+          staggerIndex: 3,
+          onTap: () {
+            HapticUtils.selection();
+            context.go(AppRoutes.analytics);
+          },
+        ),
+      ],
+    );
+  }
+}
+
+/// Карточка «Финансовый совет» под сеткой быстрых действий (как в макете).
+class _HomeAdviceBanner extends StatelessWidget {
+  const _HomeAdviceBanner({
+    required this.title,
+    required this.body,
+    this.subtitle,
+    this.hintLine,
+    this.budgetProgress,
+    this.leadingIcon = Icons.auto_awesome_rounded,
+  });
+
+  final String title;
+  final String body;
+  final String? subtitle;
+  final String? hintLine;
+  final double? budgetProgress;
+  final IconData leadingIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = body.trim();
+    final h = hintLine?.trim() ?? '';
+    if (t.isEmpty &&
+        (subtitle == null || subtitle!.trim().isEmpty) &&
+        h.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: cs.primaryContainer.withValues(alpha: 0.38),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: cs.primary.withValues(alpha: 0.22),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(leadingIcon, color: cs.primary, size: 26),
+          SizedBox(width: HomeLayoutSpacing.s12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: cs.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                if (t.isNotEmpty) ...[
+                  SizedBox(height: HomeLayoutSpacing.s8),
+                  Text(
+                    t,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: cs.onSurface.withValues(alpha: 0.88),
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+                if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
+                  SizedBox(height: HomeLayoutSpacing.s8),
+                  Text(
+                    subtitle!.trim(),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurface.withValues(alpha: 0.58),
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+                if (h.isNotEmpty) ...[
+                  SizedBox(height: HomeLayoutSpacing.s8),
+                  Text(
+                    h,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: cs.primary.withValues(alpha: 0.88),
+                      fontWeight: FontWeight.w600,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+                if (budgetProgress != null) ...[
+                  SizedBox(height: HomeLayoutSpacing.s12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(
+                      value: budgetProgress!.clamp(0.0, 1.0),
+                      minHeight: 5,
+                      backgroundColor: cs.surface.withValues(alpha: 0.5),
+                      color: cs.primary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(duration: AppMotion.standard, curve: AppMotion.curve)
+        .slideY(
+          begin: 0.04,
+          end: 0,
+          duration: AppMotion.screen,
+          curve: AppMotion.curve,
+        );
+  }
+}
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -59,7 +310,7 @@ class HomePage extends ConsumerWidget {
         OutlinedCircleIconButton(
           icon: Icons.bar_chart_rounded,
           tooltip: tr('analytics.title'),
-          onPressed: () => context.push('/analytics'),
+          onPressed: () => context.push(AppRoutes.analytics),
         ),
         Padding(
           padding: const EdgeInsets.only(left: HomeLayoutSpacing.s8),
@@ -78,43 +329,43 @@ class HomePage extends ConsumerWidget {
                   ctx,
                   icon: Icons.account_balance_wallet_rounded,
                   label: tr('budget.title'),
-                  route: '/budgets',
+                  route: AppRoutes.budgets,
                 ),
                 _quickNavMenuItem(
                   ctx,
                   icon: Icons.account_balance_rounded,
                   label: tr('debts.title'),
-                  route: '/debts',
+                  route: AppRoutes.debts,
                 ),
                 _quickNavMenuItem(
                   ctx,
                   icon: Icons.category_rounded,
                   label: tr('categories.title'),
-                  route: '/categories',
+                  route: AppRoutes.categories,
                 ),
                 _quickNavMenuItem(
                   ctx,
                   icon: Icons.repeat_rounded,
                   label: tr('recurring.title'),
-                  route: '/recurring',
+                  route: AppRoutes.recurring,
                 ),
                 _quickNavMenuItem(
                   ctx,
                   icon: Icons.upload_file_rounded,
                   label: tr('export.title'),
-                  route: '/export',
+                  route: AppRoutes.export,
                 ),
                 _quickNavMenuItem(
                   ctx,
                   icon: Icons.download_rounded,
                   label: tr('import.title'),
-                  route: '/import',
+                  route: AppRoutes.import,
                 ),
                 _quickNavMenuItem(
                   ctx,
                   icon: Icons.settings_rounded,
                   label: tr('settings'),
-                  route: '/settings',
+                  route: AppRoutes.settings,
                 ),
               ],
             ),
@@ -134,10 +385,9 @@ class HomePage extends ConsumerWidget {
 
     final financialAsync = ref.watch(financialSnapshotProvider);
     final recentExpensesAsync = ref.watch(expensesStreamProvider);
-    final budgetsAsync = ref.watch(budgetsWithSpendingProvider);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
@@ -161,12 +411,14 @@ class HomePage extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         homeWalletHeroCard(
-                          insightLine: tr('home.hero.ftue_micro'),
+                          insightLine: null,
                           balanceAmountFormatted: formatter.format(0),
                           expensesFormatted: formatter.format(0),
                           incomeFormatted: formatter.format(0),
                           forecastFormatted: tr('home.hero.forecast_na'),
                           isCompactFtue: true,
+                          contentOrder:
+                              WalletHeroContentOrder.balanceMetricsInsight,
                         )
                             .animate()
                             .fadeIn(
@@ -180,24 +432,18 @@ class HomePage extends ConsumerWidget {
                               curve: AppMotion.curve,
                             ),
                         SizedBox(height: HomeLayoutSpacing.s16),
-                        PrimaryActionButton(
-                          onPressed: () => context.push('/expenses/new'),
-                          child: Text(
-                            tr('home.hero.new_operation'),
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
+                        const _HomeQuickActionGrid(),
+                        SizedBox(height: HomeLayoutSpacing.s12),
+                        _HomeAdviceBanner(
+                          title: tr('home.advice.title'),
+                          body: tr('home.hero.ftue_micro'),
                         ),
-                        SizedBox(height: HomeLayoutSpacing.s8),
+                        SizedBox(height: HomeLayoutSpacing.s12),
                         Center(
                           child: TextButton.icon(
                             onPressed: () {
                               HapticUtils.selection();
-                              context.push('/import');
+                              context.push(AppRoutes.import);
                             },
                             icon: const Icon(
                               Icons.upload_file,
@@ -216,9 +462,7 @@ class HomePage extends ConsumerWidget {
                             : tr('home.hero.forecast_na');
                         return _HomeLoadedHeroBlock(
                           formatter: formatter,
-                          snapshot: fin.decision,
                           stats: fin.decision.monthStats,
-                          budgetsAsync: budgetsAsync,
                           forecastStr: forecastStr,
                         );
                       },
@@ -227,7 +471,7 @@ class HomePage extends ConsumerWidget {
                         compact: true,
                         title: tr('home.stats_error'),
                         action: PrimaryActionButton(
-                          onPressed: () => context.push('/expenses/new'),
+                          onPressed: () => context.push(AppRoutes.expensesNew),
                           child: Text(
                             tr('home.hero.new_operation'),
                             style: Theme.of(context)
@@ -246,7 +490,7 @@ class HomePage extends ConsumerWidget {
                       variant: SectionHeaderVariant.mutedLabel,
                       title: tr('home.feed.recent_upper'),
                       trailing: TextButton(
-                        onPressed: () => context.push('/expenses'),
+                        onPressed: () => context.push(AppRoutes.expenses),
                         child: Text(
                           tr('home.feed.all_link'),
                           style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -357,20 +601,16 @@ class HomePage extends ConsumerWidget {
   }
 }
 
-/// Hero с градиентом по тону, стабильным текстом, задержкой показа инсайта и feedback.
+/// Hero: только UI; логика стабилизации инсайта — [homeHeroInsightNotifierProvider].
 class _HomeLoadedHeroBlock extends ConsumerStatefulWidget {
   const _HomeLoadedHeroBlock({
     required this.formatter,
-    required this.snapshot,
     required this.stats,
-    required this.budgetsAsync,
     required this.forecastStr,
   });
 
   final NumberFormat formatter;
-  final HomeDecisionSnapshot snapshot;
   final AnalyticsStats stats;
-  final AsyncValue<List<BudgetWithSpending>> budgetsAsync;
   final String forecastStr;
 
   @override
@@ -379,316 +619,57 @@ class _HomeLoadedHeroBlock extends ConsumerStatefulWidget {
 }
 
 class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
-  /// Минимум времени, пока показываем текущий инсайт, прежде чем сменить на другой.
-  static const Duration _kMinInsightDisplay = Duration(seconds: 3);
-
-  static const Duration _kInsightRevealDelay = Duration(milliseconds: 220);
-
-  Timer? _revealTimer;
-  Timer? _persistResyncTimer;
-  Timer? _improvedBannerTimer;
-  bool _showSituationImproved = false;
-  bool _insightRevealed = false;
-  String? _stableLine;
-  String? _stableContext;
-  String? _stableHint;
-  bool _feedbackSent = false;
-  int _lastSyncHash = -1;
-
-  /// Когда пользователь увидел текущий (раскрытый) инсайт — для окна стабильности.
-  DateTime? _insightVisibleSince;
-
-  /// Tier на момент последнего закреплённого инсайта (для persistence + severity bypass).
-  HomeFinancialStateTier? _lastVisibleTier;
-
-  /// Feedback по бюджету → мягкий штраф при выборе строки hero (см. [pickBudgetForHeroInsight]).
-  Set<String> _budgetSoftDepIds = {};
-
-  /// Исчерпан лимит показов бюджета в hero за окно.
-  Set<String> _budgetRateLimitedIds = {};
-
-  /// Enter-animation (fade/slide) только до первого завершения; апдейты — без повторного motion.
-  bool _heroEnterAnimationPlayed = false;
-
   final GlobalKey _walletHeroCardKey = GlobalKey();
 
   @override
-  void dispose() {
-    _revealTimer?.cancel();
-    _persistResyncTimer?.cancel();
-    _improvedBannerTimer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant _HomeLoadedHeroBlock oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final ot = oldWidget.snapshot.stateTier;
-    final nt = widget.snapshot.stateTier;
-    if (ot == HomeFinancialStateTier.danger &&
-        (nt == HomeFinancialStateTier.caution ||
-            nt == HomeFinancialStateTier.stable)) {
-      _improvedBannerTimer?.cancel();
-      setState(() => _showSituationImproved = true);
-      _improvedBannerTimer = Timer(const Duration(seconds: 6), () {
-        if (mounted) setState(() => _showSituationImproved = false);
-      });
-    }
-    if (nt == HomeFinancialStateTier.danger) {
-      _improvedBannerTimer?.cancel();
-      setState(() => _showSituationImproved = false);
-    }
-  }
-
-  void _schedulePersistResync() {
-    _persistResyncTimer?.cancel();
-    final since = _insightVisibleSince;
-    if (since == null) return;
-    var remaining = _kMinInsightDisplay - DateTime.now().difference(since);
-    if (remaining.isNegative) remaining = Duration.zero;
-    _persistResyncTimer = Timer(remaining, () {
-      if (mounted) {
-        WidgetsBinding.instance
-            .addPostFrameCallback((_) => _syncInsightDisplay());
-      }
-    });
-  }
-
-  void _publishRevealState(String fp, HomeHeroInsightResult raw) {
-    final line = raw.insightLine?.trim();
-    if (line == null || line.isEmpty) return;
-    ref.read(insightRevealSyncProvider.notifier).state =
-        InsightRevealSyncState(fingerprint: fp, revealed: true);
-  }
-
-  int _contentHash() {
-    final depSorted = _budgetSoftDepIds.toList()..sort();
-    final rateSorted = _budgetRateLimitedIds.toList()..sort();
-    return Object.hash(
-      widget.snapshot.stateTier,
-      widget.stats.balance,
-      widget.stats.totalExpenses,
-      widget.snapshot.behaviorInsight?.variant,
-      widget.snapshot.spendingTrend,
-      widget.budgetsAsync.valueOrNull?.length,
-      Object.hashAll(depSorted),
-      Object.hashAll(rateSorted),
-    );
-  }
-
-  Future<void> _persistBudgetHeroShow(String budgetId) async {
-    final recorded = await ref
-        .read(budgetHeroRateLimitStoreProvider)
-        .recordShowIfGapped(budgetId);
-    if (recorded && mounted) {
-      ref.invalidate(budgetHeroRateLimitedIdsProvider);
-    }
-  }
-
-  void _syncInsightDisplay() {
-    if (!mounted) return;
-    final ux = UxDecisionMapper.mapSnapshot(
-      widget.snapshot,
-      colorScheme: Theme.of(context).colorScheme,
-      formatter: widget.formatter,
-    );
-    final raw = resolveHomeHeroInsight(
-      budgetsAsync: widget.budgetsAsync,
-      ux: ux,
-      formatter: widget.formatter,
-      softDeprioritizeBudgetIds: _budgetSoftDepIds,
-      rateLimitedBudgetIds: _budgetRateLimitedIds,
-      unifiedHeroBudgetPressure: widget.snapshot.budgetPressure,
-    );
-    final revealFp = homeHeroRevealFingerprintForSync(
-      snapshot: widget.snapshot,
-      raw: raw,
-    );
-
-    final fromBudget = raw.budgetProgress != null;
-    var immediateReveal = false;
-    var startTimer = false;
-    var bumpInsightVisibleSince = false;
-
-    if (fromBudget) {
-      _stableLine = raw.insightLine;
-      _stableContext = raw.insightContextLine;
-      _stableHint = raw.actionHint;
-      immediateReveal = true;
-      _feedbackSent = false;
-      bumpInsightVisibleSince = true;
-      final bid = raw.budgetEntityId;
-      final line = raw.insightLine;
-      if (bid != null && line != null && line.trim().isNotEmpty) {
-        unawaited(_persistBudgetHeroShow(bid));
-      }
-    } else if (raw.insightLine == null || raw.insightLine!.trim().isEmpty) {
-      _stableLine = raw.insightLine;
-      _stableContext = raw.insightContextLine;
-      _stableHint = raw.actionHint;
-      immediateReveal = true;
-      bumpInsightVisibleSince = true;
-    } else if (_stableLine != null &&
-        uxCoreRoughlySame(_stableLine!, raw.insightLine!)) {
-      _stableHint = raw.actionHint ?? _stableHint;
-      _revealTimer?.cancel();
-      immediateReveal = true;
-    } else {
-      final candidate = raw.insightLine!;
-      final severityUp = homeFinancialSeverityIncreased(
-        _lastVisibleTier,
-        widget.snapshot.stateTier,
-      );
-      if (_insightRevealed &&
-          _stableLine != null &&
-          !uxCoreRoughlySame(_stableLine!, candidate) &&
-          _insightVisibleSince != null &&
-          DateTime.now().difference(_insightVisibleSince!) <
-              _kMinInsightDisplay &&
-          !severityUp) {
-        _schedulePersistResync();
-        return;
-      }
-
-      _stableLine = raw.insightLine;
-      _stableContext = raw.insightContextLine;
-      _stableHint = raw.actionHint;
-      _feedbackSent = false;
-
-      if (_insightRevealed) {
-        immediateReveal = true;
-        startTimer = false;
-        _revealTimer?.cancel();
-        bumpInsightVisibleSince = true;
-      } else {
-        final sync = ref.read(insightRevealSyncProvider);
-        if (sync.revealed && sync.fingerprint == revealFp) {
-          immediateReveal = true;
-          startTimer = false;
-          _revealTimer?.cancel();
-          bumpInsightVisibleSince = true;
-        } else {
-          startTimer = true;
-          immediateReveal = false;
-        }
-      }
-    }
-
-    _revealTimer?.cancel();
-    setState(() {
-      if (immediateReveal) {
-        _insightRevealed = true;
-      } else if (startTimer) {
-        _insightRevealed = false;
-        final fpCaptured = revealFp;
-        _revealTimer = Timer(_kInsightRevealDelay, () {
-          if (mounted) {
-            setState(() => _insightRevealed = true);
-            _insightVisibleSince = DateTime.now();
-            _lastVisibleTier = widget.snapshot.stateTier;
-            _publishRevealState(fpCaptured, raw);
-          }
-        });
-      }
-    });
-    if (bumpInsightVisibleSince) {
-      _insightVisibleSince = DateTime.now();
-      _lastVisibleTier = widget.snapshot.stateTier;
-      _publishRevealState(revealFp, raw);
-    }
-  }
-
-  Future<void> _sendFeedback(FeedbackType type) async {
-    if (_feedbackSent) return;
-    final ux = UxDecisionMapper.mapSnapshot(
-      widget.snapshot,
-      colorScheme: Theme.of(context).colorScheme,
-      formatter: widget.formatter,
-    );
-    final raw = resolveHomeHeroInsight(
-      budgetsAsync: widget.budgetsAsync,
-      ux: ux,
-      formatter: widget.formatter,
-      softDeprioritizeBudgetIds: _budgetSoftDepIds,
-      rateLimitedBudgetIds: _budgetRateLimitedIds,
-      unifiedHeroBudgetPressure: widget.snapshot.budgetPressure,
-    );
-    final classKey = homeInsightClassKeyForHero(
-      snapshot: widget.snapshot,
-      raw: raw,
-    );
-    try {
-      await ref.read(insightFeedbackRepositoryProvider).record(
-            InsightFeedback(
-              id:
-                  '${DateTime.now().microsecondsSinceEpoch}_${classKey.hashCode.abs()}',
-              fingerprint: classKey,
-              useful: type == FeedbackType.helpful,
-              timestamp: DateTime.now(),
-            ),
-          );
-      ref.invalidate(financialSnapshotProvider);
-      ref.invalidate(budgetHeroSoftDeprioritizeIdsProvider);
-      if (mounted) {
-        setState(() => _feedbackSent = true);
-        HapticUtils.selection();
-      }
-    } catch (_) {}
-  }
-
-  @override
   Widget build(BuildContext context) {
-    _budgetSoftDepIds =
-        ref.watch(budgetHeroSoftDeprioritizeIdsProvider).valueOrNull ?? {};
-    _budgetRateLimitedIds = ref.watch(budgetHeroRateLimitedIdsProvider);
-    final h = _contentHash();
-    if (h != _lastSyncHash) {
-      _lastSyncHash = h;
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => _syncInsightDisplay());
-    }
-
-    final ux = UxDecisionMapper.mapSnapshot(
-      widget.snapshot,
+    final insightState = ref.watch(homeHeroInsightNotifierProvider);
+    final insightNotifier = ref.read(homeHeroInsightNotifierProvider.notifier);
+    insightNotifier.setFormattingContext(
       colorScheme: Theme.of(context).colorScheme,
       formatter: widget.formatter,
     );
-    final raw = resolveHomeHeroInsight(
-      budgetsAsync: widget.budgetsAsync,
-      ux: ux,
-      formatter: widget.formatter,
-      softDeprioritizeBudgetIds: _budgetSoftDepIds,
-      rateLimitedBudgetIds: _budgetRateLimitedIds,
-      unifiedHeroBudgetPressure: widget.snapshot.budgetPressure,
+
+    final resolved = insightState.resolved;
+    final ux = resolved?.ux;
+    final raw = resolved?.raw;
+
+    final tone = ux?.tone ?? UxFinancialTone.safe;
+    final gradient = walletHeroGradientForTone(
+      Theme.of(context).colorScheme,
+      tone,
     );
-    final fromBudget = raw.budgetProgress != null;
-    final toneShort = switch (ux.tone) {
+
+    final fromBudget = raw?.budgetProgress != null;
+    final toneShort = switch (tone) {
       UxFinancialTone.safe => tr('home.hero.ux.tone_safe_short'),
       UxFinancialTone.watch => tr('home.hero.ux.tone_watch_short'),
       UxFinancialTone.risk => tr('home.hero.ux.tone_risk_short'),
     };
 
-    final displayLine = fromBudget || _insightRevealed
-        ? (_stableLine ?? raw.insightLine)
-        : toneShort;
-    final displayContext =
-        (fromBudget || _insightRevealed) ? _stableContext : null;
+    final displayLine = raw == null
+        ? toneShort
+        : (fromBudget || insightState.insightRevealed)
+            ? (insightState.stableLine ?? raw.insightLine)
+            : toneShort;
+    final displayContext = (fromBudget || insightState.insightRevealed)
+        ? insightState.stableContext
+        : null;
 
-    final gradient = walletHeroGradientForTone(
-      Theme.of(context).colorScheme,
-      ux.tone,
-    );
-
-    final hint = _stableHint ?? raw.actionHint;
+    final hint = insightState.stableHint ?? raw?.actionHint;
     final hintTrimmed = (hint ?? '').trim();
     final insightHintForCard =
         hintTrimmed.isNotEmpty ? hintTrimmed : null;
 
     final hasInsightLine =
         displayLine != null && displayLine.trim().isNotEmpty;
-    final String? sourceLabel = fromBudget
-        ? (hasInsightLine ? tr('insight.source_budget') : null)
-        : (hasInsightLine ? tr('insight.source_behavior') : null);
+    final String? sourceLabel = raw == null
+        ? null
+        : (fromBudget
+            ? (hasInsightLine ? tr('insight.source_budget') : null)
+            : (hasInsightLine ? tr('insight.source_behavior') : null));
+    final showFeedbackRow =
+        resolved != null && hasInsightLine && !insightState.feedbackSent;
 
     final cs = Theme.of(context).colorScheme;
     final subtleStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -707,43 +688,26 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
 
     final heroCard = homeWalletHeroCard(
       key: _walletHeroCardKey,
-      insightLine: displayLine,
-      insightContextLine: displayContext,
-      insightHintLine: insightHintForCard,
-      budgetProgress: raw.budgetProgress,
+      insightLine: null,
+      insightContextLine: null,
+      insightHintLine: null,
+      budgetProgress: null,
       balanceAmountFormatted: widget.formatter.format(widget.stats.balance),
       expensesFormatted:
           widget.formatter.format(widget.stats.totalExpenses),
       incomeFormatted: widget.formatter.format(widget.stats.totalIncome),
       forecastFormatted: widget.forecastStr,
       gradientColors: gradient,
-      contentOrder: WalletHeroContentOrder.decision,
-      insightLeadingIcon: hasInsightLine
-          ? walletHeroLeadingIconForTone(ux.tone)
-          : null,
-      footerCta: PrimaryActionButton(
-        onPressed: () => context.push('/expenses/new'),
-        backgroundColor:
-            ux.tone == UxFinancialTone.risk ? cs.error : null,
-        foregroundColor:
-            ux.tone == UxFinancialTone.risk ? cs.onError : null,
-        child: Text(
-          tr('home.hero.new_operation'),
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-      ),
+      contentOrder: WalletHeroContentOrder.balanceMetricsInsight,
+      insightLeadingIcon: null,
     );
 
-    final heroWrapped = _heroEnterAnimationPlayed
+    final heroWrapped = insightState.heroEnterAnimationPlayed
         ? heroCard
         : heroCard
             .animate(
               onComplete: (_) {
-                if (mounted) {
-                  setState(() => _heroEnterAnimationPlayed = true);
-                }
+                insightNotifier.markHeroEnterAnimationPlayed();
               },
             )
             .fadeIn(duration: AppMotion.standard, curve: AppMotion.curve)
@@ -758,7 +722,24 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         heroWrapped,
-        if (_showSituationImproved)
+        Padding(
+          padding: const EdgeInsets.only(top: HomeLayoutSpacing.s16),
+          child: const _HomeQuickActionGrid(),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: HomeLayoutSpacing.s12),
+          child: _HomeAdviceBanner(
+            title: tr('home.advice.title'),
+            body: (displayLine ?? '').trim(),
+            subtitle: displayContext?.trim(),
+            hintLine: insightHintForCard,
+            budgetProgress: raw?.budgetProgress,
+            leadingIcon: hasInsightLine
+                ? walletHeroLeadingIconForTone(tone)
+                : Icons.auto_awesome_rounded,
+          ),
+        ),
+        if (insightState.showSituationImproved)
           Padding(
             padding: const EdgeInsets.only(top: HomeLayoutSpacing.s12),
             child: Text(
@@ -780,7 +761,7 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
               style: subtleStyle,
             ),
           ),
-        if (hasInsightLine && !_feedbackSent)
+        if (showFeedbackRow)
           Padding(
             padding: const EdgeInsets.only(top: HomeLayoutSpacing.s12),
             child: Column(
@@ -800,7 +781,8 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
                   children: [
                     TextButton(
                       style: btnSmall,
-                      onPressed: () => _sendFeedback(FeedbackType.helpful),
+                      onPressed: () =>
+                          insightNotifier.sendFeedback(FeedbackType.helpful),
                       child: Text(
                         tr('home.hero.ux.feedback_yes'),
                         style: Theme.of(context).textTheme.labelSmall,
@@ -808,7 +790,9 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
                     ),
                     TextButton(
                       style: btnSmall,
-                      onPressed: () => _sendFeedback(FeedbackType.notHelpful),
+                      onPressed: () => insightNotifier.sendFeedback(
+                        FeedbackType.notHelpful,
+                      ),
                       child: Text(
                         tr('home.hero.ux.feedback_no'),
                         style: Theme.of(context).textTheme.labelSmall,
@@ -912,8 +896,8 @@ class _HomeFeedCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final isIncome = expense.type.isIncome;
-    // Доход — семантика через схему (DESIGN_SYSTEM §5).
-    final amountColor = isIncome ? cs.primary : cs.error;
+    // Доход — акцент tertiary (макет: бирюза), расход — error.
+    final amountColor = isIncome ? cs.tertiary : cs.error;
     final timeLabel =
         DateFormat.Hm(context.locale.toLanguageTag())
             .format(expense.occurredAt);
@@ -954,7 +938,7 @@ class _HomeFeedCard extends ConsumerWidget {
         gradient: isIncome
             ? IncomeGradient.fromScheme(cs)
             : ExpenseGradient.fromScheme(cs),
-        onTap: () => context.push('/expenses'),
+        onTap: () => context.push(AppRoutes.expenses),
         onLongPress: () => _showContextMenu(context, ref),
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -976,14 +960,14 @@ class _HomeFeedCard extends ConsumerWidget {
                 SizedBox(height: HomeLayoutSpacing.s12),
               ],
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
                       color: amountColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(
                       isIncome
@@ -1022,25 +1006,15 @@ class _HomeFeedCard extends ConsumerWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
-                        SizedBox(height: HomeLayoutSpacing.s8),
-                        Text(
-                          timeLabel,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                color:
-                                    cs.onSurface.withValues(alpha: 0.45),
-                              ),
-                        ),
                       ],
                     ),
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '${isIncome ? '+' : '−'}${formatter.format(expense.amount.amount)}',
+                        '${isIncome ? '+' : '−'} ${formatter.format(expense.amount.amount)}',
                         style: Theme.of(context)
                             .textTheme
                             .titleMedium
@@ -1048,6 +1022,17 @@ class _HomeFeedCard extends ConsumerWidget {
                               fontWeight: FontWeight.w800,
                               color: amountColor,
                               letterSpacing: -0.6,
+                            ),
+                      ),
+                      Text(
+                        timeLabel,
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelSmall
+                            ?.copyWith(
+                              color:
+                                  cs.onSurface.withValues(alpha: 0.45),
+                              fontWeight: FontWeight.w500,
                             ),
                       ),
                       IconButton(
@@ -1107,7 +1092,7 @@ class _HomeFeedCard extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(tr('expenses.delete.success')),
-          duration: const Duration(seconds: 10),
+          duration: const Duration(seconds: 4),
           action: SnackBarAction(
             label: tr('expenses.delete.undo'),
             onPressed: () async {
@@ -1195,7 +1180,7 @@ class _HomeFeedCard extends ConsumerWidget {
             onTap: () {
               HapticUtils.selection();
               Navigator.pop(sheetContext);
-              context.push('/expenses/new', extra: {'expense': expense});
+              context.push(AppRoutes.expensesNew, extra: {'expense': expense});
             },
           ),
           _HomeSheetAction(

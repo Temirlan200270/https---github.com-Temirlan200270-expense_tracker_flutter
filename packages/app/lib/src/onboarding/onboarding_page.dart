@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ui_components/ui_components.dart';
 
 import '../home/home_layout_shell.dart';
+import '../navigation/app_routes.dart';
 import 'onboarding_providers.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
@@ -150,7 +151,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   Future<void> _completeOnboarding() async {
     await ref.read(onboardingCompletedProvider.notifier).completeOnboarding();
     if (mounted) {
-      context.go('/');
+      context.go(AppRoutes.home);
     }
   }
 }

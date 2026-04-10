@@ -34,7 +34,8 @@ CustomTransitionPage<T> _buildPageTransition<T>({
   );
 }
 
-List<GoRoute> analyticsRoutes = [
+/// Ветка [StatefulShellRoute]: экран аналитики.
+final List<RouteBase> analyticsShellBranchRoutes = [
   GoRoute(
     path: '/analytics',
     name: 'analytics',

@@ -418,3 +418,8 @@ class KaspiStatementParser {
   }
 }
 
+/// Топ-уровневая функция для [compute] — парсинг выписки Kaspi вне UI-потока.
+List<ParsedTransaction> kaspiParseForIsolate(String rawText) {
+  return KaspiStatementParser().parse(rawText);
+}
+

@@ -8,7 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'navigation/app_routes.dart';
 import 'home/home_page.dart';
+import 'shell/main_navigation_shell.dart';
 import 'onboarding/onboarding_page.dart';
 import 'onboarding/onboarding_providers.dart';
 import 'presentation/app_lifecycle_observer.dart';
@@ -63,29 +65,49 @@ final _routerProvider = Provider<GoRouter>((ref) {
   final onboardingCompleted = ref.watch(onboardingCompletedProvider);
 
   return GoRouter(
-    initialLocation: onboardingCompleted ? '/' : '/onboarding',
+    initialLocation:
+        onboardingCompleted ? AppRoutes.home : AppRoutes.onboarding,
     routes: [
       GoRoute(
-        path: '/onboarding',
+        path: AppRoutes.onboarding,
         name: 'onboarding',
         pageBuilder: (context, state) => _buildPageTransition(
           key: state.pageKey,
           child: const OnboardingPage(),
         ),
       ),
-      GoRoute(
-        path: '/',
-        name: 'home',
-        pageBuilder: (context, state) => _buildPageTransition(
-          key: state.pageKey,
-          child: const HomePage(),
-        ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return MainNavigationShell(navigationShell: navigationShell);
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.home,
+                name: 'home',
+                pageBuilder: (context, state) => _buildPageTransition(
+                  key: state.pageKey,
+                  child: const HomePage(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: expensesShellBranchRoutes,
+          ),
+          StatefulShellBranch(
+            routes: budgetsRoutes,
+          ),
+          StatefulShellBranch(
+            routes: analyticsShellBranchRoutes,
+          ),
+        ],
       ),
       ...expensesRoutes,
-      ...analyticsRoutes,
       ...debtsRoutes,
       GoRoute(
-        path: '/export',
+        path: AppRoutes.export,
         name: 'export',
         pageBuilder: (context, state) => _buildPageTransition(
           key: state.pageKey,
@@ -94,7 +116,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/import',
+        path: AppRoutes.import,
         name: 'import',
         pageBuilder: (context, state) => _buildPageTransition(
           key: state.pageKey,
@@ -103,7 +125,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/import/review',
+        path: AppRoutes.importReview,
         name: 'importReview',
         pageBuilder: (context, state) => _buildPageTransition(
           key: state.pageKey,
@@ -112,7 +134,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/backup',
+        path: AppRoutes.backup,
         name: 'backup',
         pageBuilder: (context, state) => _buildPageTransition(
           key: state.pageKey,
@@ -121,46 +143,13 @@ final _routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/settings',
+        path: AppRoutes.settings,
         name: 'settings',
         pageBuilder: (context, state) => _buildPageTransition(
           key: state.pageKey,
           child: const SettingsPage(),
           slideFromRight: true,
         ),
-      ),
-      // Бюджеты
-      GoRoute(
-        path: '/budgets',
-        name: 'budgets',
-        pageBuilder: (context, state) => _buildPageTransition(
-          key: state.pageKey,
-          child: const BudgetsListPage(),
-          slideFromRight: true,
-        ),
-        routes: [
-          GoRoute(
-            path: 'new',
-            name: 'budget_new',
-            pageBuilder: (context, state) => _buildPageTransition(
-              key: state.pageKey,
-              child: const BudgetFormPage(),
-              slideFromRight: true,
-            ),
-          ),
-          GoRoute(
-            path: ':id',
-            name: 'budget_edit',
-            pageBuilder: (context, state) {
-              final id = state.pathParameters['id']!;
-              return _buildPageTransition(
-                key: state.pageKey,
-                child: BudgetFormPage(budgetId: id),
-                slideFromRight: true,
-              );
-            },
-          ),
-        ],
       ),
     ],
   );

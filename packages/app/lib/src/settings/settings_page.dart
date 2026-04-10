@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ui_components/ui_components.dart';
 import 'package:features_expenses/features_expenses.dart';
 
+import '../navigation/app_routes.dart';
 import '../core/theme/app_theme.dart';
 import '../home/home_layout_shell.dart';
 import 'settings_providers.dart';
@@ -158,7 +159,7 @@ class SettingsPage extends ConsumerWidget {
             iconColor: cs.primary,
             title: tr('backup.title'),
             subtitle: tr('backup.subtitle'),
-            onTap: () => context.push('/backup'),
+            onTap: () => context.push(AppRoutes.backup),
             animationIndex: 7,
           ),
           SettingsTile(

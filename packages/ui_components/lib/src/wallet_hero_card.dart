@@ -10,6 +10,9 @@ enum WalletHeroContentOrder {
 
   /// §2.1 Decision Mode: баланс → инсайт → подсказка → метрики → опциональный CTA.
   decision,
+
+  /// Как в продуктовом макете: баланс → три метрики → блок «Анализ» (инсайт) внизу карты.
+  balanceMetricsInsight,
 }
 
 /// Премиальная hero-карточка кошелька: градиент, стекло, инсайт, баланс, три метрики.
@@ -162,7 +165,32 @@ class WalletHeroCard extends StatelessWidget {
     );
 
     final List<Widget> columnChildren;
-    if (contentOrder == WalletHeroContentOrder.decision) {
+    if (contentOrder == WalletHeroContentOrder.balanceMetricsInsight) {
+      columnChildren = [
+        balanceBlock,
+        SizedBox(height: isCompactFtue ? 18 : 22),
+        metricsBlock,
+        if (insightBlock != null) ...[
+          SizedBox(height: isCompactFtue ? 16 : 20),
+          insightBlock,
+        ] else if (hasHint) ...[
+          SizedBox(height: isCompactFtue ? 16 : 20),
+          Text(
+            hint!,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.white.withValues(alpha: 0.72),
+              height: 1.35,
+            ),
+          ),
+        ],
+        if (footerCta != null) ...[
+          const SizedBox(height: 16),
+          footerCta!,
+        ],
+      ];
+    } else if (contentOrder == WalletHeroContentOrder.decision) {
       columnChildren = [
         balanceBlock,
         if (insightBlock != null) ...[

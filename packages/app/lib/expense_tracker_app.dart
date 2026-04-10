@@ -6,6 +6,9 @@ export 'src/home/home_wallet_shell.dart'
 export 'src/home/ux_decision_mapper.dart';
 export 'src/home/wallet_hero_tone.dart';
 export 'src/app.dart';
+export 'src/navigation/app_routes.dart';
+export 'src/home/home_hero_insight_notifier.dart';
+export 'src/home/home_hero_resolved_insight.dart';
 export 'src/providers.dart';
 export 'src/providers/ui_behavior_provider.dart' show uiBehaviorStateProvider;
 export 'src/providers/budget_hero_depriority_provider.dart';

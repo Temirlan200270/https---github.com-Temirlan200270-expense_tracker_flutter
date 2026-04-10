@@ -11,6 +11,16 @@ import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfrx/pdfrx.dart';
 
+/// Ошибка REST Gemini (текст ответа для отладки).
+class GeminiApiException implements Exception {
+  GeminiApiException(this.statusCode, this.body);
+  final int statusCode;
+  final String body;
+
+  @override
+  String toString() => 'Gemini API $statusCode: $body';
+}
+
 /// Сервис для распознавания текста из PDF с использованием AI API (Google Gemini)
 class AiOcrService {
   final WidgetRef? ref;
@@ -67,29 +77,31 @@ class AiOcrService {
 
       print('📄 Начало AI OCR обработки. Страниц: $pageCount');
 
-      // Обрабатываем все страницы параллельно для ускорения
-      final pageResults = await Future.wait(
-        List.generate(
-            pageCount,
-            (i) => _processPageAsync(
-                  pages[i],
-                  i + 1,
-                  pageCount,
-                  finalApiKey,
-                  finalModel,
-                )),
-      );
-
-      // Собираем результаты
-      for (final result in pageResults) {
+      // Последовательно: REST v1beta ожидает camelCase в JSON; параллельный залёт
+      // всех страниц даёт 429/перегрузку и подвисание UI при рендере PNG.
+      for (var i = 0; i < pageCount; i++) {
+        if (i > 0) {
+          await Future<void>.delayed(const Duration(milliseconds: 450));
+        }
+        final result = await _processPageAsync(
+          pages[i],
+          i + 1,
+          pageCount,
+          finalApiKey,
+          finalModel,
+        );
         if (result != null && result.isNotEmpty) {
           fullText.writeln(result);
         }
+        // Даём кадр UI между тяжёлыми страницами
+        await Future<void>.delayed(Duration.zero);
       }
 
       final result = fullText.toString();
       print('📝 Итого распознано: ${result.length} символов');
       return result.isEmpty ? null : result;
+    } on GeminiApiException {
+      rethrow;
     } catch (e, stackTrace) {
       print('❌ Ошибка AI OCR: $e');
       print('Stack trace: $stackTrace');
@@ -188,6 +200,8 @@ class AiOcrService {
         print('⚠️ Страница $pageNumber: текст не распознан');
         return null;
       }
+    } on GeminiApiException {
+      rethrow;
     } catch (e) {
       print('❌ Ошибка обработки страницы $pageNumber: $e');
       return null;
@@ -204,29 +218,32 @@ class AiOcrService {
     int maxRetries = 3,
     Duration retryDelay = const Duration(seconds: 2),
   }) async {
-    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+    for (var attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         final result =
             await _recognizeImageWithGemini(imageFile, apiKey, model);
-        if (result != null) {
+        if (result != null && result.isNotEmpty) {
           return result;
         }
 
-        // Если получили 503, ждем и повторяем
         if (attempt < maxRetries) {
           print(
-              '⚠️ Попытка $attempt не удалась, повтор через ${retryDelay.inSeconds}с...');
-          await Future.delayed(
-              retryDelay * attempt); // Экспоненциальная задержка
-        }
-      } catch (e) {
-        if (attempt < maxRetries) {
-          print(
-              '⚠️ Ошибка на попытке $attempt: $e, повтор через ${retryDelay.inSeconds}с...');
+              '⚠️ Попытка $attempt: пустой ответ, повтор через ${retryDelay.inSeconds}с...');
           await Future.delayed(retryDelay * attempt);
-        } else {
+        }
+      } on GeminiApiException {
+        rethrow;
+      } catch (e) {
+        final msg = e.toString();
+        final retryable = msg.contains('503') ||
+            msg.contains('429') ||
+            msg.contains('overloaded');
+        if (!retryable || attempt >= maxRetries) {
           rethrow;
         }
+        print(
+            '⚠️ Ошибка на попытке $attempt: $e, повтор через ${retryDelay.inSeconds}с...');
+        await Future.delayed(retryDelay * attempt);
       }
     }
     return null;
@@ -244,6 +261,7 @@ class AiOcrService {
       final url = Uri.parse(
           '${AppConfig.geminiApiBaseUrl}/models/$model:generateContent?key=$apiKey');
 
+      // REST generateContent (v1beta): поля в camelCase, иначе 400 Invalid JSON / unknown name.
       final requestBody = {
         'contents': [
           {
@@ -253,14 +271,17 @@ class AiOcrService {
                     'Распознай весь текст с этого изображения выписки из банка Kaspi. Верни только текст, без дополнительных комментариев. Сохрани форматирование (даты, суммы, категории).'
               },
               {
-                'inline_data': {'mime_type': 'image/png', 'data': base64Image}
-              }
-            ]
-          }
+                'inlineData': {
+                  'mimeType': 'image/png',
+                  'data': base64Image,
+                },
+              },
+            ],
+          },
         ],
         'generationConfig': {
-          'maxOutputTokens': 8000, // Увеличено для больших страниц
-        }
+          'maxOutputTokens': 8000,
+        },
       };
 
       final response = await http.post(
@@ -282,18 +303,27 @@ class AiOcrService {
             return text;
           }
         }
-        return null;
-      } else if (response.statusCode == 503) {
-        // Специальная обработка для 503 - пробрасываем для retry
-        print('❌ Ошибка Gemini API: ${response.statusCode} - ${response.body}');
-        throw Exception('Gemini API overloaded (503)');
-      } else {
-        print('❌ Ошибка Gemini API: ${response.statusCode} - ${response.body}');
+        final feedback = jsonResponse['promptFeedback'];
+        final block = feedback is Map ? feedback['blockReason'] : null;
+        if (block != null) {
+          throw GeminiApiException(
+            200,
+            'Ответ без candidates (blockReason: $block). ${response.body}',
+          );
+        }
         return null;
       }
+      if (response.statusCode == 503 || response.statusCode == 429) {
+        print('❌ Ошибка Gemini API: ${response.statusCode} - ${response.body}');
+        throw Exception('Gemini API overloaded (${response.statusCode})');
+      }
+      print('❌ Ошибка Gemini API: ${response.statusCode} - ${response.body}');
+      throw GeminiApiException(response.statusCode, response.body);
+    } on GeminiApiException {
+      rethrow;
     } catch (e) {
       print('❌ Ошибка при вызове Gemini API: $e');
-      return null;
+      rethrow;
     }
   }
 }

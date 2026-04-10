@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:csv/csv.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_models/shared_models.dart';
 import 'package:uuid/uuid.dart';
@@ -12,6 +13,23 @@ import 'kaspi_ocr_service.dart';
 import 'ai_ocr_service.dart';
 
 class ImportService {
+  /// Сборка [Expense] из результата Kaspi-парсера (на UI-потоке, после [compute]).
+  List<Expense> _expensesFromParsed(List<ParsedTransaction> parsedTransactions) {
+    return parsedTransactions.map((tr) {
+      return Expense(
+        id: Uuid().v4(),
+        amount: Money(
+          amountInCents: (tr.amount * 100).round(),
+          currencyCode: 'KZT',
+        ),
+        type: tr.isIncome ? ExpenseType.income : ExpenseType.expense,
+        occurredAt: tr.date,
+        categoryId: null,
+        note: tr.title.isNotEmpty ? tr.title : tr.category,
+      );
+    }).toList();
+  }
+
   Future<List<Expense>> importFromJson(File file) async {
     try {
       final content = await file.readAsString();
@@ -402,28 +420,13 @@ class ImportService {
               : recognizedText;
           print('Первые 1000 символов: $preview');
 
-          // Используем Kaspi парсер для парсинга
-          final kaspiParser = KaspiStatementParser();
-          final parsedTransactions = kaspiParser.parse(recognizedText);
+          final parsedTransactions =
+              await compute(kaspiParseForIsolate, recognizedText);
 
           if (parsedTransactions.isNotEmpty) {
             print(
                 'Kaspi парсер нашел ${parsedTransactions.length} транзакций через AI OCR');
-            // Конвертируем ParsedTransaction в Expense
-            final expenses = parsedTransactions.map((tr) {
-              return Expense(
-                id: Uuid().v4(),
-                amount: Money(
-                  amountInCents: (tr.amount * 100).round(),
-                  currencyCode: 'KZT',
-                ),
-                type: tr.isIncome ? ExpenseType.income : ExpenseType.expense,
-                occurredAt: tr.date,
-                categoryId: null,
-                note: tr.title.isNotEmpty ? tr.title : tr.category,
-              );
-            }).toList();
-
+            final expenses = _expensesFromParsed(parsedTransactions);
             print('Успешно распарсено записей: ${expenses.length}');
             return expenses;
           } else {
@@ -435,6 +438,10 @@ class ImportService {
         } else {
           print('⚠️ AI OCR не смог распознать текст');
         }
+      } on GeminiApiException catch (e) {
+        throw FormatException(
+          'Ошибка Gemini (${e.statusCode}). Проверьте API-ключ и название модели в настройках.',
+        );
       } catch (e, stackTrace) {
         print('❌ Ошибка AI OCR: $e');
         print('Stack trace: $stackTrace');
@@ -455,27 +462,12 @@ class ImportService {
               : recognizedText;
           print('Первые 1000 символов: $preview');
 
-          // Используем Kaspi парсер для парсинга
-          final kaspiParser = KaspiStatementParser();
-          final parsedTransactions = kaspiParser.parse(recognizedText);
+          final parsedTransactions =
+              await compute(kaspiParseForIsolate, recognizedText);
 
           if (parsedTransactions.isNotEmpty) {
             print('Kaspi парсер нашел ${parsedTransactions.length} транзакций');
-            // Конвертируем ParsedTransaction в Expense
-            final expenses = parsedTransactions.map((tr) {
-              return Expense(
-                id: Uuid().v4(),
-                amount: Money(
-                  amountInCents: (tr.amount * 100).round(),
-                  currencyCode: 'KZT',
-                ),
-                type: tr.isIncome ? ExpenseType.income : ExpenseType.expense,
-                occurredAt: tr.date,
-                categoryId: null,
-                note: tr.title.isNotEmpty ? tr.title : tr.category,
-              );
-            }).toList();
-
+            final expenses = _expensesFromParsed(parsedTransactions);
             print('Успешно распарсено записей: ${expenses.length}');
             return expenses;
           } else {
@@ -900,6 +892,8 @@ class ImportService {
       final expenses = _parsePdfLines(dataLines);
       print('Успешно распарсено записей: ${expenses.length}');
       return expenses;
+    } on FormatException {
+      rethrow;
     } catch (e, stackTrace) {
       print('ОШИБКА ПАРСИНГА PDF: $e');
       print('Stack trace: $stackTrace');

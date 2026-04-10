@@ -89,15 +89,16 @@ class _ImportPageState extends ConsumerState<ImportPage> {
   }
 
   Future<void> _importCsv(BuildContext context) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['csv'],
+    );
+
+    if (result == null || result.files.single.path == null) return;
+
     setState(() => _isImporting = true);
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['csv'],
-      );
-
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
+      final file = File(result.files.single.path!);
         final expenses = await _importService.importFromCsv(file);
         final errors = _importService.validateImportData(expenses);
 
@@ -126,7 +127,6 @@ class _ImportPageState extends ConsumerState<ImportPage> {
         } else {
           await _openImportReview(context, expenses);
         }
-      }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -139,17 +139,17 @@ class _ImportPageState extends ConsumerState<ImportPage> {
   }
 
   Future<void> _importJson(BuildContext context) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+    );
+
+    if (result == null || result.files.single.path == null) return;
+
     setState(() => _isImporting = true);
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-      );
-
-      if (result != null && result.files.single.path != null) {
-        final filePath = result.files.single.path;
-        if (filePath == null) return;
-        final file = File(filePath);
+      final filePath = result.files.single.path!;
+      final file = File(filePath);
         final expenses = await _importService.importFromJson(file);
         final errors = _importService.validateImportData(expenses);
 
@@ -178,7 +178,6 @@ class _ImportPageState extends ConsumerState<ImportPage> {
         } else {
           await _openImportReview(context, expenses);
         }
-      }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -191,17 +190,16 @@ class _ImportPageState extends ConsumerState<ImportPage> {
   }
 
   Future<void> _importPdf(BuildContext context) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+
+    if (result == null || result.files.single.path == null) return;
+
     setState(() => _isImporting = true);
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-      );
-
-      if (result != null && result.files.single.path != null) {
-        final filePath = result.files.single.path;
-        if (filePath == null) return;
-        final file = File(filePath);
+      final file = File(result.files.single.path!);
         // Получаем API ключ и модель из провайдеров
         final geminiApiKey = ref.read(geminiApiKeyProvider);
         final geminiModel = ref.read(geminiModelProvider);
@@ -273,6 +271,11 @@ class _ImportPageState extends ConsumerState<ImportPage> {
         } else {
           await _openImportReview(context, expenses);
         }
+    } on FormatException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
       }
     } catch (e) {
       if (context.mounted) {

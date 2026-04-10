@@ -42,6 +42,27 @@
   "onboarding_title": "Welcome",
   "onboarding_sub": "Track expenses, visualize your money, and keep things simple.",
   "home": {
+    "cta_row": {
+      "add_expense": "Add expense",
+      "add_income": "Add income",
+      "budgets": "Budgets"
+    },
+    "cta_grid": {
+      "expense": "Expense",
+      "income": "Income",
+      "budget": "Budget",
+      "analytics": "Insights"
+    },
+    "advice": {
+      "title": "Financial tip"
+    },
+    "nav": {
+      "home": "Home",
+      "operations": "Activity",
+      "add": "New",
+      "budget": "Budget",
+      "analytics": "Insights"
+    },
     "title": "Home",
     "month_stats": "Monthly Statistics",
     "recent_transactions": "Recent Transactions",
@@ -104,7 +125,7 @@
       "yesterday": "Yesterday",
       "income": "Income",
       "expense": "Expense",
-      "recent_upper": "RECENT",
+      "recent_upper": "Recent activity",
       "all_link": "All →"
     },
     "decision": {
