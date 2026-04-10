@@ -14,13 +14,16 @@ import 'ai_ocr_service.dart';
 
 class ImportService {
   /// Сборка [Expense] из результата Kaspi-парсера (на UI-потоке, после [compute]).
-  List<Expense> _expensesFromParsed(List<ParsedTransaction> parsedTransactions) {
+  List<Expense> _expensesFromParsed(
+    List<ParsedTransaction> parsedTransactions, {
+    required String currencyCode,
+  }) {
     return parsedTransactions.map((tr) {
       return Expense(
         id: Uuid().v4(),
         amount: Money(
           amountInCents: (tr.amount * 100).round(),
-          currencyCode: 'KZT',
+          currencyCode: currencyCode,
         ),
         type: tr.isIncome ? ExpenseType.income : ExpenseType.expense,
         occurredAt: tr.date,
@@ -158,9 +161,6 @@ class ImportService {
           final item = expensesList[i];
           if (item is! Map<String, dynamic>) {
             errorCount++;
-            if (errorCount <= 5) {
-              print('Ошибка: элемент $i не является объектом');
-            }
             continue;
           }
           
@@ -168,9 +168,6 @@ class ImportService {
           expenses.add(expense);
         } catch (e) {
           errorCount++;
-          if (errorCount <= 5) {
-            print('Ошибка парсинга транзакции $i: $e');
-          }
           continue;
         }
       }
@@ -376,11 +373,7 @@ class ImportService {
             ),
           );
         } catch (e) {
-          // Логируем ошибки для первых 5 строк
-          if (errorCount < 5) {
-            print('Ошибка парсинга CSV строки ${i + 2}: $e');
-            print('  Данные: ${row.join(', ')}');
-          }
+          // Пропускаем строки с ошибками парсинга
           errorCount++;
           continue;
         }
@@ -400,108 +393,58 @@ class ImportService {
   }
 
   Future<List<Expense>> importFromPdf(File file,
-      {String? geminiApiKey, String? geminiModel, WidgetRef? ref}) async {
+      {String? geminiApiKey, String? geminiModel, WidgetRef? ref,
+       String currencyCode = 'KZT'}) async {
     try {
-      print('=== НАЧАЛО ИМПОРТА PDF ===');
-      print(
-          '📋 Переданные параметры: apiKey=${geminiApiKey != null && geminiApiKey.isNotEmpty ? '${geminiApiKey.substring(0, 4)}...' : 'null'}, model=$geminiModel');
-
-      // Метод 1: Пробуем AI OCR (Google Gemini) - самый надежный способ
+      // Метод 1: AI OCR (Google Gemini) — самый надёжный способ
       try {
-        print('=== ПОПЫТКА AI OCR РАСПОЗНАВАНИЯ (Gemini) ===');
         final aiOcrService = AiOcrService(ref: ref);
         final recognizedText = await aiOcrService.recognizePdf(file,
             apiKey: geminiApiKey, model: geminiModel);
 
         if (recognizedText != null && recognizedText.isNotEmpty) {
-          print('✅ AI OCR распознал текст: ${recognizedText.length} символов');
-          final preview = recognizedText.length > 1000
-              ? recognizedText.substring(0, 1000)
-              : recognizedText;
-          print('Первые 1000 символов: $preview');
-
           final parsedTransactions =
               await compute(kaspiParseForIsolate, recognizedText);
 
           if (parsedTransactions.isNotEmpty) {
-            print(
-                'Kaspi парсер нашел ${parsedTransactions.length} транзакций через AI OCR');
-            final expenses = _expensesFromParsed(parsedTransactions);
-            print('Успешно распарсено записей: ${expenses.length}');
-            return expenses;
-          } else {
-            print(
-                '⚠️ AI OCR распознал текст, но Kaspi парсер не нашел транзакций');
-            print('Полный распознанный текст для отладки:');
-            print(recognizedText);
+            return _expensesFromParsed(parsedTransactions, currencyCode: currencyCode);
           }
-        } else {
-          print('⚠️ AI OCR не смог распознать текст');
         }
       } on GeminiApiException catch (e) {
         throw FormatException(
           'Ошибка Gemini (${e.statusCode}). Проверьте API-ключ и название модели в настройках.',
         );
-      } catch (e, stackTrace) {
-        print('❌ Ошибка AI OCR: $e');
-        print('Stack trace: $stackTrace');
-        print('Пробуем альтернативный метод (ML Kit OCR)...');
+      } catch (_) {
+        // Gemini failed — fall through to ML Kit
       }
 
-      // Метод 2: Пробуем OCR (Google ML Kit) - резервный способ
+      // Метод 2: Пробуем OCR (Google ML Kit) — резервный способ
       try {
-        print('=== ПОПЫТКА ML KIT OCR РАСПОЗНАВАНИЯ ===');
         final ocrService = KaspiOcrService();
         final recognizedText = await ocrService.recognizePdf(file);
         ocrService.dispose();
 
         if (recognizedText != null && recognizedText.isNotEmpty) {
-          print('✅ OCR распознал текст: ${recognizedText.length} символов');
-          final preview = recognizedText.length > 1000
-              ? recognizedText.substring(0, 1000)
-              : recognizedText;
-          print('Первые 1000 символов: $preview');
-
           final parsedTransactions =
               await compute(kaspiParseForIsolate, recognizedText);
 
           if (parsedTransactions.isNotEmpty) {
-            print('Kaspi парсер нашел ${parsedTransactions.length} транзакций');
-            final expenses = _expensesFromParsed(parsedTransactions);
-            print('Успешно распарсено записей: ${expenses.length}');
-            return expenses;
-          } else {
-            print(
-                '⚠️ OCR распознал текст, но Kaspi парсер не нашел транзакций');
-            print('Полный распознанный текст для отладки:');
-            print(recognizedText);
+            return _expensesFromParsed(parsedTransactions, currencyCode: currencyCode);
           }
-        } else {
-          print('⚠️ OCR не смог распознать текст');
         }
-      } catch (e, stackTrace) {
-        print('❌ Ошибка OCR: $e');
-        print('Stack trace: $stackTrace');
-        print('Пробуем альтернативный метод...');
+      } catch (_) {
+        // ML Kit failed — fall through to binary extraction
       }
 
-      // Метод 2: Пробуем извлечь текст из бинарных данных (старый метод)
+      // Метод 3: Бинарный поиск паттернов Kaspi в разных кодировках
       final bytes = await file.readAsBytes();
 
-      // Метод 1: Прямой поиск паттернов Kaspi в разных кодировках
-      print('=== ПОИСК ПАТТЕРНОВ KASPI ===');
-
-      // Пробуем разные варианты кодировки текста
-      final encodings = [
-        utf8,
-        latin1,
-      ];
+      final encodings = [utf8, latin1];
 
       for (final encoding in encodings) {
         try {
           final text = encoding.decode(bytes);
 
-          // Более гибкий паттерн - учитываем разные варианты пробелов и символов
           final kaspiPattern = RegExp(
             r'(\d{2}\.\d{2}\.\d{2})\s*([-+])\s*([\d\s]+[,\.]\d{2})\s*[₸TтТ]\s*(Покупка|Пополнение|Перевод|Снятие|Разное)([^\n\r]*)',
             multiLine: true,
@@ -511,9 +454,6 @@ class ImportService {
           final kaspiMatches = kaspiPattern.allMatches(text);
 
           if (kaspiMatches.isNotEmpty) {
-            print(
-                'Найдено совпадений паттерна Kaspi в кодировке ${encoding.name}: ${kaspiMatches.length}');
-
             final textBuffer = StringBuffer();
             for (final match in kaspiMatches) {
               final fullMatch = match.group(0);
@@ -523,61 +463,22 @@ class ImportService {
             }
 
             final extractedText = textBuffer.toString();
-            print('Извлечено текста: ${extractedText.length} символов');
-
             if (extractedText.isNotEmpty) {
-              final preview = extractedText.length > 500
-                  ? extractedText.substring(0, 500)
-                  : extractedText;
-              print('Первые 500 символов: $preview');
-
-              // Используем Kaspi парсер для парсинга
               final kaspiParser = KaspiStatementParser();
               final parsedTransactions = kaspiParser.parse(extractedText);
 
               if (parsedTransactions.isNotEmpty) {
-                print(
-                    'Kaspi парсер нашел ${parsedTransactions.length} транзакций');
-                // Конвертируем ParsedTransaction в Expense
-                final expenses = parsedTransactions.map((tr) {
-                  return Expense(
-                    id: Uuid().v4(),
-                    amount: Money(
-                      amountInCents: (tr.amount * 100).round(),
-                      currencyCode: 'KZT',
-                    ),
-                    type:
-                        tr.isIncome ? ExpenseType.income : ExpenseType.expense,
-                    occurredAt: tr.date,
-                    categoryId: null,
-                    note: tr.title.isNotEmpty ? tr.title : tr.category,
-                  );
-                }).toList();
-
-                print('Успешно распарсено записей: ${expenses.length}');
-                return expenses;
+                return _expensesFromParsed(parsedTransactions, currencyCode: currencyCode);
               }
             }
           }
-        } catch (e) {
-          // Пробуем следующую кодировку
+        } catch (_) {
           continue;
         }
       }
 
-      print('Паттерн Kaspi не найден ни в одной кодировке');
-
-      // Сначала пытаемся декомпрессировать сжатые потоки
+      // Метод 4: Декомпрессия сжатых PDF-потоков
       final decompressedText = await _extractTextFromCompressedPdf(bytes);
-
-      print('=== РЕЗУЛЬТАТ ДЕКОМПРЕССИИ ===');
-      print('Декомпрессировано символов: ${decompressedText.length}');
-      if (decompressedText.isNotEmpty) {
-        final preview = decompressedText.length > 500
-            ? decompressedText.substring(0, 500)
-            : decompressedText;
-        print('Первые 500 символов декомпрессированного текста: $preview');
-      }
 
       // Если декомпрессия не дала результатов, пробуем обычный метод
       final text = decompressedText.isNotEmpty
@@ -790,37 +691,17 @@ class ImportService {
 
       final allText = extractedText.toString();
 
-      // Отладка для диагностики
-      print('=== ОТЛАДКА PDF ИМПОРТА ===');
-      print('Извлечено символов: ${allText.length}');
-      if (allText.isNotEmpty) {
-        final preview =
-            allText.length > 1000 ? allText.substring(0, 1000) : allText;
-        print('Первые 1000 символов: $preview');
-      }
-
       if (allText.trim().isEmpty) {
-        print('ОШИБКА: Не удалось извлечь текст из PDF');
         throw Exception(
             'Не удалось извлечь текст из PDF. Файл может быть поврежден или иметь нестандартный формат. Попробуйте экспортировать данные в CSV или JSON формат.');
       }
 
-      // Разбиваем на строки и парсим
       final lines = allText
           .split(RegExp(r'[\n\r]+'))
           .where((l) => l.trim().isNotEmpty)
           .toList();
 
-      print('Извлечено строк: ${lines.length}');
-      if (lines.isNotEmpty) {
-        print('Первые 20 строк:');
-        for (int i = 0; i < lines.length && i < 20; i++) {
-          print('[$i] ${lines[i]}');
-        }
-      }
-
       if (lines.isEmpty) {
-        print('ОШИБКА: Нет строк для парсинга');
         throw Exception(
             'Не удалось извлечь данные из PDF. Убедитесь, что файл содержит таблицу с данными.');
       }
@@ -839,7 +720,6 @@ class ImportService {
         }
       }
 
-      // Парсим строки
       final dataLines = headerIndex >= 0
           ? lines.skip(headerIndex + 1).where((line) {
               final trimmed = line.trim().toLowerCase();
@@ -855,48 +735,20 @@ class ImportService {
             }).toList()
           : lines;
 
-      print('Строк для парсинга после фильтрации: ${dataLines.length}');
-
-      // Пробуем использовать KaspiStatementParser для парсинга
-      // Используем весь извлеченный текст, а не только отфильтрованные строки
+      // Пробуем Kaspi парсер на полном тексте
       final fullText = allText.isNotEmpty ? allText : dataLines.join('\n');
-      print(
-          'Пробуем парсить с Kaspi парсером, размер текста: ${fullText.length}');
       final kaspiParser = KaspiStatementParser();
       final parsedTransactions = kaspiParser.parse(fullText);
 
       if (parsedTransactions.isNotEmpty) {
-        print('Kaspi парсер нашел ${parsedTransactions.length} транзакций');
-        // Конвертируем ParsedTransaction в Expense
-        final expenses = parsedTransactions.map((tr) {
-          return Expense(
-            id: Uuid().v4(),
-            amount: Money(
-              amountInCents: (tr.amount * 100).round(),
-              currencyCode: 'KZT',
-            ),
-            type: tr.isIncome ? ExpenseType.income : ExpenseType.expense,
-            occurredAt: tr.date,
-            categoryId: null, // Категорию можно будет сопоставить позже
-            note: tr.title.isNotEmpty ? tr.title : tr.category,
-          );
-        }).toList();
-
-        print('Успешно распарсено записей: ${expenses.length}');
-        return expenses;
+        return _expensesFromParsed(parsedTransactions, currencyCode: currencyCode);
       }
 
-      // Если Kaspi парсер не сработал, используем старый метод
-      print(
-          'Kaspi парсер не нашел транзакций, используем старый метод парсинга');
-      final expenses = _parsePdfLines(dataLines);
-      print('Успешно распарсено записей: ${expenses.length}');
-      return expenses;
+      // Если Kaspi парсер не сработал, используем универсальный построчный парсинг
+      return _parsePdfLines(dataLines, currencyCode: currencyCode);
     } on FormatException {
       rethrow;
-    } catch (e, stackTrace) {
-      print('ОШИБКА ПАРСИНГА PDF: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
       throw Exception(
           'Ошибка чтения PDF: $e. Убедитесь, что файл был экспортирован из этого приложения и содержит таблицу с данными.');
     }
@@ -906,21 +758,15 @@ class ImportService {
     final extractedText = StringBuffer();
     final seenTexts = <String>{};
 
-    // Метод: Декомпрессируем потоки и ищем PDF операторы текста
-    // Используем байты напрямую для поиска потоков
     final text = utf8.decode(bytes, allowMalformed: true);
     final streamPattern = RegExp(r'stream\s+(.*?)\s+endstream', dotAll: true);
     final filterPattern =
         RegExp(r'/Filter\s*/\s*FlateDecode', caseSensitive: false);
     final streamMatches = streamPattern.allMatches(text);
 
-    print('=== ДЕКОМПРЕССИЯ PDF ===');
-    print('Найдено потоков: ${streamMatches.length}');
-
     int processedStreams = 0;
-    int decompressedStreams = 0;
-    const maxStreams = 20; // Увеличиваем лимит
-    const maxStreamSize = 2 * 1024 * 1024; // 2MB максимум на поток
+    const maxStreams = 20;
+    const maxStreamSize = 2 * 1024 * 1024;
 
     for (final match in streamMatches) {
       if (processedStreams >= maxStreams) break;
@@ -930,27 +776,19 @@ class ImportService {
           (streamStart - 500).clamp(0, streamStart), streamStart);
 
       if (filterPattern.hasMatch(beforeStream)) {
-        decompressedStreams++;
-        print('Найден сжатый поток #$decompressedStreams');
         try {
           final streamStart = match.start;
           final streamEnd = match.end;
           
-          // Находим позицию начала данных потока (после "stream\n")
           final streamDataStart = text.indexOf('stream', streamStart);
           if (streamDataStart == -1) continue;
           
-          // Находим позицию конца данных потока (перед "\nendstream")
           final streamDataEnd = text.lastIndexOf('endstream', streamEnd);
           if (streamDataEnd == -1) continue;
           
-          // Извлекаем байты потока напрямую из исходных байтов
-          // Ищем позиции в байтах, соответствующие позициям в тексте
-          final streamTextStart = streamDataStart + 6; // "stream" = 6 символов
+          final streamTextStart = streamDataStart + 6;
           final streamTextEnd = streamDataEnd;
           
-          // Конвертируем позиции в тексте в позиции в байтах
-          // Это приблизительно, но должно работать для большинства PDF
           final streamBytesStart = (streamTextStart * bytes.length / text.length).round();
           final streamBytesEnd = (streamTextEnd * bytes.length / text.length).round();
           
@@ -959,7 +797,6 @@ class ImportService {
             continue;
           }
           
-          // Извлекаем байты потока
           final streamBytes = bytes.sublist(
             streamBytesStart.clamp(0, bytes.length),
             streamBytesEnd.clamp(0, bytes.length),
@@ -967,133 +804,80 @@ class ImportService {
           
           if (streamBytes.isEmpty || streamBytes.length > maxStreamSize) continue;
 
-          // Пытаемся декомпрессировать
           try {
             final decompressed = Inflate(streamBytes).getBytes();
-            if (decompressed.length > 10 * 1024 * 1024) {
-              print('Поток #$decompressedStreams слишком большой, пропускаем');
-              continue; // 10MB максимум
-            }
-
-            print(
-                'Поток #$decompressedStreams декомпрессирован, размер: ${decompressed.length} байт');
+            if (decompressed.length > 10 * 1024 * 1024) continue;
 
             final decompressedText = String.fromCharCodes(decompressed);
 
-            // Ищем читаемые символы в декомпрессированном тексте
             final readableChars = <int>[];
             for (final byte in decompressed) {
               if ((byte >= 32 && byte <= 126) ||
-                  byte == 9 ||
-                  byte == 10 ||
-                  byte == 13) {
+                  byte == 9 || byte == 10 || byte == 13) {
                 readableChars.add(byte);
               }
             }
 
             if (readableChars.length > 10) {
               final readableText = String.fromCharCodes(readableChars);
-              final sample = readableText.length > 500
-                  ? readableText.substring(0, 500)
-                  : readableText;
-              print(
-                  'Читаемый текст из потока #$decompressedStreams (${readableChars.length} символов, первые 500): $sample');
-
-              // Добавляем читаемый текст в результат (для Kaspi парсера)
               if (readableText.length > 20 &&
                   !seenTexts.contains(readableText)) {
                 seenTexts.add(readableText);
                 extractedText.writeln(readableText);
               }
-
-              // Проверяем наличие PDF операторов
-              if (readableText.contains('Tj') ||
-                  readableText.contains('TJ') ||
-                  readableText.contains('(')) {
-                print('В потоке #$decompressedStreams найдены PDF операторы!');
-              }
-            } else {
-              print(
-                  'В потоке #$decompressedStreams нет читаемого текста (только бинарные данные, ${decompressed.length} байт)');
             }
 
-            // Также пробуем искать текст в шестнадцатеричном формате <hex>
+            // Hex text objects
             final hexTextPattern = RegExp(r'<([0-9A-Fa-f]+)>');
             final hexMatches = hexTextPattern.allMatches(decompressedText);
             if (hexMatches.isNotEmpty) {
-              print(
-                  'В потоке #$decompressedStreams найдено ${hexMatches.length} шестнадцатеричных текстовых объектов');
               int hexCount = 0;
               for (final hexMatch in hexMatches) {
-                if (hexCount++ >= 3) break; // Показываем только первые 3
+                if (hexCount++ >= 3) break;
                 final hexStr = hexMatch.group(1);
                 if (hexStr != null && hexStr.isNotEmpty) {
                   try {
-                    // Декодируем hex в текст
-                    final bytes = <int>[];
+                    final hexBytes = <int>[];
                     for (int i = 0; i < hexStr.length; i += 2) {
                       if (i + 1 < hexStr.length) {
-                        final byteStr = hexStr.substring(i, i + 2);
-                        final byte = int.parse(byteStr, radix: 16);
-                        bytes.add(byte);
+                        hexBytes.add(int.parse(hexStr.substring(i, i + 2), radix: 16));
                       }
                     }
-                    if (bytes.isNotEmpty) {
-                      final decodedText = String.fromCharCodes(bytes);
-                      print('  Hex текст #$hexCount: $decodedText');
+                    if (hexBytes.isNotEmpty) {
+                      final decodedText = String.fromCharCodes(hexBytes);
                       if (_isValidText(decodedText) &&
                           !seenTexts.contains(decodedText)) {
                         seenTexts.add(decodedText);
                         extractedText.writeln(decodedText);
                       }
                     }
-                  } catch (e) {
-                    // Игнорируем ошибки декодирования hex
-                  }
+                  } catch (_) {}
                 }
               }
             }
 
-            // Ищем PDF операторы текста:
-            // 1. (текст) Tj - Show text
-            // 2. [(текст1) (текст2) ...] TJ - Show text with positioning
-            // 3. (текст) ' - Move to next line and show text
-            // 4. (текст) " - Set spacing and show text
-
-            // Паттерн 1: (текст) Tj
+            // PDF text operators: (text) Tj
             final tjPattern = RegExp(r'\(([^)]+)\)\s+Tj');
-            final tjMatches = tjPattern.allMatches(decompressedText);
-            print(
-                'Поток #$decompressedStreams: найдено ${tjMatches.length} совпадений для паттерна (текст) Tj');
-            for (final m in tjMatches) {
+            for (final m in tjPattern.allMatches(decompressedText)) {
               final textPart = m.group(1);
               if (textPart != null && textPart.trim().isNotEmpty) {
-                var trimmed = _decodePdfText(textPart);
-                print('  Извлечен текст из Tj: "$trimmed"');
+                final trimmed = _decodePdfText(textPart);
                 if (_isValidText(trimmed) && !seenTexts.contains(trimmed)) {
                   seenTexts.add(trimmed);
                   extractedText.writeln(trimmed);
-                  print('  Текст добавлен в результат');
-                } else {
-                  print(
-                      '  Текст отфильтрован: isValid=${_isValidText(trimmed)}, seen=${seenTexts.contains(trimmed)}');
                 }
               }
             }
 
-            // Паттерн 2: [(текст1) (текст2) ...] TJ
+            // [(text1) (text2) ...] TJ
             final tjArrayPattern = RegExp(r'\[(.*?)\]\s*TJ', dotAll: true);
-            final tjArrayMatches = tjArrayPattern.allMatches(decompressedText);
-            for (final m in tjArrayMatches) {
+            for (final m in tjArrayPattern.allMatches(decompressedText)) {
               final arrayContent = m.group(1);
               if (arrayContent != null) {
-                // Извлекаем все текстовые части из массива
-                final textInArray =
-                    RegExp(r'\(([^)]+)\)').allMatches(arrayContent);
-                for (final textMatch in textInArray) {
+                for (final textMatch in RegExp(r'\(([^)]+)\)').allMatches(arrayContent)) {
                   final textPart = textMatch.group(1);
                   if (textPart != null && textPart.trim().isNotEmpty) {
-                    var trimmed = _decodePdfText(textPart);
+                    final trimmed = _decodePdfText(textPart);
                     if (_isValidText(trimmed) && !seenTexts.contains(trimmed)) {
                       seenTexts.add(trimmed);
                       extractedText.writeln(trimmed);
@@ -1103,13 +887,12 @@ class ImportService {
               }
             }
 
-            // Паттерн 3: (текст) ' или (текст) "
+            // (text) ' or (text) "
             final quotePattern = RegExp(r'\(([^)]+)\)\s*[' '"]');
-            final quoteMatches = quotePattern.allMatches(decompressedText);
-            for (final m in quoteMatches) {
+            for (final m in quotePattern.allMatches(decompressedText)) {
               final textPart = m.group(1);
               if (textPart != null && textPart.trim().isNotEmpty) {
-                var trimmed = _decodePdfText(textPart);
+                final trimmed = _decodePdfText(textPart);
                 if (_isValidText(trimmed) && !seenTexts.contains(trimmed)) {
                   seenTexts.add(trimmed);
                   extractedText.writeln(trimmed);
@@ -1117,14 +900,12 @@ class ImportService {
               }
             }
 
-            // Паттерн 4: Просто текст в скобках (может быть без оператора)
+            // Simple text in parentheses
             final simpleTextPattern = RegExp(r'\(([^)]+)\)');
-            final simpleMatches =
-                simpleTextPattern.allMatches(decompressedText);
-            for (final m in simpleMatches) {
+            for (final m in simpleTextPattern.allMatches(decompressedText)) {
               final textPart = m.group(1);
               if (textPart != null && textPart.trim().length > 1) {
-                var trimmed = _decodePdfText(textPart);
+                final trimmed = _decodePdfText(textPart);
                 if (_isValidText(trimmed) && !seenTexts.contains(trimmed)) {
                   seenTexts.add(trimmed);
                   extractedText.writeln(trimmed);
@@ -1133,28 +914,12 @@ class ImportService {
             }
 
             processedStreams++;
-            print(
-                'Поток #$processedStreams обработан, извлечено текстовых фрагментов: ${seenTexts.length}');
-          } catch (e) {
-            // Игнорируем ошибки декомпрессии
-            print('Ошибка декомпрессии потока #$decompressedStreams: $e');
-          }
-        } catch (e) {
-          // Игнорируем ошибки
-          print('Ошибка обработки потока: $e');
-        }
+          } catch (_) {}
+        } catch (_) {}
       }
     }
 
-    print('Итого декомпрессировано потоков: $decompressedStreams');
-    print('Итого обработано потоков: $processedStreams');
-    print(
-        'Итого извлечено уникальных текстовых фрагментов: ${seenTexts.length}');
-
-    final result = extractedText.toString();
-    print('Итоговый размер извлеченного текста: ${result.length} символов');
-
-    return result;
+    return extractedText.toString();
   }
 
   String _decodePdfText(String text) {
@@ -1195,7 +960,7 @@ class ImportService {
     return true;
   }
 
-  List<Expense> _parsePdfLines(List<String> lines) {
+  List<Expense> _parsePdfLines(List<String> lines, {String currencyCode = 'KZT'}) {
     final expenses = <Expense>[];
     final dateFormats = [
       DateFormat('dd.MM.yy'), // 02.12.25
@@ -1208,9 +973,6 @@ class ImportService {
       DateFormat('dd-MM-yyyy'),
       DateFormat('yyyy.MM.dd'),
     ];
-
-    int successCount = 0;
-    int failCount = 0;
 
     for (final line in lines) {
       if (line.trim().isEmpty) continue;
@@ -1296,10 +1058,7 @@ class ImportService {
 
         if (date == null) continue;
 
-        // Пытаемся найти сумму (число с возможной валютой)
-        // Форматы: "$-1000,00 \text { T }$", "- 900,00 T", "$+2000,00 \boldsymbol{T}$"
         double? amount;
-        String currencyCode = 'KZT';
         int amountIndex = -1;
 
         // Улучшенный regex для сумм
@@ -1441,7 +1200,7 @@ class ImportService {
             id: Uuid().v4(),
             amount: Money(
               amountInCents: (amount * 100).round(),
-              currencyCode: currencyCode.length == 3 ? currencyCode : 'KZT',
+              currencyCode: currencyCode,
             ),
             type: type,
             occurredAt: date,
@@ -1449,22 +1208,11 @@ class ImportService {
             note: note?.isEmpty ?? true ? null : note,
           ),
         );
-        successCount++;
-      } catch (e) {
-        // Пропускаем некорректные строки
-        failCount++;
-        if (failCount <= 5) {
-          // Показываем первые 5 ошибок для диагностики
-          print(
-              'Ошибка парсинга строки [$failCount]: ${line.substring(0, line.length > 100 ? 100 : line.length)}');
-          print('  Ошибка: $e');
-        }
+      } catch (_) {
         continue;
       }
     }
 
-    print(
-        'Парсинг завершен: успешно $successCount, ошибок $failCount из ${lines.length} строк');
     return expenses;
   }
 

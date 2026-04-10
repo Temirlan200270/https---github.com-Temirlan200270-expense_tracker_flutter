@@ -39,6 +39,7 @@ dependencies:
     path: ../sync_api
   ui_components:
     path: ../ui_components
+  package_info_plus: ^9.0.1
 
 dev_dependencies:
   flutter_test:

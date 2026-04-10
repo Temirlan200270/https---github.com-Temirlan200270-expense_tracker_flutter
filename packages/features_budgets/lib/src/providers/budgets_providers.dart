@@ -21,8 +21,12 @@ final budgetsStreamProvider = StreamProvider.autoDispose<List<Budget>>((ref) {
 final budgetsWithSpendingProvider =
     FutureProvider.autoDispose<List<BudgetWithSpending>>((ref) async {
   final budgetsRepo = ref.watch(budgetsRepositoryProvider);
-  final expenses = await ref.watch(expensesStreamProvider.future);
-  final categories = await ref.watch(categoriesStreamProvider.future);
+  final expensesAsync = ref.watch(expensesStreamProvider);
+  final List<Expense> expenses =
+      expensesAsync.valueOrNull ?? <Expense>[];
+  final categoriesAsync = ref.watch(categoriesStreamProvider);
+  final List<Category> categories =
+      categoriesAsync.valueOrNull ?? <Category>[];
 
   final budgets = await budgetsRepo.fetchBudgets();
 

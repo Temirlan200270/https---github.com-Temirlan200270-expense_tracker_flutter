@@ -8,35 +8,31 @@ import 'analytics_models.dart';
 import 'analytics_period_provider.dart';
 import 'smart_insights.dart';
 
-// Провайдер для отфильтрованных расходов
+/// Отфильтрованные по периоду аналитики операции.
+///
+/// Слушает [expensesStreamProvider] через [AsyncValue], а не [StreamProvider.future]:
+/// иначе после первого эмита стрима `future` уже завершён и провайдеры не
+/// пересчитываются при новых данных — экран «Анализ» остаётся пустым/устаревшим.
 final filteredExpensesProvider =
-    FutureProvider.autoDispose<List<Expense>>((ref) async {
+    Provider.autoDispose<List<Expense>>((ref) {
   final periodState = ref.watch(analyticsPeriodProvider);
-  final expenses = await ref.watch(expensesStreamProvider.future);
+  final expensesAsync = ref.watch(expensesStreamProvider);
+  final expenses = expensesAsync.valueOrNull ?? <Expense>[];
 
-  final from = periodState.fromDate;
-  final to = periodState.toDate;
+  final DateTime? from = periodState.fromDate;
+  final DateTime? to = periodState.toDate;
 
-  final filtered = expenses.where((expense) {
+  return expenses.where((Expense expense) {
     if (from != null && expense.occurredAt.isBefore(from)) return false;
     if (to != null && expense.occurredAt.isAfter(to)) return false;
     return true;
   }).toList();
-  
-  // Логируем для отладки (только если период не "все время")
-  if (from != null || to != null) {
-    print('📊 Фильтр аналитики: период ${from?.toString() ?? "начало"} - ${to?.toString() ?? "конец"}');
-    print('   Всего транзакций: ${expenses.length}');
-    print('   Отфильтровано: ${filtered.length}');
-  }
-  
-  return filtered;
 });
 
 // Провайдер для статистики за период
 final analyticsStatsProvider =
     FutureProvider.autoDispose<AnalyticsStats>((ref) async {
-  final expenses = await ref.watch(filteredExpensesProvider.future);
+  final List<Expense> expenses = ref.watch(filteredExpensesProvider);
   final defaultCurrency = ref.watch(defaultCurrencyProvider);
   final currencyService = ref.watch(currencyServiceProvider);
 
@@ -48,8 +44,9 @@ final analyticsStatsProvider =
 // Провайдер для данных по категориям
 final categoryStatsProvider =
     FutureProvider.autoDispose<List<CategoryStat>>((ref) async {
-  final expenses = await ref.watch(filteredExpensesProvider.future);
-  final categories = await ref.watch(categoriesStreamProvider.future);
+  final List<Expense> expenses = ref.watch(filteredExpensesProvider);
+  final categoriesAsync = ref.watch(categoriesStreamProvider);
+  final List<Category> categories = categoriesAsync.valueOrNull ?? <Category>[];
   final defaultCurrency = ref.watch(defaultCurrencyProvider);
   final currencyService = ref.watch(currencyServiceProvider);
 
@@ -61,7 +58,7 @@ final categoryStatsProvider =
 // Провайдер для данных по месяцам/дням (зависит от периода)
 final timeStatsProvider =
     FutureProvider.autoDispose<List<TimeStat>>((ref) async {
-  final expenses = await ref.watch(filteredExpensesProvider.future);
+  final List<Expense> expenses = ref.watch(filteredExpensesProvider);
   final periodState = ref.watch(analyticsPeriodProvider);
   final defaultCurrency = ref.watch(defaultCurrencyProvider);
   final currencyService = ref.watch(currencyServiceProvider);
@@ -82,7 +79,7 @@ final timeStatsProvider =
 final comparisonStatsProvider =
     FutureProvider.autoDispose<ComparisonStats?>((ref) async {
   final periodState = ref.watch(analyticsPeriodProvider);
-  final currentExpenses = await ref.watch(filteredExpensesProvider.future);
+  final List<Expense> currentExpenses = ref.watch(filteredExpensesProvider);
   final defaultCurrency = ref.watch(defaultCurrencyProvider);
   final currencyService = ref.watch(currencyServiceProvider);
 
@@ -97,7 +94,9 @@ final comparisonStatsProvider =
   final previousTo = from.subtract(const Duration(seconds: 1));
 
   // Получаем все расходы
-  final allExpenses = await ref.watch(expensesStreamProvider.future);
+  final expensesAsync = ref.watch(expensesStreamProvider);
+  final List<Expense> allExpenses =
+      expensesAsync.valueOrNull ?? <Expense>[];
 
   // Фильтруем предыдущий период
   final previousExpenses = allExpenses.where((expense) {
@@ -127,8 +126,10 @@ final comparisonStatsProvider =
 final smartInsightsProvider =
     FutureProvider.autoDispose<List<SmartInsight>>((ref) async {
   final periodState = ref.watch(analyticsPeriodProvider);
-  final currentExpenses = await ref.watch(filteredExpensesProvider.future);
-  final categories = await ref.watch(categoriesStreamProvider.future);
+  final List<Expense> currentExpenses = ref.watch(filteredExpensesProvider);
+  final categoriesAsync = ref.watch(categoriesStreamProvider);
+  final List<Category> categories =
+      categoriesAsync.valueOrNull ?? <Category>[];
   final defaultCurrency = ref.watch(defaultCurrencyProvider);
   final currencyService = ref.watch(currencyServiceProvider);
 
@@ -142,7 +143,9 @@ final smartInsightsProvider =
   final previousFrom = from.subtract(duration);
   final previousTo = from.subtract(const Duration(seconds: 1));
 
-  final allExpenses = await ref.watch(expensesStreamProvider.future);
+  final expensesAsync = ref.watch(expensesStreamProvider);
+  final List<Expense> allExpenses =
+      expensesAsync.valueOrNull ?? <Expense>[];
   final previousExpenses = allExpenses.where((expense) {
     return expense.occurredAt.isAfter(previousFrom) &&
         expense.occurredAt.isBefore(previousTo);
@@ -163,7 +166,7 @@ final smartInsightsProvider =
 final averageStatsProvider =
     FutureProvider.autoDispose<AverageStats?>((ref) async {
   final periodState = ref.watch(analyticsPeriodProvider);
-  final expenses = await ref.watch(filteredExpensesProvider.future);
+  final List<Expense> expenses = ref.watch(filteredExpensesProvider);
   final defaultCurrency = ref.watch(defaultCurrencyProvider);
   final currencyService = ref.watch(currencyServiceProvider);
 
@@ -184,7 +187,7 @@ final averageStatsProvider =
 // Провайдер для паттернов трат
 final spendingPatternsProvider =
     FutureProvider.autoDispose<SpendingPattern?>((ref) async {
-  final expenses = await ref.watch(filteredExpensesProvider.future);
+  final List<Expense> expenses = ref.watch(filteredExpensesProvider);
   final defaultCurrency = ref.watch(defaultCurrencyProvider);
   final currencyService = ref.watch(currencyServiceProvider);
 
@@ -200,7 +203,7 @@ final spendingPatternsProvider =
 // Провайдер для прогноза
 final forecastProvider = FutureProvider.autoDispose<Forecast?>((ref) async {
   final periodState = ref.watch(analyticsPeriodProvider);
-  final expenses = await ref.watch(filteredExpensesProvider.future);
+  final List<Expense> expenses = ref.watch(filteredExpensesProvider);
   final defaultCurrency = ref.watch(defaultCurrencyProvider);
   final currencyService = ref.watch(currencyServiceProvider);
 

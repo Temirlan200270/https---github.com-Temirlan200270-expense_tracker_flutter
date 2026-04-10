@@ -163,8 +163,11 @@ int? _monthRunwayDays({
 }
 
 Future<HomeDecisionSnapshot> _computeHomeDecisionSnapshot(Ref ref) async {
-  final all = await ref.watch(expensesStreamProvider.future);
-  final categories = await ref.watch(categoriesStreamProvider.future);
+  final expensesAsync = ref.watch(expensesStreamProvider);
+  final List<Expense> all = expensesAsync.valueOrNull ?? <Expense>[];
+  final categoriesAsync = ref.watch(categoriesStreamProvider);
+  final List<Category> categories =
+      categoriesAsync.valueOrNull ?? <Category>[];
   final budgetsWithSpending = await ref.watch(budgetsWithSpendingProvider.future);
   final budgetPressure = HomeBudgetPressure.fromActiveBudgets(budgetsWithSpending);
   final defaultCurrency = ref.watch(defaultCurrencyProvider);

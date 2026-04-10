@@ -8,12 +8,13 @@ abstract final class HomeLayoutSpacing {
   static const double s20 = 20;
   static const double s24 = 24;
   static const double s32 = 32;
+  static const double s40 = 40;
 
   /// Горизонтальный ритм для слота Hero (и связанных CTA под карточкой).
   static const EdgeInsets horizontal = EdgeInsets.symmetric(horizontal: s20);
 
-  /// Обёртка ленты операций.
-  static const EdgeInsets feedOuter = EdgeInsets.fromLTRB(s20, 0, s20, s32);
+  /// Обёртка ленты операций (нижний отступ — запас над панелью навигации при скролле).
+  static const EdgeInsets feedOuter = EdgeInsets.fromLTRB(s20, 0, s20, s40);
 }
 
 /// Каркас скролла Home: слоты header → hero → (опц.) заголовок ленты → slivers ленты.

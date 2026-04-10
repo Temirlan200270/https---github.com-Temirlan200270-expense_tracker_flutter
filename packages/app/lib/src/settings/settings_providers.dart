@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'settings_constants.dart';
+
 // Провайдер для SharedPreferences
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError(
@@ -169,6 +171,31 @@ class ExchangeRateApiKeyNotifier extends StateNotifier<String?> {
   }
 }
 
+// Провайдер для уменьшения анимаций (accessibility)
+final reduceMotionProvider =
+    StateNotifierProvider<ReduceMotionNotifier, bool>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return ReduceMotionNotifier(prefs);
+});
+
+class ReduceMotionNotifier extends StateNotifier<bool> {
+  ReduceMotionNotifier(this._prefs) : super(false) {
+    _load();
+  }
+
+  final SharedPreferences _prefs;
+  static const String _key = 'reduce_motion';
+
+  void _load() {
+    state = _prefs.getBool(_key) ?? false;
+  }
+
+  Future<void> setEnabled(bool enabled) async {
+    state = enabled;
+    await _prefs.setBool(_key, enabled);
+  }
+}
+
 // Провайдер для модели Gemini
 final geminiModelProvider =
     StateNotifierProvider<GeminiModelNotifier, String>((ref) {
@@ -177,27 +204,26 @@ final geminiModelProvider =
 });
 
 class GeminiModelNotifier extends StateNotifier<String> {
-  GeminiModelNotifier(this._prefs) : super('gemini-2.5-flash') {
+  GeminiModelNotifier(this._prefs) : super(GeminiModelIds.defaultId) {
     _loadModel();
   }
 
   final SharedPreferences _prefs;
   static const String _key = 'gemini_model';
-  static const String _defaultModel = 'gemini-2.5-flash';
 
   void _loadModel() {
     final saved = _prefs.getString(_key);
     if (saved != null && saved.isNotEmpty) {
       state = saved;
     } else {
-      state = _defaultModel;
+      state = GeminiModelIds.defaultId;
     }
   }
 
   Future<void> setModel(String model) async {
     if (model.isEmpty) {
-      state = _defaultModel;
-      await _prefs.setString(_key, _defaultModel);
+      state = GeminiModelIds.defaultId;
+      await _prefs.setString(_key, GeminiModelIds.defaultId);
     } else {
       state = model;
       await _prefs.setString(_key, model);

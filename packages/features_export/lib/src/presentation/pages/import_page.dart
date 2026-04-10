@@ -200,14 +200,15 @@ class _ImportPageState extends ConsumerState<ImportPage> {
     setState(() => _isImporting = true);
     try {
       final file = File(result.files.single.path!);
-        // Получаем API ключ и модель из провайдеров
         final geminiApiKey = ref.read(geminiApiKeyProvider);
         final geminiModel = ref.read(geminiModelProvider);
+        final currency = ref.read(defaultCurrencyProvider);
         final expenses = await _importService.importFromPdf(
           file,
           geminiApiKey: geminiApiKey,
           geminiModel: geminiModel,
           ref: ref,
+          currencyCode: currency,
         );
 
         if (expenses.isEmpty) {
@@ -300,7 +301,7 @@ class _ImportPageState extends ConsumerState<ImportPage> {
     ref.read(importReviewControllerProvider.notifier).stage(pending);
 
     if (!context.mounted) return;
-    await context.push('/import/review');
+    await context.push(AppRoutes.importReview);
   }
 }
 

@@ -329,7 +329,9 @@ class _ImportReviewPageState extends ConsumerState<ImportReviewPage> {
         try {
           await repo.upsertExpense(e);
           ok++;
-        } catch (_) {}
+        } catch (_) {
+          // Counted as failed via (toSave.length - ok)
+        }
       }
 
       try {

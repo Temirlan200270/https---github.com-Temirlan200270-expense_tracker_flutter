@@ -14,7 +14,7 @@ export 'src/providers/ui_behavior_provider.dart' show uiBehaviorStateProvider;
 export 'src/providers/budget_hero_depriority_provider.dart';
 export 'src/providers/insight_feedback_providers.dart' show insightFeedbackRepositoryProvider;
 export 'src/providers/insight_reveal_sync_provider.dart';
-export 'src/settings/settings_providers.dart' show defaultCurrencyProvider, sharedPreferencesProvider, exchangeRateApiKeyProvider, geminiApiKeyProvider, geminiModelProvider;
+export 'src/settings/settings_providers.dart' show defaultCurrencyProvider, sharedPreferencesProvider, exchangeRateApiKeyProvider, geminiApiKeyProvider, geminiModelProvider, reduceMotionProvider;
 export 'src/settings/color_scheme_providers.dart' show appThemeTypeProvider;
 export 'src/core/theme/app_theme.dart' show AppThemeType, AppTheme;
 export 'src/settings/biometric_providers.dart' show biometricEnabledProvider, biometricServiceProvider, biometricAvailableProvider, biometricTypeNameProvider;

@@ -22,12 +22,15 @@ class HomeQuickActionGrid extends StatelessWidget {
       int staggerIndex = 0,
       bool filled = false,
     }) {
+      // Контраст: слабый tint + явная обводка (иначе «белое на белом» на светлой теме).
       final bg = filled
-          ? accentColor.withValues(alpha: 0.12)
-          : cs.surfaceContainerHighest.withValues(alpha: 0.5);
-      final border = filled
-          ? BorderSide.none
-          : BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3));
+          ? Color.lerp(cs.surfaceContainerHighest, accentColor, 0.28)!
+          : cs.surfaceContainerHighest;
+      final border = BorderSide(
+        color: filled
+            ? accentColor.withValues(alpha: 0.42)
+            : cs.outlineVariant.withValues(alpha: 0.55),
+      );
 
       return Expanded(
         child: PressableScale(
@@ -44,7 +47,7 @@ class HomeQuickActionGrid extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: bg,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.fromBorderSide(border),
+                  border: Border.all(color: border.color, width: 1),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -56,7 +59,7 @@ class HomeQuickActionGrid extends StatelessWidget {
                       style: theme.textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                         fontSize: 11,
-                        color: cs.onSurface.withValues(alpha: 0.75),
+                        color: cs.onSurface.withValues(alpha: 0.92),
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
