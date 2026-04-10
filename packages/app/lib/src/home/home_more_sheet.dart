@@ -62,12 +62,6 @@ void showHomeMoreSheet(BuildContext context) {
             SizedBox(height: HomeLayoutSpacing.s12),
             sectionLabel('home.more_sheet.section_finance'),
             HomeSheetAction(
-              icon: Icons.account_balance_wallet_rounded,
-              label: tr('budget.title'),
-              foregroundColor: cs.primary,
-              onTap: () => go(AppRoutes.budgets),
-            ),
-            HomeSheetAction(
               icon: Icons.account_balance_rounded,
               label: tr('debts.title'),
               foregroundColor: cs.primary,

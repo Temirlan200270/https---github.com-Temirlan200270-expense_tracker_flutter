@@ -8,17 +8,22 @@
 
 ```text
 packages/app/lib/src/home/
-├── home_page.dart                (~300 строк) — ConsumerWidget, phase switch, scaffold
+├── home_page.dart                (~390 строк) — ConsumerWidget, decision-driven scaffold
+├── home_decision_engine.dart     — HomeDecisionEngine + HomeConsistencyRules (центральный координатор)
+├── home_decision.dart            — HomeDecision + HomeConsistencyFlags (единый выход engine)
+├── home_event.dart               — HomeEventKind enum (семантические события)
+├── home_transition_log.dart      — StateTransitionRecord + ring buffer (observability)
 ├── home_screen_phase.dart        — resolveHomeScreenPhase() — SSS §2.1
+├── home_ftue_state.dart          — FtueStep enum + HomeFtueState + HomeFtueNotifier (persistence)
 ├── home_layout_shell.dart        — spacing tokens + CustomScrollView каркас
 ├── home_wallet_shell.dart        — hero card factory (l10n) + WalletHeader
 ├── home_loaded_hero_block.dart   — hero intelligence: insight, feedback, tone, gradient
 ├── home_feed_card.dart           — feed карточка + swipe + context menu
-├── home_feed_tile_model.dart    — ExpenseTileModel (presentation model)
-├── home_feed_provider.dart      — homeFeedTilesProvider (1 подписка вместо N)
+├── home_feed_tile_model.dart     — ExpenseTileModel (presentation model)
+├── home_feed_provider.dart       — homeFeedTilesProvider (1 подписка вместо N)
 ├── home_advice_banner.dart       — карточка совета / инсайта
 ├── home_quick_action_grid.dart   — сетка 2×2 (расход, доход, импорт, категории)
-├── home_ftue_steps.dart          — 3 шага onboarding (empty state)
+├── home_ftue_steps.dart          — 3 шага onboarding (FTUE-state-aware)
 ├── home_more_sheet.dart          — bottom sheet «быстрые переходы» + HomeSheetAction
 ├── home_walkthrough_overlay.dart — walkthrough overlay
 ├── home_walkthrough_providers.dart
@@ -42,26 +47,39 @@ packages/app/lib/src/home/
 
 ```text
 ┌──────────────────────────────────────────────┐
-│  HomePage (ConsumerWidget)                   │  ← фаза + scaffold
-│  └── _buildBodyForPhase(phase)               │  ← switch по UiScreenPhase
+│  HomeDecisionEngine (AutoDisposeNotifier)     │  ← единый координатор
+│  ├── watches: expenses, financial, ftue,      │
+│  │           walkthrough                      │
+│  ├── resolveHomeScreenPhase()                │  ← data → phase
+│  ├── HomeConsistencyRules (6 правил)          │  ← guards / invariants
+│  ├── auto-advance FTUE                       │
+│  └── → HomeDecision (единый выход)            │
+│        ├── phase: UiScreenPhase              │
+│        ├── ftue: HomeFtueState               │
+│        ├── showWalkthrough: bool             │
+│        └── flags: HomeConsistencyFlags       │
+├──────────────────────────────────────────────┤
+│  HomePage (ConsumerWidget)                   │  ← тонкая оболочка
+│  └── ref.watch(homeDecisionProvider)          │  ← ОДИН provider
+│  └── _buildBodyForPhase(decision)            │  ← switch по phase
 │       ├── _loadingShell                      │
 │       ├── _expensesError                     │
 │       ├── _emptyLayout                       │  → HomeFtueSteps, PrimaryActionButton
 │       └── _nonEmptyLayout                    │  → HomeLoadedHeroBlock, HomeFeedCard
 ├──────────────────────────────────────────────┤
+│  HomeTransitionLog (ring buffer, 64 записи)   │  ← observability layer
+│  └── StateTransitionRecord { trigger, from,   │
+│       to, rule, detail, timestamp }           │
+├──────────────────────────────────────────────┤
 │  HomeLoadedHeroBlock (ConsumerStatefulWidget) │  ← insight intelligence layer
-│  └── HomeAdviceBanner                        │
-│  └── HomeQuickActionGrid                     │
-│  └── Feedback row                            │
 ├──────────────────────────────────────────────┤
 │  HomeFeedCard (ConsumerStatefulWidget)        │  ← card + swipe + context menu
-│  └── HomeSheetAction                         │
 ├──────────────────────────────────────────────┤
 │  HomeLayoutShell (StatelessWidget)            │  ← scroll structure only
 └──────────────────────────────────────────────┘
 ```
 
-**HomePage** не знает про insight, feedback, категории. Он знает только **фазу** и **какой layout собрать**.
+**HomePage** не решает — он рендерит. **DecisionEngine** решает — он не рендерит. Разделение concerns абсолютное.
 
 ---
 
@@ -75,23 +93,24 @@ packages/app/lib/src/home/
 - `home_feed_provider.dart` — `homeFeedTilesProvider` (одна подписка на expenses + categories)
 - `HomeFeedCard` принимает `ExpenseTileModel` — **нет `ref.watch(categoriesStreamProvider)` внутри карточки**
 
-### 2.2 FTUE State Machine
+### 2.2 FTUE State Machine — DONE
 
-**Проблема:** FTUE — это UI-виджет, а не состояние. Нет возможности отслеживать прогресс, variants, A/B.
+Реализовано:
 
-**Решение:**
+- `home_ftue_state.dart` — `FtueStep` enum (welcome → firstExpense → insightSeen → completed) + `HomeFtueState` + `HomeFtueNotifier` (SharedPreferences persistence)
+- `home_ftue_steps.dart` — визуальная прогрессия шагов (completed / active / pending)
+- Auto-advance логика перенесена в Decision Engine (Rule 5, Rule 6)
 
-```dart
-enum FtueStep { welcome, firstExpense, firstInsight, completed }
+### 2.2b Unified Decision Engine — DONE
 
-class FtueState {
-  final FtueStep step;
-  final bool hasSeenWalkthrough;
-  final DateTime? firstExpenseAt;
-}
-```
+Реализовано:
 
-Notifier → persistence → UI реагирует на `FtueState`, а не на `allExpenses.isEmpty`.
+- `home_decision_engine.dart` — `HomeDecisionEngine` (единый Notifier, watches ALL inputs, outputs ONE `HomeDecision`)
+- `home_decision.dart` — `HomeDecision` + `HomeConsistencyFlags`
+- `home_event.dart` — `HomeEventKind` enum (семантические события)
+- `home_transition_log.dart` — `StateTransitionRecord` + ring buffer (observability)
+- 6 именованных consistency rules в `HomeConsistencyRules` (pure functions, testable)
+- `HomePage.build()` подписывается только на `homeDecisionProvider` — не принимает решения
 
 ### 2.3 Масштабирование паттерна на другие экраны
 
@@ -138,11 +157,15 @@ AnalyticsPage
 
 | Слой | Тест |
 |------|------|
+| `HomeConsistencyRules` | Unit: все 6 правил — pure functions, легко тестировать |
+| `HomeDecisionEngine` | Unit: комбинации inputs → decision + flags + transitions |
+| `HomeTransitionLog` | Unit: ring buffer, capacity, forTrigger, guarded |
 | `resolveHomeScreenPhase` | Unit: все комбинации AsyncValue → phase |
 | `ExpenseTileModel` mapper | Unit: category lookup, fallback title |
+| `HomeFtueNotifier` | Unit: persistence, advanceTo monotonic, markFirstExpense |
 | `HomeLoadedHeroBlock` | Widget test: tone → gradient, feedback tap |
 | `HomeFeedCard` | Widget test: swipe dismiss, context menu |
-| `HomePage` | Integration: phase switch → correct layout |
+| `HomePage` | Integration: decision → correct layout |
 
 ---
 
@@ -156,4 +179,8 @@ AnalyticsPage
 | Architecture | `ARCHITECTURE.md` |
 | UiScreenPhase enum | `packages/shared_models/lib/src/ui_screen_phase.dart` |
 | Phase resolver | `packages/app/lib/src/home/home_screen_phase.dart` |
+| Decision Engine | `packages/app/lib/src/home/home_decision_engine.dart` |
+| Decision model | `packages/app/lib/src/home/home_decision.dart` |
+| Transition log | `packages/app/lib/src/home/home_transition_log.dart` |
+| FTUE State Machine | `packages/app/lib/src/home/home_ftue_state.dart` |
 | Presentation Layer Standard | `docs/SSS_PRESENTATION_LAYER_V1.md` |

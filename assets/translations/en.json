@@ -87,13 +87,13 @@
     },
     "title": "Home",
     "month_stats": "Monthly Statistics",
-    "recent_transactions": "Recent Transactions",
+    "recent_transactions": "Recent Operations",
     "view_all": "View All",
-    "no_transactions": "No transactions yet",
+    "no_transactions": "No operations yet",
     "add_expense": "Expense",
     "add_income": "Income",
     "stats_error": "Failed to load statistics",
-    "transactions_error": "Failed to load transactions",
+    "transactions_error": "Failed to load operations",
     "ftue": {
       "title": "Welcome to your financial hub",
       "message": "Add your first expense manually or import a statement so the app can start learning your habits.",
@@ -218,7 +218,7 @@
   },
   "expenses": {
     "list": {
-      "title": "Transactions",
+      "title": "Operations",
       "empty": "No expenses yet. Add the first record!"
     },
     "form": {

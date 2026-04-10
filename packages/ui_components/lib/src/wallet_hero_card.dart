@@ -93,8 +93,8 @@ class WalletHeroCard extends StatelessWidget {
         ? gradientColors!.take(3).toList()
         : <Color>[
             cs.primary,
-            Color.lerp(cs.primary, cs.tertiary, 0.35)!,
-            cs.primaryContainer,
+            Color.lerp(cs.primary, cs.tertiary, 0.45)!,
+            Color.lerp(cs.primary, cs.primaryContainer, 0.35)!,
           ];
 
     final hasInsight =

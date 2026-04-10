@@ -10,162 +10,118 @@ enum AppThemeType {
 
 class AppTheme {
   static ThemeData light(AppThemeType type) {
-    // Используем стандартные цвета Material, похожие на FlexColor схемы
     final seedColor = _getSeedColor(type);
-
-    // Создаем базовую тему Material 3
-    final baseTheme = ThemeData(
-      useMaterial3: true,
-      colorSchemeSeed: seedColor,
+    final scheme = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: Brightness.light,
     );
 
-    // Применяем Google Fonts к базовой теме (правильный способ согласно документации)
-    return baseTheme.copyWith(
-      textTheme: GoogleFonts.manropeTextTheme(baseTheme.textTheme),
-      // Глобальные скругления
-      cardTheme: CardThemeData(
-        elevation: 0.5,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24.0),
-        ),
-      ),
-      // Настройка кнопок
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        ),
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        ),
-      ),
-      // Настройка полей ввода
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20.0),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20.0),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20.0),
-          borderSide: BorderSide(
-            color: seedColor,
-            width: 2,
-          ),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      ),
-      // Floating Action Button
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-      ),
-      // Chip
-      chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.0),
-        ),
-      ),
-    );
+    return _buildTheme(scheme, seedColor);
   }
 
   static ThemeData dark(AppThemeType type) {
-    // Используем стандартные цвета Material, похожие на FlexColor схемы
     final seedColor = _getSeedColor(type);
-
-    // Создаем базовую тему Material 3
-    final baseTheme = ThemeData(
-      useMaterial3: true,
-      colorSchemeSeed: seedColor,
+    final scheme = ColorScheme.fromSeed(
+      seedColor: seedColor,
       brightness: Brightness.dark,
     );
 
-    // Применяем Google Fonts к базовой теме (правильный способ согласно документации)
-    return baseTheme.copyWith(
-      textTheme: GoogleFonts.manropeTextTheme(baseTheme.textTheme),
-      // Глобальные скругления
+    return _buildTheme(scheme, seedColor);
+  }
+
+  static ThemeData _buildTheme(ColorScheme scheme, Color seedColor) {
+    final textTheme = GoogleFonts.manropeTextTheme(
+      scheme.brightness == Brightness.dark
+          ? ThemeData.dark().textTheme
+          : ThemeData.light().textTheme,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: scheme,
+      textTheme: textTheme,
+      scaffoldBackgroundColor: scheme.surface,
       cardTheme: CardThemeData(
-        elevation: 0.5,
+        elevation: 0,
+        color: scheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24.0),
+          borderRadius: BorderRadius.circular(24),
         ),
       ),
-      // Настройка кнопок
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
+            borderRadius: BorderRadius.circular(20),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
+            borderRadius: BorderRadius.circular(20),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          side: BorderSide(color: scheme.outlineVariant),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
+            borderRadius: BorderRadius.circular(20),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         ),
       ),
-      // Настройка полей ввода
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
+        fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20.0),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20.0),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20.0),
-          borderSide: BorderSide(
-            color: seedColor,
-            width: 2,
-          ),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: scheme.primary, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       ),
-      // Floating Action Button
       floatingActionButtonTheme: FloatingActionButtonThemeData(
+        elevation: 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.0),
+          borderRadius: BorderRadius.circular(20),
         ),
       ),
-      // Chip
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.0),
+          borderRadius: BorderRadius.circular(12),
         ),
+      ),
+      dividerTheme: DividerThemeData(
+        color: scheme.outlineVariant.withValues(alpha: 0.3),
+        thickness: 1,
+      ),
+      appBarTheme: AppBarTheme(
+        elevation: 0,
+        scrolledUnderElevation: 0.5,
+        centerTitle: true,
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: scheme.onSurface,
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        backgroundColor: scheme.surface,
+        showDragHandle: true,
       ),
     );
   }

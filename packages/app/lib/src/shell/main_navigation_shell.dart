@@ -40,10 +40,15 @@ class MainNavigationShell extends StatelessWidget {
 
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: Material(
-        elevation: 3,
-        shadowColor: cs.shadow.withValues(alpha: 0.12),
-        color: cs.surface,
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+          color: cs.surface,
+          border: Border(
+            top: BorderSide(
+              color: cs.outlineVariant.withValues(alpha: 0.15),
+            ),
+          ),
+        ),
         child: Padding(
           padding: EdgeInsets.only(bottom: bottomInset),
           child: SizedBox(
@@ -209,7 +214,7 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-/// Квадратная кнопка «+» с мягкой тенью и приглушённой иконкой (как в макете).
+/// Круглая кнопка «+» с градиентом primary и мягкой тенью.
 class _CenterAddFab extends StatelessWidget {
   const _CenterAddFab({required this.colorScheme});
 
@@ -219,30 +224,40 @@ class _CenterAddFab extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = colorScheme;
 
-    return Material(
-      elevation: 10,
-      shadowColor: cs.primary.withValues(alpha: 0.35),
-      borderRadius: BorderRadius.circular(22),
-      color: cs.surface,
-      child: InkWell(
-        onTap: () {
-          HapticUtils.selection();
-          context.push(AppRoutes.expensesNew);
-        },
-        borderRadius: BorderRadius.circular(22),
-        child: Ink(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: cs.outlineVariant.withValues(alpha: 0.35),
-            ),
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            cs.primary,
+            Color.lerp(cs.primary, cs.tertiary, 0.4)!,
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: cs.primary.withValues(alpha: 0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
-          child: Icon(
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            HapticUtils.selection();
+            context.push(AppRoutes.expensesNew);
+          },
+          child: const Icon(
             Icons.add_rounded,
             size: 30,
-            color: cs.primary.withValues(alpha: 0.42),
+            color: Colors.white,
           ),
         ),
       ),

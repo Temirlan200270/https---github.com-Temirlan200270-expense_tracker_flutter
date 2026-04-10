@@ -39,7 +39,7 @@ class DecisionGradientShell extends StatelessWidget {
               filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: glassAlpha),
+                  color: Colors.white.withValues(alpha: glassAlpha * 0.5),
                 ),
               ),
             ),

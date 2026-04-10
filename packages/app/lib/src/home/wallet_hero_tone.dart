@@ -10,23 +10,23 @@ IconData walletHeroLeadingIconForTone(UxFinancialTone tone) {
   };
 }
 
-/// Градиент hero под ощущение SAFE / WATCH / RISK (только [ColorScheme], без «кричащего» красного).
+/// Градиент hero под ощущение SAFE / WATCH / RISK — насыщенный, не бледный.
 List<Color> walletHeroGradientForTone(ColorScheme cs, UxFinancialTone tone) {
   return switch (tone) {
     UxFinancialTone.safe => [
-        Color.lerp(cs.primaryContainer, cs.secondaryContainer, 0.35)!,
-        Color.lerp(cs.primary, cs.secondary, 0.25)!,
         cs.primary,
+        Color.lerp(cs.primary, cs.tertiary, 0.35)!,
+        Color.lerp(cs.primary, cs.primaryContainer, 0.3)!,
       ],
     UxFinancialTone.watch => [
-        Color.lerp(cs.tertiaryContainer, cs.surfaceContainerHighest, 0.2)!,
-        Color.lerp(cs.tertiary, cs.tertiaryContainer, 0.45)!,
         cs.tertiary,
+        Color.lerp(cs.tertiary, cs.primary, 0.3)!,
+        Color.lerp(cs.tertiary, cs.tertiaryContainer, 0.35)!,
       ],
     UxFinancialTone.risk => [
-        Color.lerp(cs.errorContainer, cs.surfaceContainerHighest, 0.15)!,
-        Color.lerp(cs.error, cs.errorContainer, 0.55)!,
-        Color.lerp(cs.error, cs.primary, 0.12)!,
+        cs.error,
+        Color.lerp(cs.error, cs.tertiary, 0.25)!,
+        Color.lerp(cs.error, cs.errorContainer, 0.4)!,
       ],
   };
 }

@@ -242,24 +242,44 @@ class _HomeLoadedHeroBlockState extends ConsumerState<HomeLoadedHeroBlock> {
   }
 }
 
-/// Скелет градиентной карточки при загрузке.
+/// Скелет градиентной карточки при загрузке — градиент + мягкая пульсация.
 class WalletHeroLoadingCard extends StatelessWidget {
   const WalletHeroLoadingCard({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return ClipRRect(
       borderRadius: BorderRadius.circular(28),
       child: Container(
-        height: 220,
-        color: Theme.of(context)
-            .colorScheme
-            .primaryContainer
-            .withValues(alpha: 0.4),
-        child: const Center(
-          child: CircularProgressIndicator(strokeWidth: 2),
+        height: 200,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              cs.primary.withValues(alpha: 0.15),
+              cs.primaryContainer.withValues(alpha: 0.25),
+              cs.tertiary.withValues(alpha: 0.1),
+            ],
+          ),
+        ),
+        child: Center(
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              color: cs.primary.withValues(alpha: 0.5),
+            ),
+          ),
         ),
       ),
-    );
+    )
+        .animate(onPlay: (c) => c.repeat(reverse: true))
+        .shimmer(
+          duration: const Duration(milliseconds: 1800),
+          color: cs.primary.withValues(alpha: 0.06),
+        );
   }
 }

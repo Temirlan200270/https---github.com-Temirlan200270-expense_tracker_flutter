@@ -5,9 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ui_components/ui_components.dart';
 
-import 'home_layout_shell.dart';
-
-/// Сетка 2×2 под hero: расход, доход, импорт, категории.
+/// Компактная строка быстрых действий под hero — pill-кнопки с иконками.
 class HomeQuickActionGrid extends StatelessWidget {
   const HomeQuickActionGrid({super.key});
 
@@ -16,49 +14,49 @@ class HomeQuickActionGrid extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
 
-    Widget tile({
-      required Color background,
+    Widget pill({
       required IconData icon,
-      required Color iconColor,
+      required Color accentColor,
       required String label,
       required VoidCallback onTap,
       int staggerIndex = 0,
+      bool filled = false,
     }) {
+      final bg = filled
+          ? accentColor.withValues(alpha: 0.12)
+          : cs.surfaceContainerHighest.withValues(alpha: 0.5);
+      final border = filled
+          ? BorderSide.none
+          : BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3));
+
       return Expanded(
         child: PressableScale(
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(20),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: HomeLayoutSpacing.s8,
+              onTap: () {
+                HapticUtils.selection();
+                onTap();
+              },
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.fromBorderSide(border),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: background,
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [
-                          BoxShadow(
-                            color: cs.shadow.withValues(alpha: 0.06),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Icon(icon, color: iconColor, size: 26),
-                    ),
-                    SizedBox(height: HomeLayoutSpacing.s8),
+                    Icon(icon, color: accentColor, size: 22),
+                    const SizedBox(height: 4),
                     Text(
                       label,
-                      style: theme.textTheme.labelLarge?.copyWith(
+                      style: theme.textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                        color: cs.onSurface.withValues(alpha: 0.75),
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
@@ -77,8 +75,9 @@ class HomeQuickActionGrid extends StatelessWidget {
             delay: Duration(milliseconds: 40 * staggerIndex),
             curve: AppMotion.curve,
           )
-          .scale(
-            begin: const Offset(0.94, 0.94),
+          .slideY(
+            begin: 0.08,
+            end: 0,
             duration: AppMotion.standard,
             delay: Duration(milliseconds: 40 * staggerIndex),
             curve: AppMotion.curve,
@@ -86,51 +85,40 @@ class HomeQuickActionGrid extends StatelessWidget {
     }
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        tile(
-          background: cs.primaryContainer.withValues(alpha: 0.9),
-          icon: Icons.add_rounded,
-          iconColor: cs.primary,
+        pill(
+          icon: Icons.remove_rounded,
+          accentColor: cs.primary,
           label: tr('home.cta_grid.expense'),
           staggerIndex: 0,
-          onTap: () {
-            HapticUtils.selection();
-            context.push(AppRoutes.expensesNew);
-          },
+          filled: true,
+          onTap: () => context.push(AppRoutes.expensesNew),
         ),
-        tile(
-          background: cs.tertiaryContainer.withValues(alpha: 0.85),
-          icon: Icons.trending_up_rounded,
-          iconColor: cs.tertiary,
+        const SizedBox(width: 8),
+        pill(
+          icon: Icons.add_rounded,
+          accentColor: cs.tertiary,
           label: tr('home.cta_grid.income'),
           staggerIndex: 1,
-          onTap: () {
-            HapticUtils.selection();
-            context.push(AppRoutes.expensesNew, extra: {'type': 'income'});
-          },
+          filled: true,
+          onTap: () =>
+              context.push(AppRoutes.expensesNew, extra: {'type': 'income'}),
         ),
-        tile(
-          background: cs.secondaryContainer.withValues(alpha: 0.75),
+        const SizedBox(width: 8),
+        pill(
           icon: Icons.upload_file_rounded,
-          iconColor: cs.secondary,
+          accentColor: cs.secondary,
           label: tr('home.cta_grid.import'),
           staggerIndex: 2,
-          onTap: () {
-            HapticUtils.selection();
-            context.push(AppRoutes.import);
-          },
+          onTap: () => context.push(AppRoutes.import),
         ),
-        tile(
-          background: cs.surfaceContainerHighest.withValues(alpha: 0.95),
+        const SizedBox(width: 8),
+        pill(
           icon: Icons.category_rounded,
-          iconColor: cs.primary,
+          accentColor: cs.onSurfaceVariant,
           label: tr('home.cta_grid.categories'),
           staggerIndex: 3,
-          onTap: () {
-            HapticUtils.selection();
-            context.push(AppRoutes.categories);
-          },
+          onTap: () => context.push(AppRoutes.categories),
         ),
       ],
     );

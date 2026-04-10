@@ -179,15 +179,31 @@ class _SlideContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.all(HomeLayoutSpacing.s32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            slide.icon,
-            size: 120,
-            color: Theme.of(context).colorScheme.primary,
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  cs.primary.withValues(alpha: 0.12),
+                  cs.primaryContainer.withValues(alpha: 0.25),
+                ],
+              ),
+            ),
+            child: Icon(
+              slide.icon,
+              size: 52,
+              color: cs.primary,
+            ),
           )
               .animate()
               .scale(
@@ -204,7 +220,7 @@ class _SlideContent extends StatelessWidget {
           Text(
             tr(slide.title),
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
                 ),
             textAlign: TextAlign.center,
           )
@@ -222,7 +238,10 @@ class _SlideContent extends StatelessWidget {
           SizedBox(height: HomeLayoutSpacing.s24),
           Text(
             tr(slide.description),
-            style: Theme.of(context).textTheme.bodyLarge,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: cs.onSurface.withValues(alpha: 0.7),
+                  height: 1.5,
+                ),
             textAlign: TextAlign.center,
           )
               .animate()

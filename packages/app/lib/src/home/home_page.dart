@@ -10,14 +10,16 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_models/shared_models.dart';
 import 'package:ui_components/ui_components.dart';
 
+import 'home_decision.dart';
+import 'home_decision_engine.dart';
 import 'home_feed_card.dart';
 import 'home_feed_provider.dart';
 import 'home_feed_tile_model.dart';
+import 'home_ftue_state.dart';
 import 'home_ftue_steps.dart';
 import 'home_layout_shell.dart';
 import 'home_loaded_hero_block.dart';
 import 'home_more_sheet.dart';
-import 'home_screen_phase.dart';
 import 'home_walkthrough_overlay.dart';
 import 'home_walkthrough_providers.dart';
 import 'home_wallet_shell.dart';
@@ -33,33 +35,20 @@ class HomePage extends ConsumerWidget {
 
   static Widget _headerActions(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        OutlinedCircleIconButton(
-          icon: Icons.bar_chart_rounded,
-          tooltip: tr('analytics.title'),
-          onPressed: () => context.go(AppRoutes.analytics),
+    return PressableScale(
+      child: Material(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: IconButton(
+          tooltip: tr('home.more_sheet.tooltip'),
+          icon: Icon(Icons.tune_rounded, color: cs.onSurface, size: 22),
+          onPressed: () {
+            HapticUtils.selection();
+            showHomeMoreSheet(context);
+          },
         ),
-        Padding(
-          padding: const EdgeInsets.only(left: HomeLayoutSpacing.s12),
-          child: PressableScale(
-            child: Material(
-              color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
-              shape: const CircleBorder(),
-              clipBehavior: Clip.antiAlias,
-              child: IconButton(
-                tooltip: tr('home.more_sheet.tooltip'),
-                icon: Icon(Icons.tune_rounded, color: cs.onSurface, size: 22),
-                onPressed: () {
-                  HapticUtils.selection();
-                  showHomeMoreSheet(context);
-                },
-              ),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -69,6 +58,9 @@ class HomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final decision = ref.watch(homeDecisionProvider);
+    final feedTiles = ref.watch(homeFeedTilesProvider);
+
     final currencyCode = ref.watch(defaultCurrencyProvider);
     final formatter = NumberFormat.currency(
       locale: context.locale.toLanguageTag(),
@@ -76,38 +68,32 @@ class HomePage extends ConsumerWidget {
     );
 
     final financialAsync = ref.watch(financialSnapshotProvider);
-    final recentExpensesAsync = ref.watch(expensesStreamProvider);
-    final showHomeWalkthrough = ref.watch(homeWalkthroughPendingProvider);
-    final phase = resolveHomeScreenPhase(
-      expenses: recentExpensesAsync,
-      financial: financialAsync,
-    );
 
     return Stack(
       fit: StackFit.expand,
       children: [
         Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await Future.wait([
-            ref.refresh(financialSnapshotProvider.future),
-            ref.refresh(expensesStreamProvider.future),
-            ref.refresh(budgetsWithSpendingProvider.future),
-          ]);
-        },
-        child: _buildBodyForPhase(
-          context: context,
-          ref: ref,
-          formatter: formatter,
-          phase: phase,
-          expensesAsync: recentExpensesAsync,
-          financialAsync: financialAsync,
-          feedTiles: ref.watch(homeFeedTilesProvider),
+          backgroundColor:
+              Theme.of(context).colorScheme.surfaceContainerLowest,
+          body: RefreshIndicator(
+            onRefresh: () async {
+              await Future.wait([
+                ref.refresh(financialSnapshotProvider.future),
+                ref.refresh(expensesStreamProvider.future),
+                ref.refresh(budgetsWithSpendingProvider.future),
+              ]);
+            },
+            child: _buildBodyForPhase(
+              context: context,
+              ref: ref,
+              formatter: formatter,
+              decision: decision,
+              financialAsync: financialAsync,
+              feedTiles: feedTiles,
+            ),
+          ),
         ),
-      ),
-        ),
-        if (showHomeWalkthrough)
+        if (decision.showWalkthrough)
           HomeWalkthroughOverlay(
             onDismiss: () {
               ref.read(homeWalkthroughPendingProvider.notifier).clearPending();
@@ -125,24 +111,24 @@ class HomePage extends ConsumerWidget {
     required BuildContext context,
     required WidgetRef ref,
     required NumberFormat formatter,
-    required UiScreenPhase phase,
-    required AsyncValue<List<Expense>> expensesAsync,
+    required HomeDecision decision,
     required AsyncValue<FinancialSnapshot> financialAsync,
     required List<ExpenseTileModel> feedTiles,
   }) {
-    switch (phase) {
+    switch (decision.phase) {
       case UiScreenPhase.loading:
         return _loadingShell(context);
       case UiScreenPhase.error:
         return _expensesError(context, ref);
       case UiScreenPhase.empty:
-        return _emptyLayout(context, formatter);
+        return _emptyLayout(context, formatter, decision.ftue);
       case UiScreenPhase.stale:
       case UiScreenPhase.ready:
       case UiScreenPhase.partial:
       case UiScreenPhase.updating:
-        final allExpenses = expensesAsync.valueOrNull ?? const <Expense>[];
-        if (allExpenses.isEmpty) return _emptyLayout(context, formatter);
+        if (decision.flags.feedSuppressed) {
+          return _emptyLayout(context, formatter, decision.ftue);
+        }
         return _nonEmptyLayout(context, formatter, feedTiles, financialAsync);
     }
   }
@@ -179,13 +165,17 @@ class HomePage extends ConsumerWidget {
 
   static List<Color> _ftueGradient(ColorScheme cs) {
     return [
-      Color.lerp(cs.surfaceContainerHighest, cs.primary, 0.28)!,
-      Color.lerp(cs.surfaceContainerHigh, cs.primaryContainer, 0.35)!,
-      Color.lerp(cs.surfaceContainerHighest, cs.secondaryContainer, 0.22)!,
+      cs.primary,
+      Color.lerp(cs.primary, cs.tertiary, 0.4)!,
+      Color.lerp(cs.primary, cs.primaryContainer, 0.3)!,
     ];
   }
 
-  static Widget _emptyLayout(BuildContext context, NumberFormat formatter) {
+  static Widget _emptyLayout(
+    BuildContext context,
+    NumberFormat formatter,
+    HomeFtueState ftue,
+  ) {
     final cs = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
 
@@ -260,7 +250,7 @@ class HomePage extends ConsumerWidget {
             ),
           ),
           SizedBox(height: HomeLayoutSpacing.s32),
-          const HomeFtueSteps(),
+          HomeFtueSteps(currentStep: ftue.step),
         ],
       ),
       feedHeader: null,

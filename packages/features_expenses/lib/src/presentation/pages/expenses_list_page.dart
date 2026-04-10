@@ -194,12 +194,6 @@ class ExpensesListPage extends ConsumerWidget {
             ),
             _expensesOverflowMenuItem(
               ctx,
-              icon: Icons.bar_chart_rounded,
-              label: tr('analytics.title'),
-              route: '/analytics',
-            ),
-            _expensesOverflowMenuItem(
-              ctx,
               icon: Icons.upload_file_rounded,
               label: tr('export.title'),
               route: '/export',
@@ -210,19 +204,9 @@ class ExpensesListPage extends ConsumerWidget {
               label: tr('import.title'),
               route: '/import',
             ),
-            _expensesOverflowMenuItem(
-              ctx,
-              icon: Icons.settings_rounded,
-              label: tr('settings'),
-              route: '/settings',
-            ),
           ],
         ),
       ],
-      fab: FloatingActionButton(
-        onPressed: () => context.push('/expenses/new'),
-        child: const Icon(Icons.add),
-      ),
       child: Column(
         children: [
           Padding(
