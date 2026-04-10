@@ -50,8 +50,30 @@
     "cta_grid": {
       "expense": "Expense",
       "income": "Income",
-      "budget": "Budget",
-      "analytics": "Insights"
+      "import": "Import",
+      "categories": "Categories"
+    },
+    "more_sheet": {
+      "title": "Shortcuts",
+      "tooltip": "More",
+      "section_finance": "Money & tracking",
+      "section_data": "Data",
+      "section_app": "App"
+    },
+    "walkthrough": {
+      "skip": "Skip",
+      "next": "Next",
+      "done": "Got it",
+      "step1_title": "Balance and summary",
+      "step1_body": "Your period balance, expenses, income, and forecast — once you have data.",
+      "step2_title": "Quick actions",
+      "step2_body": "Add an expense or income. Import and categories live here; budget and insights stay in the bottom bar — no duplicate shortcuts.",
+      "step3_title": "Tips",
+      "step3_body": "Once you add transactions, tips and spending rhythm will show up here.",
+      "step4_title": "Bottom navigation",
+      "step4_body": "Home, activity, budget, and insights are always one tap away. The center + button adds a transaction quickly (same idea as Expense).",
+      "step5_title": "Menu and settings",
+      "step5_body": "The top-right control opens shortcuts in a bottom sheet: budget, debts, categories, import, settings, and more."
     },
     "advice": {
       "title": "Financial tip"
@@ -497,7 +519,7 @@
     },
     "slide6": {
       "title": "Security",
-      "description": "Protect your financial data with biometric authentication (Face ID / Fingerprint)."
+      "description": "Protect your data with biometrics (Face ID / fingerprint). After Get Started, we’ll show you around the home screen — you can skip the tour."
     },
     "next": "Next",
     "skip": "Skip",

@@ -12,6 +12,22 @@ import '../../controllers/expenses_list_controller.dart';
 import '../widgets/expense_filters_sheet.dart';
 import '../widgets/expense_search_field.dart';
 
+/// Маршруты нижнего [StatefulShellRoute] нужно открывать через [GoRouter.go], не [push].
+void _goOrPushRoute(BuildContext context, String route) {
+  if (!context.mounted) return;
+  const shellTabPaths = <String>{
+    AppRoutes.home,
+    AppRoutes.expenses,
+    AppRoutes.budgets,
+    AppRoutes.analytics,
+  };
+  if (shellTabPaths.contains(route)) {
+    context.go(route);
+  } else {
+    context.push(route);
+  }
+}
+
 /// Пункт меню «ещё» без вложенного ListTile.
 PopupMenuEntry<void> _expensesOverflowMenuItem(
   BuildContext context, {
@@ -22,9 +38,7 @@ PopupMenuEntry<void> _expensesOverflowMenuItem(
   final cs = Theme.of(context).colorScheme;
   return PopupMenuItem<void>(
     onTap: () {
-      Future.microtask(() {
-        if (context.mounted) context.push(route);
-      });
+      Future.microtask(() => _goOrPushRoute(context, route));
     },
     child: Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -951,7 +965,6 @@ class _ExpenseTile extends StatelessWidget {
                 ],
               ),
             ),
-            // Кнопка удаления
             IconButton(
               icon: Icon(
                 Icons.delete_outline_rounded,

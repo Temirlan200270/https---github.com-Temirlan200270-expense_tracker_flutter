@@ -63,6 +63,10 @@ class HomeHeroInsightState {
 }
 
 /// Таймеры, стабилизация текста, feedback и rate-limit — вне виджета hero.
+///
+/// Дальнейший рост: вынести чистый расчёт в `InsightEngine`, персистенс в
+/// `InsightPersistence`, таймеры раскрытия — в узкий `InsightRevealController`;
+/// явная фаза UI — `enum` вместо набора bool (см. обсуждение state machine).
 final homeHeroInsightNotifierProvider =
     NotifierProvider.autoDispose<HomeHeroInsightNotifier, HomeHeroInsightState>(
   HomeHeroInsightNotifier.new,

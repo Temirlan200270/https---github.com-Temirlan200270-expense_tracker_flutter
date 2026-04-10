@@ -11,9 +11,11 @@ import 'package:shared_models/shared_models.dart';
 import 'package:ui_components/ui_components.dart';
 
 import 'home_layout_shell.dart';
+import 'home_walkthrough_overlay.dart';
+import 'home_walkthrough_providers.dart';
 import 'home_wallet_shell.dart';
 
-/// Сетка 2×2 под hero: расход, доход, бюджет, анализ (макет neo-bank).
+/// Сетка 2×2 под hero: расход, доход, импорт, категории (без дублирования нижней панели).
 class _HomeQuickActionGrid extends StatelessWidget {
   const _HomeQuickActionGrid();
 
@@ -31,43 +33,45 @@ class _HomeQuickActionGrid extends StatelessWidget {
       int staggerIndex = 0,
     }) {
       return Expanded(
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(20),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: background,
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(
-                          color: cs.shadow.withValues(alpha: 0.06),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
+        child: PressableScale(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: HomeLayoutSpacing.s8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: background,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: cs.shadow.withValues(alpha: 0.06),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Icon(icon, color: iconColor, size: 26),
                     ),
-                    child: Icon(icon, color: iconColor, size: 26),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    label,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    SizedBox(height: HomeLayoutSpacing.s8),
+                    Text(
+                      label,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -118,24 +122,24 @@ class _HomeQuickActionGrid extends StatelessWidget {
         ),
         tile(
           background: cs.secondaryContainer.withValues(alpha: 0.75),
-          icon: Icons.work_outline_rounded,
+          icon: Icons.upload_file_rounded,
           iconColor: cs.secondary,
-          label: tr('home.cta_grid.budget'),
+          label: tr('home.cta_grid.import'),
           staggerIndex: 2,
           onTap: () {
             HapticUtils.selection();
-            context.go(AppRoutes.budgets);
+            context.push(AppRoutes.import);
           },
         ),
         tile(
           background: cs.surfaceContainerHighest.withValues(alpha: 0.95),
-          icon: Icons.stacked_bar_chart_rounded,
+          icon: Icons.category_rounded,
           iconColor: cs.primary,
-          label: tr('home.cta_grid.analytics'),
+          label: tr('home.cta_grid.categories'),
           staggerIndex: 3,
           onTap: () {
             HapticUtils.selection();
-            context.go(AppRoutes.analytics);
+            context.push(AppRoutes.categories);
           },
         ),
       ],
@@ -270,35 +274,107 @@ class _HomeAdviceBanner extends StatelessWidget {
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
-  /// Пункт меню без ListTile: Action Mode / Configuration в одном визуальном языке.
-  static PopupMenuEntry<void> _quickNavMenuItem(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String route,
-  }) {
-    final cs = Theme.of(context).colorScheme;
-    return PopupMenuItem<void>(
-      onTap: () {
-        Future.microtask(() {
-          if (context.mounted) context.push(route);
-        });
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            Icon(icon, size: 22, color: cs.onSurfaceVariant),
-            SizedBox(width: HomeLayoutSpacing.s12),
-            Expanded(
-              child: Text(
-                label,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
+  /// Нижний sheet вместо PopupMenu: тот же набор маршрутов, стиль SSS.
+  static void _showHomeMoreSheet(BuildContext context) {
+    showSssModalSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        final cs = Theme.of(sheetContext).colorScheme;
+        void go(String route) {
+          Navigator.of(sheetContext).pop();
+          Future.microtask(() {
+            if (context.mounted) context.push(route);
+          });
+        }
+
+        Widget sectionLabel(String key) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: HomeLayoutSpacing.s8),
+            child: Text(
+              tr(key),
+              style: Theme.of(sheetContext).textTheme.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.35,
+                  ),
             ),
-          ],
-        ),
-      ),
+          );
+        }
+
+        Widget divider() {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: HomeLayoutSpacing.s8),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: cs.outlineVariant.withValues(alpha: 0.4),
+            ),
+          );
+        }
+
+        return SssSheetShell(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                tr('home.more_sheet.title'),
+                style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+              SizedBox(height: HomeLayoutSpacing.s12),
+              sectionLabel('home.more_sheet.section_finance'),
+              _HomeSheetAction(
+                icon: Icons.account_balance_wallet_rounded,
+                label: tr('budget.title'),
+                foregroundColor: cs.primary,
+                onTap: () => go(AppRoutes.budgets),
+              ),
+              _HomeSheetAction(
+                icon: Icons.account_balance_rounded,
+                label: tr('debts.title'),
+                foregroundColor: cs.primary,
+                onTap: () => go(AppRoutes.debts),
+              ),
+              _HomeSheetAction(
+                icon: Icons.category_rounded,
+                label: tr('categories.title'),
+                foregroundColor: cs.primary,
+                onTap: () => go(AppRoutes.categories),
+              ),
+              _HomeSheetAction(
+                icon: Icons.repeat_rounded,
+                label: tr('recurring.title'),
+                foregroundColor: cs.primary,
+                onTap: () => go(AppRoutes.recurring),
+              ),
+              divider(),
+              sectionLabel('home.more_sheet.section_data'),
+              _HomeSheetAction(
+                icon: Icons.upload_file_rounded,
+                label: tr('export.title'),
+                foregroundColor: cs.primary,
+                onTap: () => go(AppRoutes.export),
+              ),
+              _HomeSheetAction(
+                icon: Icons.download_rounded,
+                label: tr('import.title'),
+                foregroundColor: cs.primary,
+                onTap: () => go(AppRoutes.import),
+              ),
+              divider(),
+              sectionLabel('home.more_sheet.section_app'),
+              _HomeSheetAction(
+                icon: Icons.settings_rounded,
+                label: tr('settings'),
+                foregroundColor: cs.primary,
+                onTap: () => go(AppRoutes.settings),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -310,64 +386,24 @@ class HomePage extends ConsumerWidget {
         OutlinedCircleIconButton(
           icon: Icons.bar_chart_rounded,
           tooltip: tr('analytics.title'),
-          onPressed: () => context.push(AppRoutes.analytics),
+          // Вкладки shell — только go(), иначе push ломает ветку и экран не виден.
+          onPressed: () => context.go(AppRoutes.analytics),
         ),
         Padding(
-          padding: const EdgeInsets.only(left: HomeLayoutSpacing.s8),
-          child: Material(
-            color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
-            shape: const CircleBorder(),
-            clipBehavior: Clip.antiAlias,
-            child: PopupMenuButton<void>(
-              tooltip: tr('settings'),
-              icon: Icon(Icons.tune_rounded, color: cs.onSurface, size: 22),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+          padding: const EdgeInsets.only(left: HomeLayoutSpacing.s12),
+          child: PressableScale(
+            child: Material(
+              color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: IconButton(
+                tooltip: tr('home.more_sheet.tooltip'),
+                icon: Icon(Icons.tune_rounded, color: cs.onSurface, size: 22),
+                onPressed: () {
+                  HapticUtils.selection();
+                  _showHomeMoreSheet(context);
+                },
               ),
-              itemBuilder: (ctx) => [
-                _quickNavMenuItem(
-                  ctx,
-                  icon: Icons.account_balance_wallet_rounded,
-                  label: tr('budget.title'),
-                  route: AppRoutes.budgets,
-                ),
-                _quickNavMenuItem(
-                  ctx,
-                  icon: Icons.account_balance_rounded,
-                  label: tr('debts.title'),
-                  route: AppRoutes.debts,
-                ),
-                _quickNavMenuItem(
-                  ctx,
-                  icon: Icons.category_rounded,
-                  label: tr('categories.title'),
-                  route: AppRoutes.categories,
-                ),
-                _quickNavMenuItem(
-                  ctx,
-                  icon: Icons.repeat_rounded,
-                  label: tr('recurring.title'),
-                  route: AppRoutes.recurring,
-                ),
-                _quickNavMenuItem(
-                  ctx,
-                  icon: Icons.upload_file_rounded,
-                  label: tr('export.title'),
-                  route: AppRoutes.export,
-                ),
-                _quickNavMenuItem(
-                  ctx,
-                  icon: Icons.download_rounded,
-                  label: tr('import.title'),
-                  route: AppRoutes.import,
-                ),
-                _quickNavMenuItem(
-                  ctx,
-                  icon: Icons.settings_rounded,
-                  label: tr('settings'),
-                  route: AppRoutes.settings,
-                ),
-              ],
             ),
           ),
         ),
@@ -385,8 +421,12 @@ class HomePage extends ConsumerWidget {
 
     final financialAsync = ref.watch(financialSnapshotProvider);
     final recentExpensesAsync = ref.watch(expensesStreamProvider);
+    final showHomeWalkthrough = ref.watch(homeWalkthroughPendingProvider);
 
-    return Scaffold(
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
       body: RefreshIndicator(
         onRefresh: () async {
@@ -438,20 +478,6 @@ class HomePage extends ConsumerWidget {
                           title: tr('home.advice.title'),
                           body: tr('home.hero.ftue_micro'),
                         ),
-                        SizedBox(height: HomeLayoutSpacing.s12),
-                        Center(
-                          child: TextButton.icon(
-                            onPressed: () {
-                              HapticUtils.selection();
-                              context.push(AppRoutes.import);
-                            },
-                            icon: const Icon(
-                              Icons.upload_file,
-                              size: 20,
-                            ),
-                            label: Text(tr('home.ftue.import_cta')),
-                          ),
-                        ),
                       ],
                     )
                   : financialAsync.when(
@@ -490,7 +516,7 @@ class HomePage extends ConsumerWidget {
                       variant: SectionHeaderVariant.mutedLabel,
                       title: tr('home.feed.recent_upper'),
                       trailing: TextButton(
-                        onPressed: () => context.push(AppRoutes.expenses),
+                        onPressed: () => context.go(AppRoutes.expenses),
                         child: Text(
                           tr('home.feed.all_link'),
                           style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -575,6 +601,14 @@ class HomePage extends ConsumerWidget {
           ),
         ),
       ),
+        ),
+        if (showHomeWalkthrough)
+          HomeWalkthroughOverlay(
+            onDismiss: () {
+              ref.read(homeWalkthroughPendingProvider.notifier).clearPending();
+            },
+          ),
+      ],
     );
   }
 
@@ -621,14 +655,34 @@ class _HomeLoadedHeroBlock extends ConsumerStatefulWidget {
 class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
   final GlobalKey _walletHeroCardKey = GlobalKey();
 
+  /// Подача темы/формата в [HomeHeroInsightNotifier] вне [build] (без side-effect в build).
+  void _syncFormattingToInsightNotifier() {
+    ref.read(homeHeroInsightNotifierProvider.notifier).setFormattingContext(
+          colorScheme: Theme.of(context).colorScheme,
+          formatter: widget.formatter,
+        );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncFormattingToInsightNotifier();
+  }
+
+  @override
+  void didUpdateWidget(covariant _HomeLoadedHeroBlock oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final localeChanged = oldWidget.formatter.locale != widget.formatter.locale;
+    final currencyChanged =
+        oldWidget.formatter.currencySymbol != widget.formatter.currencySymbol;
+    if (localeChanged || currencyChanged) {
+      _syncFormattingToInsightNotifier();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final insightState = ref.watch(homeHeroInsightNotifierProvider);
-    final insightNotifier = ref.read(homeHeroInsightNotifierProvider.notifier);
-    insightNotifier.setFormattingContext(
-      colorScheme: Theme.of(context).colorScheme,
-      formatter: widget.formatter,
-    );
 
     final resolved = insightState.resolved;
     final ux = resolved?.ux;
@@ -707,7 +761,9 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
         : heroCard
             .animate(
               onComplete: (_) {
-                insightNotifier.markHeroEnterAnimationPlayed();
+                ref
+                    .read(homeHeroInsightNotifierProvider.notifier)
+                    .markHeroEnterAnimationPlayed();
               },
             )
             .fadeIn(duration: AppMotion.standard, curve: AppMotion.curve)
@@ -781,8 +837,9 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
                   children: [
                     TextButton(
                       style: btnSmall,
-                      onPressed: () =>
-                          insightNotifier.sendFeedback(FeedbackType.helpful),
+                      onPressed: () => ref
+                          .read(homeHeroInsightNotifierProvider.notifier)
+                          .sendFeedback(FeedbackType.helpful),
                       child: Text(
                         tr('home.hero.ux.feedback_yes'),
                         style: Theme.of(context).textTheme.labelSmall,
@@ -790,9 +847,9 @@ class _HomeLoadedHeroBlockState extends ConsumerState<_HomeLoadedHeroBlock> {
                     ),
                     TextButton(
                       style: btnSmall,
-                      onPressed: () => insightNotifier.sendFeedback(
-                        FeedbackType.notHelpful,
-                      ),
+                      onPressed: () => ref
+                          .read(homeHeroInsightNotifierProvider.notifier)
+                          .sendFeedback(FeedbackType.notHelpful),
                       child: Text(
                         tr('home.hero.ux.feedback_no'),
                         style: Theme.of(context).textTheme.labelSmall,
@@ -878,8 +935,9 @@ class _WalletHeroLoadingCard extends StatelessWidget {
   }
 }
 
-/// Карточка операции в ленте (лёгкая тень, без тяжёлого градиента).
-class _HomeFeedCard extends ConsumerWidget {
+/// Карточка операции в ленте: плоский surface, свайп и long-press на удаление,
+/// [PressableScale], цвет категории через [CategoryColorHarmony].
+class _HomeFeedCard extends ConsumerStatefulWidget {
   const _HomeFeedCard({
     required this.expense,
     required this.formatter,
@@ -893,31 +951,54 @@ class _HomeFeedCard extends ConsumerWidget {
   final String dayHeaderText;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_HomeFeedCard> createState() => _HomeFeedCardState();
+}
+
+class _HomeFeedCardState extends ConsumerState<_HomeFeedCard> {
+  @override
+  Widget build(BuildContext context) {
+    final expense = widget.expense;
     final cs = Theme.of(context).colorScheme;
     final isIncome = expense.type.isIncome;
-    // Доход — акцент tertiary (макет: бирюза), расход — error.
     final amountColor = isIncome ? cs.tertiary : cs.error;
     final timeLabel =
         DateFormat.Hm(context.locale.toLanguageTag())
             .format(expense.occurredAt);
 
     final categoriesAsync = ref.watch(categoriesStreamProvider);
-    final categoryName = categoriesAsync.maybeWhen(
+    final category = categoriesAsync.maybeWhen(
       data: (cats) {
         final id = expense.categoryId;
         if (id == null) return null;
         for (final c in cats) {
-          if (c.id == id) return c.name;
+          if (c.id == id) return c;
         }
         return null;
       },
       orElse: () => null,
     );
+    final categoryName = category?.name;
 
     final title = (expense.note != null && expense.note!.trim().isNotEmpty)
         ? expense.note!.trim()
         : (isIncome ? tr('home.feed.income') : tr('home.feed.expense'));
+
+    final cat = category;
+    final rawCat = cat != null ? Color(cat.colorValue) : null;
+    final iconBg = rawCat != null
+        ? CategoryColorHarmony.iconBackgroundTint(rawCat, cs)
+        : amountColor.withValues(alpha: 0.12);
+    final iconFg =
+        rawCat != null ? CategoryColorHarmony.foreground(rawCat, cs) : amountColor;
+    final iconData = cat != null
+        ? CategoryVisuals.iconForCategory(
+            categoryId: cat.id,
+            isExpenseCategory: cat.kind.isExpense,
+            name: cat.name,
+          )
+        : (isIncome
+            ? Icons.payments_outlined
+            : Icons.receipt_long_outlined);
 
     return Dismissible(
       key: Key(expense.id),
@@ -932,131 +1013,119 @@ class _HomeFeedCard extends ConsumerWidget {
         child: Icon(Icons.delete_rounded, color: cs.onError),
       ),
       confirmDismiss: (direction) => _confirmDelete(context),
-      onDismissed: (direction) => _deleteExpense(context, ref),
-      child: EnhancedExpenseCard(
-        margin: EdgeInsets.zero,
-        gradient: isIncome
-            ? IncomeGradient.fromScheme(cs)
-            : ExpenseGradient.fromScheme(cs),
-        onTap: () => context.push(AppRoutes.expenses),
-        onLongPress: () => _showContextMenu(context, ref),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: HomeLayoutSpacing.s16,
-            vertical: HomeLayoutSpacing.s16,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (showDayHeader) ...[
-                Text(
-                  dayHeaderText,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: cs.onSurface.withValues(alpha: 0.5),
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.35,
-                      ),
-                ),
-                SizedBox(height: HomeLayoutSpacing.s12),
-              ],
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+      onDismissed: (direction) => _deleteExpense(context),
+      child: PressableScale(
+        child: EnhancedExpenseCard(
+            margin: EdgeInsets.zero,
+            gradient: null,
+            color: cs.surface,
+            onTap: () {
+              HapticUtils.selection();
+              context.go(AppRoutes.expenses);
+            },
+            onLongPress: () => _showContextMenu(context),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: HomeLayoutSpacing.s16,
+                vertical: HomeLayoutSpacing.s16,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: amountColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(14),
+                  if (widget.showDayHeader) ...[
+                    Text(
+                      widget.dayHeaderText,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: cs.onSurface.withValues(alpha: 0.5),
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.35,
+                          ),
                     ),
-                    child: Icon(
-                      isIncome
-                          ? Icons.payments_outlined
-                          : Icons.shopping_cart_outlined,
-                      color: amountColor,
-                      size: 22,
-                    ),
-                  ),
-                  SizedBox(width: HomeLayoutSpacing.s12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                    SizedBox(height: HomeLayoutSpacing.s12),
+                  ],
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: iconBg,
+                          borderRadius: BorderRadius.circular(14),
                         ),
-                        if (categoryName != null) ...[
-                          SizedBox(height: HomeLayoutSpacing.s8),
+                        child: Icon(
+                          iconData,
+                          color: iconFg,
+                          size: 22,
+                        ),
+                      ),
+                      SizedBox(width: HomeLayoutSpacing.s12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (categoryName != null) ...[
+                              SizedBox(height: HomeLayoutSpacing.s8),
+                              Text(
+                                categoryName,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: cs.onSurface
+                                          .withValues(alpha: 0.5),
+                                    ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
                           Text(
-                            categoryName,
+                            '${isIncome ? '+' : '−'} ${widget.formatter.format(expense.amount.amount)}',
                             style: Theme.of(context)
                                 .textTheme
-                                .bodySmall
+                                .titleMedium
                                 ?.copyWith(
-                                  color:
-                                      cs.onSurface.withValues(alpha: 0.5),
+                                  fontWeight: FontWeight.w800,
+                                  color: amountColor,
+                                  letterSpacing: -0.6,
                                 ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            timeLabel,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: cs.onSurface
+                                      .withValues(alpha: 0.45),
+                                  fontWeight: FontWeight.w500,
+                                ),
                           ),
                         ],
-                      ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${isIncome ? '+' : '−'} ${formatter.format(expense.amount.amount)}',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: amountColor,
-                              letterSpacing: -0.6,
-                            ),
-                      ),
-                      Text(
-                        timeLabel,
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelSmall
-                            ?.copyWith(
-                              color:
-                                  cs.onSurface.withValues(alpha: 0.45),
-                              fontWeight: FontWeight.w500,
-                            ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.delete_outline_rounded,
-                          size: 20,
-                          color: cs.onSurface.withValues(alpha: 0.3),
-                        ),
-                        onPressed: () => _showDeleteDialog(context, ref),
-                        tooltip: tr('delete'),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 36,
-                          minHeight: 36,
-                        ),
                       ),
                     ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
-      ),
     );
   }
 
@@ -1084,10 +1153,10 @@ class _HomeFeedCard extends ConsumerWidget {
         false;
   }
 
-  Future<void> _deleteExpense(BuildContext context, WidgetRef ref) async {
+  Future<void> _deleteExpense(BuildContext context) async {
     HapticUtils.mediumImpact();
     final repo = ref.read(expensesRepositoryProvider);
-    await repo.softDelete(expense.id);
+    await repo.softDelete(widget.expense.id);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1096,7 +1165,7 @@ class _HomeFeedCard extends ConsumerWidget {
           action: SnackBarAction(
             label: tr('expenses.delete.undo'),
             onPressed: () async {
-              await repo.upsertExpense(expense.copyWith(
+              await repo.upsertExpense(widget.expense.copyWith(
                 isDeleted: false,
                 deletedAt: null,
               ));
@@ -1107,14 +1176,15 @@ class _HomeFeedCard extends ConsumerWidget {
     }
   }
 
-  void _showDeleteDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showDeleteDialog(BuildContext context) async {
     final confirmed = await _confirmDelete(context);
     if (confirmed && context.mounted) {
-      await _deleteExpense(context, ref);
+      await _deleteExpense(context);
     }
   }
 
-  void _showContextMenu(BuildContext context, WidgetRef ref) {
+  void _showContextMenu(BuildContext context) {
+    final expense = widget.expense;
     final cs = Theme.of(context).colorScheme;
     final isIncome = expense.type.isIncome;
     final amountColor = isIncome ? cs.primary : cs.error;
@@ -1150,7 +1220,7 @@ class _HomeFeedCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        formatter.format(expense.amount.amount),
+                        widget.formatter.format(expense.amount.amount),
                         style: Theme.of(sheetContext)
                             .textTheme
                             .titleMedium
@@ -1215,7 +1285,7 @@ class _HomeFeedCard extends ConsumerWidget {
             foregroundColor: cs.error,
             onTap: () {
               Navigator.pop(sheetContext);
-              _showDeleteDialog(context, ref);
+              _showDeleteDialog(context);
             },
           ),
           SizedBox(height: HomeLayoutSpacing.s8),

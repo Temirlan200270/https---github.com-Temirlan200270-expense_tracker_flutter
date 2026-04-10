@@ -7,6 +7,7 @@ import 'package:ui_components/ui_components.dart';
 
 import '../home/home_layout_shell.dart';
 import '../navigation/app_routes.dart';
+import '../home/home_walkthrough_providers.dart';
 import 'onboarding_providers.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
@@ -86,7 +87,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               padding: const EdgeInsets.all(HomeLayoutSpacing.s24),
               child: _currentPage == _slides.length - 1
                   ? FilledButton(
-                      onPressed: _completeOnboarding,
+                      onPressed: () => _completeOnboarding(showHomeTour: true),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size(double.infinity, 48),
                       ),
@@ -148,8 +149,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     }
   }
 
-  Future<void> _completeOnboarding() async {
+  Future<void> _completeOnboarding({bool showHomeTour = false}) async {
     await ref.read(onboardingCompletedProvider.notifier).completeOnboarding();
+    if (showHomeTour) {
+      await ref.read(homeWalkthroughPendingProvider.notifier).markPending();
+    }
     if (mounted) {
       context.go(AppRoutes.home);
     }

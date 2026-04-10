@@ -176,7 +176,7 @@ class WalletHeroCard extends StatelessWidget {
         ] else if (hasHint) ...[
           SizedBox(height: isCompactFtue ? 16 : 20),
           Text(
-            hint!,
+            hint,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodySmall?.copyWith(

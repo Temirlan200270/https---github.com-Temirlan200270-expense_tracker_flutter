@@ -32,21 +32,6 @@ class MainNavigationShell extends StatelessWidget {
     }
   }
 
-  static int navBarIndexToBranch(int navIndex) {
-    switch (navIndex) {
-      case 0:
-        return 0;
-      case 1:
-        return 1;
-      case 3:
-        return 2;
-      case 4:
-        return 3;
-      default:
-        return 0;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -130,7 +115,23 @@ class MainNavigationShell extends StatelessWidget {
 
   void _onSideTap(BuildContext context, int navIndex) {
     HapticUtils.selection();
-    navigationShell.goBranch(navBarIndexToBranch(navIndex));
+    // Явный go() по полному пути — надёжнее goBranch для веток shell (аналитика и др.).
+    switch (navIndex) {
+      case 0:
+        context.go(AppRoutes.home);
+        break;
+      case 1:
+        context.go(AppRoutes.expenses);
+        break;
+      case 3:
+        context.go(AppRoutes.budgets);
+        break;
+      case 4:
+        context.go(AppRoutes.analytics);
+        break;
+      default:
+        context.go(AppRoutes.home);
+    }
   }
 }
 

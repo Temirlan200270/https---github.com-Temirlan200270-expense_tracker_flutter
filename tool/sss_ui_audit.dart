@@ -24,7 +24,7 @@ void main(List<String> args) {
   });
 
   stderr.writeln('SSS UI Audit (repo: ${root.path})');
-  stderr.writeln('${'=' * 60}');
+  stderr.writeln('=' * 60);
 
   var errors = 0;
   var warnings = 0;
@@ -41,7 +41,7 @@ void main(List<String> args) {
   if (findings.isEmpty) {
     stderr.writeln('OK — нарушений не найдено.');
   } else {
-    stderr.writeln('${'=' * 60}');
+    stderr.writeln('=' * 60);
     stderr.writeln('Итого: $errors error(s), $warnings warning(s)');
   }
 
@@ -76,7 +76,6 @@ Directory _resolveRepoRoot() {
   }
   stderr.writeln('Не найден корень репозитория (ожидается каталог с packages/).');
   exit(2);
-  return Directory.current;
 }
 
 List<Directory> _collectLibRoots(Directory root) {
@@ -253,12 +252,8 @@ String _stripTrailingLineComment(String line) {
   // Грубая эвристика: не отрезать // внутри строки
   final before = line.substring(0, idx);
   final quotes = "'".allMatches(before).length + '"'.allMatches(before).length;
-  if (quotes.isOdd) return line;
+  if (quotes % 2 == 1) return line;
   return before;
-}
-
-extension on int {
-  bool get isOdd => this % 2 == 1;
 }
 
 String _relativeToPackages(String filePath, Directory libRoot) {

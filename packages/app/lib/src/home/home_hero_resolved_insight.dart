@@ -59,6 +59,9 @@ final homeHeroComputationInputsProvider =
 });
 
 /// Одна точка: [UxDecisionMapper.mapSnapshot] + [resolveHomeHeroInsight].
+///
+/// При росте стоимости расчёта: кэш по хэшу входов ([homeHeroComputationInputsProvider])
+/// или мемоизация в провайдере с `select`.
 HomeHeroResolvedPair computeHomeHeroResolved({
   required HomeHeroComputationInputs inputs,
   required ColorScheme colorScheme,
